@@ -1,0 +1,167 @@
+const TEAM_HUE = [210, 30];
+function drawZoneVisOverlay() {
+if (!viz("zone") && !viz("vis")) return;
+ecsQuery("bug", "pos").forEach(e => {
+const cb = C.combat.get(e);
+if (cb && cb.dead) return;
+const p = C.pos.get(e),
+b = C.bug.get(e);
+if (viz("zone")) {
+const zoneR = 34;
+for (const [a0, a1, col] of [[PI / 3, TAU / 3, "rgba(255,180,60,.10)"], [TAU / 3, PI, "rgba(255,60,60,.14)"]])
+for (const sg of [1, -1]) {
+boxCx.beginPath(), boxCx.moveTo(p.x, p.y), boxCx.arc(p.x, p.y, zoneR, p.dir + sg * a0, p.dir + sg * a1, sg < 0), boxCx.closePath();
+boxCx.fillStyle = col, boxCx.fill()
+}
+boxCx.beginPath(), boxCx.arc(p.x, p.y, engageDistOf(b), 0, 7), boxCx.strokeStyle = "rgba(120,200,255,.25)", boxCx.lineWidth = 1, boxCx.stroke()
+}
+if (viz("vis")) {
+const visR = visRangeOf(b);
+const fovH = fovHalfOf(b);
+boxCx.beginPath(), boxCx.moveTo(p.x, p.y), boxCx.arc(p.x, p.y, visR, p.dir - fovH, p.dir + fovH), boxCx.closePath();
+boxCx.strokeStyle = "rgba(180,255,120,.35)", boxCx.lineWidth = 1, boxCx.stroke(), boxCx.fillStyle = "rgba(180,255,120,.06)", boxCx.fill();
+}
+})
+}
+const cdFieldOf = id => ({ strongbite: "cdStrong", swiftbite: "cdSwift" })[id] || "cd" + id[0].toUpperCase() + id.slice(1);
+function drawCooldowns() {
+if (!viz("abi")) return;
+boxCx.font = "8px 'Courier New'", boxCx.textAlign = "left";
+ecsQuery("bug", "pos").forEach(e => {
+const cb = C.combat.get(e) || {};
+if (cb.dead && !(cb.phoenixT > 0) && !(cb.fakeT > 0)) return;
+const b = C.bug.get(e),
+p = C.pos.get(e),
+list = (b.abilities || []).filter(id => id === "phoenix" ? !cb.phoenixUsed : id === "fake" ? cb.fakeUsed < 2 : !0);
+let yy = p.y + 16;
+list.forEach(id => {
+const f = cdFieldOf(id),
+has = ABILITIES[id].cd > 0 && f in cb,
+cd = cb[f] || 0;
+boxCx.fillStyle = has ? (cd <= 0 ? "#4f8" : "#fa6") : "#c8f";
+boxCx.fillText(`${ABILITIES[id].name}${has?" "+(cd<=0?"\u2713":(cd/1000).toFixed(1)):""}`, p.x + 12, yy), yy += 9
+})
+})
+}
+function sysRender(inCombat) {
+sysRenderObstacles(), drawZoneVisOverlay();
+if (inCombat) {
+groundMarks.forEach(m => {
+boxCx.globalAlpha = .4 * m.t, boxCx.fillStyle = `hsl(${m.hue},40%,18%)`, boxCx.fillRect(m.x - 8, m.y - 4, 16, 8), boxCx.globalAlpha = 1
+});
+} else {
+ecsQuery("food", "pos").forEach(e => {
+const p = C.pos.get(e);
+boxCx.fillStyle = "#c86", boxCx.beginPath(), boxCx.arc(p.x, p.y, 4, 0, 7), boxCx.fill();
+boxCx.fillStyle = "#eb9", boxCx.beginPath(), boxCx.arc(p.x - 1, p.y - 1, 1.5, 0, 7), boxCx.fill()
+});
+boxEggs.forEach(g => {
+boxCx.save(), boxCx.translate(g.x, g.y);
+boxCx.fillStyle = "#8d8a80", boxCx.beginPath(), boxCx.ellipse(0, 0, g.r, g.r * .74, 0, 0, 7), boxCx.fill();
+boxCx.fillStyle = "#a5a298", boxCx.beginPath(), boxCx.ellipse(-g.r * .22, -g.r * .22, g.r * .4, g.r * .28, 0, 0, 7), boxCx.fill();
+boxCx.restore()
+});
+}
+const ents = inCombat ? ecsQuery("bug", "pos", "team", "combat") : ecsQuery("bug", "pos", "vel", "think", "wall");
+const isGrey = e => { const c = C.combat.get(e); return c.dead || c.phoenixT > 0 || c.fakeT > 0 };
+const tops = new Set(mates.map(m => m.top));
+const drawOrder = inCombat ? [...ents].sort((a, bb) => (isGrey(a) ? 0 : 1) - (isGrey(bb) ? 0 : 1)) :
+[...ents].sort((a, bb) => (tops.has(a) ? 1 : 0) - (tops.has(bb) ? 1 : 0));
+drawOrder.forEach(e => {
+const b = C.bug.get(e),
+p = C.pos.get(e);
+if (!inCombat) {
+drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, b === inspected, posPhase(p));
+(b === inspected || scienceOn && viz("hp")) && drawHpBar(p, hpFrac(b));
+scienceOn && viz("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - 14));
+return;
+}
+const tm = C.team.get(e),
+cb = C.combat.get(e);
+const cfg = ensureMorph(b);
+if (isGrey(e)) {
+boxCx.save();
+drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha: 1, scale: .9, shadow: !1 });
+boxCx.restore();
+return;
+}
+const hitFrac = cb.hitT || 0;
+let offX = 7 * hitFrac * (cb.hitDx || 0),
+offY = 7 * hitFrac * (cb.hitDy || 0);
+if (cb.loudT > 0) { const amp = (cfg.legSpan * 0.5 / 3) * sin(cb.loudT / 40), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
+boxCx.globalAlpha = 1;
+drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), viz("col") ? TEAM_HUE[tm.team] : null);
+if (cb.hitT > 0) { boxCx.save(); boxCx.globalAlpha = cb.hitT; drawMorphBug(boxCx, cfg, "#ff2828", p.x + offX, p.y + offY, p.dir + HALF_PI, { alpha: cb.hitT, scale: .9, shadow: !1 }); boxCx.restore() }
+if (cb.stunT > 0) { boxCx.save(), boxCx.fillStyle = "#fd4", boxCx.font = "9px Courier New", boxCx.textAlign = "center", boxCx.fillText("\u2726", p.x, p.y - 14), boxCx.restore() }
+if (cb.loudT > 0) { boxCx.save(), boxCx.strokeStyle = "#ff8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, LOUD_RADIUS, 0, 7), boxCx.stroke(), boxCx.restore() }
+if (cb.markFlash > 0) {
+const blink = sin((1200 - cb.markFlash) / 1200 * TAU);
+if (blink > 0) {
+boxCx.save(); boxCx.globalAlpha = blink; boxCx.fillStyle = "#8f8"; boxCx.font = "bold 11px Courier New"; boxCx.textAlign = "center"; boxCx.textBaseline = "middle";
+const arrowR = 18;
+for (let k = 0; k < 3; k++) {
+const ang = -HALF_PI + k * (TAU / 3);
+const ax = p.x + cos(ang) * arrowR, ay = p.y + sin(ang) * arrowR;
+boxCx.save(); boxCx.translate(ax, ay); boxCx.rotate(ang + HALF_PI); boxCx.fillText("\u25bc", 0, 0); boxCx.restore();
+}
+boxCx.restore();
+}
+}
+if (viz("hp")) {
+drawHpBar(p, max(0, cb.curHp / cb.maxHp));
+if (scienceOn) { boxCx.fillStyle = "#9ab", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(max(0, round(cb.curHp)), p.x - 15, p.y - 18) }
+}
+if (viz("nam")) { boxCx.fillStyle = 0 === tm.team ? "#44ccff" : "#ffaa44", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - 14) }
+if (viz("bite")) {
+const pbW = 20, pbx = p.x - pbW / 2, pby = p.y - 12,
+prepR = cb.prepVisT > 0 ? max(0, min(1, 1 - cb.bitePrep / (cb.bitePrepMax || BITE_PREP_MS))) : 0;
+if (prepR > 0) { boxCx.fillStyle = "#1a1a1a", boxCx.fillRect(pbx, pby, pbW, 2); boxCx.fillStyle = "#ffffff", boxCx.fillRect(pbx, pby, pbW * prepR, 2) }
+}
+boxCx.globalAlpha = 1;
+});
+if (fow && inspected != null) {
+const fe = ecsQuery("bug", "pos").find(en => C.bug.get(en) === inspected || C.bug.get(en).id === inspected.id);
+if (fe != null) {
+const fp = C.pos.get(fe), fb = C.bug.get(fe),
+fr = visRangeOf(fb), fh = fovHalfOf(fb);
+boxCx.save();
+boxCx.beginPath(), boxCx.rect(0, 0, boxLW, boxLH);
+boxCx.moveTo(fp.x, fp.y), boxCx.arc(fp.x, fp.y, fr, fp.dir - fh, fp.dir + fh), boxCx.closePath();
+boxCx.moveTo(fp.x + 15, fp.y), boxCx.arc(fp.x, fp.y, 15, 0, 7, !0);
+boxCx.fillStyle = "#000", boxCx.fill("evenodd");
+boxCx.restore()
+}
+}
+if (inCombat && viz("dmg")) {
+boxCx.textAlign = "center", boxCx.font = "bold 9px 'Courier New'";
+dmgPops.forEach(d => {
+boxCx.save(), boxCx.globalAlpha = max(0, min(1, d.t));
+boxCx.fillStyle = d.team === 0 ? "#4cf" : "#f66";
+boxCx.fillText(d.isMiss ? "miss" : round(d.amount), d.x, d.y);
+boxCx.restore()
+})
+}
+drawCooldowns();
+const infoEl = $("terr-info");
+if (inspected) { infoEl.innerHTML = inspectLine(inspected); return }
+if (!inCombat) return void(infoEl.textContent = `${bugbox.length} bug${1!==bugbox.length?"s":""} \u2014 select a bug to inspect`);
+const [a0, a1] = teamAlive(ents);
+infoEl.textContent = `Fight #${fightNum} \u2014 YOURS: ${a0} alive \u00b7 ${a1} alive :ENEMY`
+}
+function teamAlive(ents) {
+const live = ents.filter(e => { const c = C.combat.get(e); return !c.dead || c.phoenixT > 0 || c.fakeT > 0 });
+return [live.filter(e => 0 === C.team.get(e).team).length, live.filter(e => 1 === C.team.get(e).team).length]
+}
+function checkFightEnd() {
+const ents = ecsQuery("team", "combat");
+if (!ents.length) return;
+const [a0, a1] = teamAlive(ents);
+if (!fightDone && (0 === a0 || 0 === a1)) {
+ents.forEach(e => {
+const c = C.combat.get(e);
+if (c.curHp <= 0) { c.dead = !0, c.curHp = 0, c.phoenixT = 0, c.fakeT = 0, clearActionState(c) }
+else if (c.dead) { c.phoenixT = 0, c.fakeT = 0 }
+});
+fightDone = !0, syncSciHud(), resultTimer = setTimeout(showFightResult, 700)
+}
+}
