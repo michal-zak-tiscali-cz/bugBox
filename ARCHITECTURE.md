@@ -1,4 +1,4 @@
-# BUGBOX v61.5 — file map
+# BUGBOX v62.0 — file map
 
 Simple bug life simulator. Plain `<script src>` files, no modules. Everything shares one global scope.
 Load order = the order in `index.html`. `main.js` is last and holds every
@@ -45,31 +45,45 @@ Open `index.html`. All paths are relative, so it works from a local folder or fr
 
 ## Workflow
 
-**How the user works (do not assume otherwise):**
-1. Analyzes and tests github repo, errors, goals
-2. Instructs LLM to change or implement stuff
-3. Receives the changed files, uploads them to github
-4. Repeats
-
-
 **Repo**
-
-Claude pulls the code itself, user never uploads it:
 `https://github.com/michal-zak-tiscali-cz/bugBox`
 Live: `https://michal-zak-tiscali-cz.github.io/bugBox/`
-User uploads only this `ARCHITECTURE.md`. Claude clones the repo.
 
-**Work rules**
-- no dead code, no redundant code, no redundant names, smaller file, less characters, less tokens
+The user works in one of two modes. Detect which one you are in, then follow only that mode's delivery rules. Everything below `Work rules` applies to both.
 
-**Delivery rules:**
-- Never deliver a `.zip`
+### Mode A — Claude chat
+You are in mode A when you have no write access to the repo.
+1. User analyzes and tests the live game, errors, goals.
+2. User instructs Claude to change or implement stuff. User uploads only this `ARCHITECTURE.md`.
+3. Claude clones the repo itself and reads only the files the routing table points at.
+4. Claude delivers finished files as downloads. User uploads them to github by hand.
+5. Repeat.
+
+**Mode A delivery rules**
+- Never deliver a `.zip`.
 - Deliver **individual files**, one download link each, ready to drop into the repo.
 - Deliver **only the files that changed** — not the whole project.
+
+### Mode B — Claude Code
+You are in mode B when the repo is checked out and you can commit.
+1. User analyzes and tests the live game, errors, goals.
+2. User submits a task from the Code tab. `CLAUDE.md` points here.
+3. Claude edits the files in place and pushes a branch. No download links, no file contents in chat.
+4. User opens the diff, creates the PR, merges it. GitHub Pages redeploys from `main`.
+5. Repeat.
+
+**Mode B delivery rules**
+- Commit **only the files that changed**.
+- One branch per task. Do not commit to `main` directly.
+- Commit message = one line, what changed, no version number.
+
+**Work rules**
+- no dead code, no redundant code, no redundant names, less characters, smaller file size
+- saving tokens! reading only parts that are necessary, not the whole repo
+- When changing project structure (removing, adding, splitting files) always update the routing table in this file.
 - Always bump the version by +1 minor: `GAME_VERSION` in `core.js`, line 1.
 
 **User info:**
-- The user is a non-coder on an android phone, prompting LLMs, getting adjusted files, uploading them back to github.
 - Android phone only. No desktop, no build tools, no terminal.
 - **Not a programmer.** Never ask to read or edit code. LLM is the only one who looks at the code. Do not explain code, do not paste snippets in chat.
 - Has Asperger syndrome: answers must be terse, literal, bullet-pointed, exact. No vague qualifiers. "I don't know" is a valid and preferred answer.
