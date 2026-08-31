@@ -7,6 +7,19 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script>
+/* v61.5 crash reporter — shows load errors on screen (no desktop console on Android) */
+(function(){
+function bar(){var e=document.getElementById("err-bar");if(!e){e=document.createElement("div");e.id="err-bar";e.style="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#300;border-top:2px solid #f44;color:#f99;font:9px 'Courier New',monospace;padding:5px;white-space:pre-wrap;max-height:45%;overflow:auto";(document.body||document.documentElement).appendChild(e)}return e}
+window.addEventListener("error",function(ev){
+if(ev.target&&ev.target.tagName==="SCRIPT"){bar().textContent+="MISSING FILE: "+ev.target.getAttribute("src")+"\n";return}
+bar().textContent+=(ev.filename||"").split("/").pop()+":"+ev.lineno+"  "+ev.message+"\n"
+},true);
+window.addEventListener("load",function(){
+["shopDone","toggleFow","syncFowBtn","inspectLine"].forEach(function(n){
+if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
+})})();
+</script>
 <div class="screen active" id="s-intro1" onclick="goShop()">
 <div class="intro-frame">
 <canvas id="intro-art" width="200" height="60" style="display:block;margin:0 auto 10px;image-rendering:pixelated;"></canvas>
@@ -18,7 +31,7 @@
 </div>
 <hr class="dos-hr">
 <div class="press-key" style="font-size:10px;">[ TAP TO ENTER ]</div>
-<div id="game-version-tag" style="position:absolute;right:6px;bottom:4px;font-size:8px;color:#44ccff;">v61.2</div>
+<div id="game-version-tag" style="position:absolute;right:6px;bottom:4px;font-size:8px;color:#44ccff;">v61.5</div>
 </div>
 </div>
 <div class="screen" id="s-shop">
@@ -49,6 +62,7 @@
 <canvas id="terr-canvas"></canvas>
 <div id="terr-bar">
 <div id="terr-bar-row" style="justify-content:flex-end;">
+<button class="btn-std" id="btn-fow" style="display:none;" title="fog of war: hide everything outside the focused bug's field of view">👁 FOW</button>
 <button class="breed-nav btn-std" id="btn-go-breed">↓ BREED 🧬</button>
 <button id="btn-open-design" class="btn-std">🎨 DESIGN</button>
 <button class="btn-std" onclick="openSettingsOverlay()">📖 INFO</button>
@@ -192,31 +206,31 @@ Science!
 </div>
 </div>
 </div>
-<script src="js/core.js"></script>
-<script src="js/achievements.js"></script>
-<script src="js/state.js"></script>
-<script src="js/bug.js"></script>
-<script src="js/abilities.js"></script>
-<script src="js/cards.js"></script>
-<script src="js/screens.js"></script>
-<script src="js/morph.js"></script>
-<script src="js/drawbug.js"></script>
-<script src="js/shop.js"></script>
-<script src="js/ecs.js"></script>
-<script src="js/terrarium.js"></script>
-<script src="js/move.js"></script>
-<script src="js/mate.js"></script>
-<script src="js/breed.js"></script>
-<script src="js/arena.js"></script>
-<script src="js/combat.js"></script>
-<script src="js/render.js"></script>
-<script src="js/input.js"></script>
-<script src="js/loop.js"></script>
-<script src="js/fight.js"></script>
-<script src="js/speed.js"></script>
-<script src="js/designer.js"></script>
-<script src="js/wiki.js"></script>
-<script src="js/records.js"></script>
-<script src="js/main.js"></script>
+<script src="core.js"></script>
+<script src="achievements.js"></script>
+<script src="state.js"></script>
+<script src="bug.js"></script>
+<script src="abilities.js"></script>
+<script src="cards.js"></script>
+<script src="screens.js"></script>
+<script src="morph.js"></script>
+<script src="drawbug.js"></script>
+<script src="shop.js"></script>
+<script src="ecs.js"></script>
+<script src="terrarium.js"></script>
+<script src="move.js"></script>
+<script src="mate.js"></script>
+<script src="breed.js"></script>
+<script src="arena.js"></script>
+<script src="combat.js"></script>
+<script src="render.js"></script>
+<script src="input.js"></script>
+<script src="loop.js"></script>
+<script src="fight.js"></script>
+<script src="speed.js"></script>
+<script src="designer.js"></script>
+<script src="wiki.js"></script>
+<script src="records.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
