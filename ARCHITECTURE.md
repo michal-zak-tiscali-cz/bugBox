@@ -1,11 +1,6 @@
 # BUGBOX v61.5 — file map
 
-**FLAT LAYOUT — every file sits in ONE folder next to `index.html`.**
-There is no `` subfolder any more (removed in v61.5). Never re-introduce it
-and never write `src="js/..."`. The user is on a phone; one folder means every
-delivered file is dropped in the same place with no sorting.
-
-Plain `<script src>` files, no modules. Everything shares one global scope.
+Simple bug life simulator. Plain `<script src>` files, no modules. Everything shares one global scope.
 Load order = the order in `index.html`. `main.js` is last and holds every
 DOM event binding, so definition files never run DOM code at load time.
 
@@ -46,40 +41,38 @@ DOM event binding, so definition files never run DOM code at load time.
   read with `C.pos.get(entity)`, listed with `ecsQuery("bug","pos")`.
 
 ## Running it
-Open `index.html`. All paths are relative, so it works from a local folder
-or from GitHub Pages with no build step.
+Open `index.html`. All paths are relative, so it works from a local folder or from GitHub Pages with no build step. The `index.html` contains an on-screen crash reporter (red bar at the bottom). It prints missing files and JS errors (Android has no console).
 
-## Working agreement — read this first, every session
+## Workflow
 
 **How the user works (do not assume otherwise):**
-1. Downloads the changed files to a folder on his Android phone.
-2. Tests the game there, offline, from that folder.
-3. Only when it works does he push it to GitHub.
-So the GitHub repo is usually **one or more versions behind** what he is testing.
-A clean repo does NOT mean the user did nothing wrong — it means he has not
-pushed yet. Never tell him to "check the repo" to debug his local copy.
+1. Analyzes and tests github repo, errors, goals
+2. Instructs LLM to change or implement stuff
+3. Receives the changed files, uploads them to github
+4. Repeats
 
-**Debugging his local copy:** `index.html` contains an on-screen crash reporter
-(red bar at the bottom). It prints missing files and JS errors. Ask him to read
-that bar instead of asking for a console log — Android has no console.
 
-**Repo (Claude pulls the code itself, user never uploads it):**
+**Repo**
+
+Claude pulls the code itself, user never uploads it:
 `https://github.com/michal-zak-tiscali-cz/bugBox`
 Live: `https://michal-zak-tiscali-cz.github.io/bugBox/`
 User uploads only this `ARCHITECTURE.md`. Claude clones the repo.
 
+**Work rules**
+- no dead code, no redundant code, no redundant names, smaller file, less characters, less tokens
+
 **Delivery rules:**
-- NEVER deliver a `.zip`. The user is on an **Android phone** and cannot open archives.
+- Never deliver a `.zip`
 - Deliver **individual files**, one download link each, ready to drop into the repo.
 - Deliver **only the files that changed** — not the whole project.
 - Always bump the version by +1 minor: `GAME_VERSION` in `core.js`, line 1.
 
-**About the user:**
+**User info:**
+- The user is a non-coder on an android phone, prompting LLMs, getting adjusted files, uploading them back to github.
 - Android phone only. No desktop, no build tools, no terminal.
-- **Not a programmer.** Never asks to read or edit code. Claude is the only one
-  who looks at the code. Do not explain code, do not paste snippets in chat.
-- Has Asperger syndrome: answers must be terse, literal, bullet-pointed, exact.
-  No vague qualifiers. "I don't know" is a valid and preferred answer.
+- **Not a programmer.** Never ask to read or edit code. LLM is the only one who looks at the code. Do not explain code, do not paste snippets in chat.
+- Has Asperger syndrome: answers must be terse, literal, bullet-pointed, exact. No vague qualifiers. "I don't know" is a valid and preferred answer.
 
 **Token budget:**
 Context is expensive and sessions run all day. Therefore:
