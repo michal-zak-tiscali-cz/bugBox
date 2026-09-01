@@ -61,18 +61,18 @@ function renderMorphWiki() {
 const el = $("itab-morph");
 if (el.dataset.done) return;
 el.dataset.done = "1";
-const baseCfg = { bodySegments: 2, segmentGradient: 3, bodyLength: 14, bodyWidth: 4, headSize: 4, legSpan: 11, headGear: "eyes_narrow" };
+const baseCfg = { bodySegments: 2, segmentGradient: 3, bodyLength: 22, bodyWidth: 6, headSize: 4, legLen: 14, headGear: "eyes", headGearSize: 0 };
 const row = (title, items) =>
 `<div class="mw-title">${title}</div><div class="mw-grid">` +
 items.map(([lbl], i) => `<div class="mw-item"><canvas class="mw-cv" data-r="${title}-${i}"></canvas><span>${lbl}</span></div>`).join("") + "</div>";
 const sections = [
-["Head gear", GEAR_KEYS.map(g => [`${GEAR_LABEL[GEAR[g].t]} ${g.endsWith("extrawide")?"XW":g.endsWith("_wide")?"W":"N"}`, { headGear: g }])],
-["Head size", [2, 3, 4, 6].map(v => [`Size ${v}`, { headSize: v }])],
-["Body", [["1 seg min", { bodySegments: 1, bodyLength: 10, bodyWidth: 3 }], ["2 segs", { bodySegments: 2, bodyLength: 18 }], ["3 segs long", { bodySegments: 3, bodyLength: 25 }], ["3 segs wide", { bodySegments: 3, bodyLength: 16, bodyWidth: 6 }]]],
-["Segment gradient", [1, 2, 3, 4, 5].map(v => [`Grad ${v}`, { segmentGradient: v, bodySegments: 3, bodyLength: 22 }])],
-["Leg span", [4, 8, 11].map(v => [`Span ${v}`, { legSpan: v }])]
+["Head gear", GEAR_KEYS.flatMap(g => [0, 1, 2].map(z => [`${GEAR_LABEL[g]} ${SIZE_LABEL[z]}`, { headGear: g, headGearSize: z }]))],
+["Head size (INT)", [2, 3, 4, 5, 6].map(v => [`Size ${v}`, { headSize: v }])],
+["Body (CON \u00d7 STR)", [["Short thin", { bodyLength: 10, bodyWidth: 2 }], ["Mid", { bodyLength: 22, bodyWidth: 6 }], ["Long", { bodyLength: 37, bodyWidth: 6 }], ["Long wide", { bodyLength: 37, bodyWidth: 11 }]]],
+["Segment gradient", [1, 2, 3, 4, 5].map(v => [`Grad ${v}`, { segmentGradient: v, bodySegments: 3, bodyLength: 30 }])],
+["Legs (AGI)", [6, 14, 24].map(v => [`Len ${v}`, { legLen: v }])]
 ];
-el.innerHTML = sections.map(([t, items]) => row(t, items)).join("");
+el.innerHTML = '<p>Length follows CON, width STR, head INT, legs AGI, head gear size PER. Segments, gradient, gear type and hue are independent.</p>' + sections.map(([t, items]) => row(t, items)).join("");
 sections.forEach(([t, items]) => items.forEach(([lbl, mod], i) => {
 const cv = el.querySelector(`[data-r="${t}-${i}"]`), ctx = hidpi(cv, 86, 86);
 drawMorphCentered(ctx, { hue: 140, morph: { ...baseCfg, ...mod } }, 86, 86, .9)

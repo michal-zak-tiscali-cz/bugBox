@@ -1,12 +1,29 @@
-let design = Object.assign({ hue: 120, con: 5, str: 5, agi: 5, int: 5, per: 5, abils: ["", "", "", ""] }, randomMorph()),
+let design = Object.assign({ hue: 120, con: 5, str: 5, agi: 5, int: 5, per: 5, link: 1, abils: ["", "", "", ""] }, randomMorph()),
 designAnim = null, designSide = 0;
-function designSliderRows() {
-const rows = [["hue", "Hue", 0, 359]];
-for (const k in MORPH_RANGE) rows.push([k, {
-bodySegments: "Segments", segmentGradient: "Gradient", bodyLength: "Length",
-bodyWidth: "Width", headSize: "Head", legSpan: "Legs"
-}[k], MORPH_RANGE[k][0], MORPH_RANGE[k][1]]);
-return rows
+Object.assign(design, statMorph(design));
+const DZ_ROWS = [["hue", "Hue", 0, 359], ["bodySegments", "Segments"], ["segmentGradient", "Gradient"],
+["bodyLength", "Length"], ["bodyWidth", "Width"], ["headSize", "Head"], ["legLen", "Legs"],
+["headGear", "Gear type", 0, GEAR_KEYS.length - 1], ["headGearSize", "Gear size"]],
+DZ_RED = ["hue", "bodySegments", "segmentGradient"],
+dzLo = r => r[2] ?? MORPH_RANGE[r[0]][0],
+dzHi = r => r[3] ?? MORPH_RANGE[r[0]][1],
+dzVal = k => k === "headGear" ? GEAR_KEYS.indexOf(design.headGear) : design[k],
+dzTxt = k => k === "headGear" ? GEAR_LABEL[design.headGear] : k === "headGearSize" ? SIZE_LABEL[design.headGearSize] : design[k],
+dzLocked = k => design.link && k in MORPH_STAT;
+function dzRandStat() {
+const m = {};
+for (const k in MORPH_STAT) { const [lo, hi] = MORPH_STAT[k]; m[k] = lo + ri(hi - lo + 1) }
+return m
+}
+function dzRefresh() {
+DZ_ROWS.forEach(r => {
+const k = r[0], el = $("dz-" + k);
+if (!el) return;
+const lock = dzLocked(k);
+el.disabled = lock, el.value = dzVal(k), $("dz-val-" + k).textContent = dzTxt(k);
+el.parentNode.className = "dz-row" + (DZ_RED.includes(k) ? " dzr" : "") + (lock ? " dzl" : "")
+});
+SK.forEach(k => { const e = $("dz-val-" + k); e && (e.textContent = design[k]) })
 }
 function designDefaults() {
 design.abils || (design.abils = ["", "", "", ""]);
@@ -38,7 +55,7 @@ $("dz-abil-" + i).onchange = ev => {
 design.abils[i] = ev.target.value;
 const id = ev.target.value;
 if (id) { const k = ABILITIES[id].stat; design[k] = max(design[k], 5) }
-renderDesignExtras()
+design.link && Object.assign(design, statMorph(design)), renderDesignExtras(), dzRefresh()
 }
 });
 const sideBtn = $("dz-side");
@@ -46,40 +63,40 @@ sideBtn && (sideBtn.onclick = () => { designSide = designSide ? 0 : 1, renderDes
 }
 function bindRange(k) {
 const el = $("dz-" + k);
-el.oninput = () => { design[k] = parseInt(el.value), $("dz-val-" + k).textContent = el.value }
+el.oninput = () => {
+const v = parseInt(el.value);
+k === "headGear" ? design.headGear = GEAR_KEYS[v] : design[k] = v;
+SK.includes(k) && design.link && Object.assign(design, statMorph(design)), dzRefresh()
+}
 }
 function openDesignOverlay() {
 overlay("design-ov", 1), achieve("designer");
 const ctr = $("design-controls");
 if (!ctr.dataset.done) {
 ctr.dataset.done = "1";
-ctr.innerHTML = designSliderRows().map(([k, lbl, lo, hi]) =>
-`<div class="dz-row"><span class="dz-lbl">${lbl} <b id="dz-val-${k}">${design[k]}</b></span>
-       <input type="range" id="dz-${k}" min="${lo}" max="${hi}" value="${design[k]}"></div>`).join("") +
-`<div class="dz-row"><span class="dz-lbl">Head gear</span>
-       <select id="dz-headGear">${GEAR_KEYS.map(g=>`<option value="${g}"${g===design.headGear?" selected":""}>${GEAR_LABEL[GEAR[g].t]} ${g.endsWith("extrawide")?"XW":g.endsWith("_wide")?"W":"N"}</option>`).join("")}</select></div>`;
-designSliderRows().forEach(([k]) => bindRange(k));
-$("dz-headGear").onchange = e => design.headGear = e.target.value;
+ctr.innerHTML = `<div class="dz-row"><span class="dz-lbl">Stat-linked</span>
+       <input type="checkbox" id="dz-link"${design.link?" checked":""}></div>` +
+DZ_ROWS.map(r => `<div class="dz-row"><span class="dz-lbl">${r[1]} <b id="dz-val-${r[0]}">${dzTxt(r[0])}</b></span>
+       <input type="range" id="dz-${r[0]}" min="${dzLo(r)}" max="${dzHi(r)}" value="${dzVal(r[0])}"></div>`).join("");
+DZ_ROWS.forEach(r => bindRange(r[0]));
+$("dz-link").onchange = e => {
+design.link = e.target.checked ? 1 : 0;
+design.link && Object.assign(design, statMorph(design)), dzRefresh()
+};
 $("btn-design-random").onclick = () => {
-design = Object.assign({}, design, { hue: ri(360) }, randomMorph());
-designSliderRows().forEach(([k]) => {
-$("dz-" + k).value = design[k];
-$("dz-val-" + k).textContent = design[k]
-});
-$("dz-headGear").value = design.headGear;
-renderDesignExtras()
+Object.assign(design, { hue: ri(360) }, randomMorph(), design.link ? statMorph(design) : dzRandStat());
+dzRefresh(), renderDesignExtras()
 };
 $("btn-design-spawn").onclick = spawnDesignedBug
 }
-renderDesignExtras();
+renderDesignExtras(), dzRefresh();
 $("btn-design-spawn").textContent = combatMode ? "DROP INTO FIGHT" : "SPAWN";
 const cv = $("design-cv"), ctx = hidpi(cv, 150, 130);
 cancelAnimationFrame(designAnim);
 ! function tick() {
 ctx.clearRect(0, 0, 150, 130), ctx.fillStyle = "#0a0a12", ctx.fillRect(0, 0, 150, 130);
-const cfg = design;
-drawMorphBug(ctx, cfg, morphColor(design.hue), 75, 65 + 2 * cfg.headSize, 0,
-{ scale: 3.06, walkL: .006 * performance.now(), walkR: .006 * performance.now() });
+drawMorphBug(ctx, design, morphColor(design.hue), 75, 65 + 2 * design.headSize, 0,
+{ scale: 2.2, walkL: .006 * performance.now(), walkR: .006 * performance.now() });
 designAnim = requestAnimationFrame(tick)
 }()
 }
@@ -88,11 +105,10 @@ cancelAnimationFrame(designAnim), overlay("design-ov", 0)
 }
 function spawnDesignedBug() {
 designDefaults();
-const { hue, con, str, agi, int: intel, per, abils, ...m } = design,
-statSet = { con: con, str: str, agi: agi, int: intel, per: per },
+const { hue, con, str, agi, int: intel, per, abils, link, ...m } = design,
 picked = abils.filter(a => a),
-nb = makeBug({ hue: hue, morph: { ...m }, ...statSet, abilities: picked });
-if (!combatMode) return bugbox.push(nb), achOwn(1), void updateMoney();
+nb = makeBug({ hue: hue, morph: { ...m }, con: con, str: str, agi: agi, int: intel, per: per, abilities: picked });
+if (link || Object.assign(nb.morph, m), !combatMode) return bugbox.push(nb), achOwn(1), void updateMoney();
 const mhp = maxHpOf(nb);
 nb.mood = "seeking", nb.curHp = mhp;
 const lw = boxLW, lh = boxLH,
