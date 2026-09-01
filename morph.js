@@ -89,12 +89,13 @@ glow && (ctx.shadowColor = glow, ctx.shadowBlur = 14);
 ctx.fillStyle = ctx.strokeStyle = color, renderMorphParts(ctx, cfg, walkL, walkR), ctx.restore(), ctx.restore()
 }
 function morphColor(hue) { return `hsl(${hue},70%,45%)` }
+function morphR(b) { const m = ensureMorph(b); return max(m.bodyWidth / 2 + .733 * m.legLen, m.bodyLength / 2 + 3.4 * m.headSize) }
 function morphFitScale(cfg, w, h) {
 const bl = cfg.bodyLength + 3.4 * cfg.headSize,
 bw = max(cfg.bodyWidth + 1.47 * cfg.legLen, 2.2 * cfg.bodyWidth, 4 * cfg.headSize);
 return min(w / bw, h / bl) * .9
 }
-function drawMorphCentered(ctx, b, w, h, scale) {
-const cfg = ensureMorph(b), sc = scale == null ? morphFitScale(cfg, w, h) : scale;
-drawMorphBug(ctx, cfg, morphColor(b.hue), w / 2, h / 2 + cfg.headSize * sc * .9, 0, { scale: sc, shadow: !1 })
+function drawMorphCentered(ctx, b, w, h) {
+const cfg = ensureMorph(b), top = cfg.bodyLength / 2 + 3.4 * cfg.headSize, tot = cfg.bodyLength + 3.4 * cfg.headSize;
+drawMorphBug(ctx, cfg, morphColor(b.hue), w / 2, max(2, (h - tot) / 2) + top, 0, { shadow: !1 })
 }

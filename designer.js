@@ -91,7 +91,7 @@ cancelAnimationFrame(designAnim);
 ! function tick() {
 ctx.clearRect(0, 0, 150, 130), ctx.fillStyle = "#0a0a12", ctx.fillRect(0, 0, 150, 130);
 drawMorphBug(ctx, design, morphColor(design.hue), 75, 65 + 2 * design.headSize, 0,
-{ scale: 2.2, walkL: .006 * performance.now(), walkR: .006 * performance.now() });
+{ walkL: .006 * performance.now(), walkR: .006 * performance.now() });
 designAnim = requestAnimationFrame(tick)
 }()
 }

@@ -72,8 +72,9 @@ const b = C.bug.get(e),
 p = C.pos.get(e);
 if (!inCombat) {
 drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, b === inspected, posPhase(p));
-(b === inspected || scienceOn && viz("hp")) && drawHpBar(p, hpFrac(b));
-scienceOn && viz("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - 14));
+const r = morphR(b);
+(b === inspected || scienceOn && viz("hp")) && drawHpBar(p, hpFrac(b), r);
+scienceOn && viz("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 4));
 return;
 }
 const tm = C.team.get(e),
@@ -81,7 +82,7 @@ cb = C.combat.get(e);
 const cfg = ensureMorph(b);
 if (isGrey(e)) {
 boxCx.save();
-drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha: 1, scale: .9, shadow: !1 });
+drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha: 1, shadow: !1 });
 boxCx.restore();
 return;
 }
@@ -91,7 +92,7 @@ offY = 7 * hitFrac * (cb.hitDy || 0);
 if (cb.loudT > 0) { const amp = (cfg.legSpan * 0.5 / 3) * sin(cb.loudT / 40), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
 boxCx.globalAlpha = 1;
 drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), viz("col") ? TEAM_HUE[tm.team] : null);
-if (cb.hitT > 0) { boxCx.save(); boxCx.globalAlpha = cb.hitT; drawMorphBug(boxCx, cfg, "#ff2828", p.x + offX, p.y + offY, p.dir + HALF_PI, { alpha: cb.hitT, scale: .9, shadow: !1 }); boxCx.restore() }
+if (cb.hitT > 0) { boxCx.save(); boxCx.globalAlpha = cb.hitT; drawMorphBug(boxCx, cfg, "#ff2828", p.x + offX, p.y + offY, p.dir + HALF_PI, { alpha: cb.hitT, shadow: !1 }); boxCx.restore() }
 if (cb.stunT > 0) { boxCx.save(), boxCx.fillStyle = "#fd4", boxCx.font = "9px Courier New", boxCx.textAlign = "center", boxCx.fillText("\u2726", p.x, p.y - 14), boxCx.restore() }
 if (cb.loudT > 0) { boxCx.save(), boxCx.strokeStyle = "#ff8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, LOUD_RADIUS, 0, 7), boxCx.stroke(), boxCx.restore() }
 if (cb.markFlash > 0) {
@@ -107,11 +108,12 @@ boxCx.save(); boxCx.translate(ax, ay); boxCx.rotate(ang + HALF_PI); boxCx.fillTe
 boxCx.restore();
 }
 }
+const r = morphR(b);
 if (viz("hp")) {
-drawHpBar(p, max(0, cb.curHp / cb.maxHp));
-if (scienceOn) { boxCx.fillStyle = "#9ab", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(max(0, round(cb.curHp)), p.x - 15, p.y - 18) }
+drawHpBar(p, max(0, cb.curHp / cb.maxHp), r);
+if (scienceOn) { boxCx.fillStyle = "#9ab", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(max(0, round(cb.curHp)), p.x - r - 5, p.y - 15) }
 }
-if (viz("nam")) { boxCx.fillStyle = 0 === tm.team ? "#44ccff" : "#ffaa44", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - 14) }
+if (viz("nam")) { boxCx.fillStyle = 0 === tm.team ? "#44ccff" : "#ffaa44", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 4) }
 if (viz("bite")) {
 const pbW = 20, pbx = p.x - pbW / 2, pby = p.y - 12,
 prepR = cb.prepVisT > 0 ? max(0, min(1, 1 - cb.bitePrep / (cb.bitePrepMax || BITE_PREP_MS))) : 0;

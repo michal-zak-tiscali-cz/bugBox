@@ -75,6 +75,6 @@ const sections = [
 el.innerHTML = '<p>Length follows CON, width STR, head INT, legs AGI, head gear size PER. Segments, gradient, gear type and hue are independent.</p>' + sections.map(([t, items]) => row(t, items)).join("");
 sections.forEach(([t, items]) => items.forEach(([lbl, mod], i) => {
 const cv = el.querySelector(`[data-r="${t}-${i}"]`), ctx = hidpi(cv, 86, 86);
-drawMorphCentered(ctx, { hue: 140, morph: { ...baseCfg, ...mod } }, 86, 86, .9)
+drawMorphCentered(ctx, { hue: 140, morph: { ...baseCfg, ...mod } }, 86, 86)
 }))
 }

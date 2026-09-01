@@ -2,7 +2,7 @@ function drawBugStyled(ctx, b, x, y, dir, alpha = 1, highlighted = !1, phase = n
 const cfg = ensureMorph(b),
 hue = hueOv == null ? b.hue : hueOv;
 drawMorphBug(ctx, cfg, morphColor(hue), x, y, dir + HALF_PI, {
-alpha: alpha, scale: .9,
+alpha: alpha,
 walkL: phase ? phase.wL : null, walkR: phase ? phase.wR : null,
 glow: highlighted ? `hsl(${hue},80%,60%)` : null
 })

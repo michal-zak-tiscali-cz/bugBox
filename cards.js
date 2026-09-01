@@ -12,8 +12,8 @@ const col = dead ? "#555" : "#c8f";
 const txt = (b.abilities && b.abilities.length) ? b.abilities.map(id => "\u2b22" + ABILITIES[id].name).join(" ") : "";
 return `<div class="uc-abils" style="color:${col};">${txt}</div>`
 }
-function drawHpBar(p, frac) {
-const c = boxCx, w = 3, h = 24, x = p.x - 15 - w / 2, y = p.y - h / 2;
+function drawHpBar(p, frac, r) {
+const c = boxCx, w = 3, h = 24, x = p.x - r - 5, y = p.y - h / 2;
 c.strokeStyle = "#555566", c.lineWidth = 1, c.strokeRect(x, y, w, h);
 c.fillStyle = "#0a0a12", c.fillRect(x, y, w, h);
 c.fillStyle = hpColor(frac), c.fillRect(x, y + h * (1 - frac), w, h * frac)
