@@ -1,4 +1,4 @@
-# BUGBOX v61.8 — file map
+# BUGBOX — file map
 
 Simple bug life simulator. Plain `<script src>` files, no modules. Everything shares one global scope.
 Load order = the order in `index.html`. `main.js` is last and holds every
