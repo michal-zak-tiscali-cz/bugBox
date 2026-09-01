@@ -62,7 +62,7 @@ x: (sp.x + tp.x) / 2, y: (sp.y + tp.y) / 2,
 r: eggRadius(sb, tb),
 bug: makeBug({ ...computeOffspring(sb, tb) }),
 ready: 0
-}), achieve("mate"));
+}), achKids(sb, tb), achieve("mate"));
 mateEnd(m, !0), mates.splice(k, 1)
 }
 }

@@ -1,4 +1,4 @@
-# BUGBOX v62.0 — file map
+# BUGBOX v61.7 — file map
 
 Simple bug life simulator. Plain `<script src>` files, no modules. Everything shares one global scope.
 Load order = the order in `index.html`. `main.js` is last and holds every
@@ -33,10 +33,13 @@ DOM event binding, so definition files never run DOM code at load time.
 | Bug designer overlay | `designer.js` |
 | Info / Morphology / Abilities texts | `wiki.js` |
 | Records screen | `records.js` |
+| Toast text | `cards.js` -> `toast()`; position `style.css` `#toast` |
 
 ## Naming rules
 - `SCREAMING_SNAKE_CASE` — constants that never change.
 - `camelCase` — variables and functions.
+- **stats** = a single bug's `con str agi int per` and HP. Nothing else.
+  Cross-game totals are **records**. One game's unlocks are **achievements**.
 - ECS components: `bug pos vel think wall team combat food obstacle`,
   read with `C.pos.get(entity)`, listed with `ecsQuery("bug","pos")`.
 
@@ -54,15 +57,31 @@ The user works in one of two modes. Detect which one you are in, then follow onl
 ### Mode A — Claude chat
 You are in mode A when you have no write access to the repo.
 1. User analyzes and tests the live game, errors, goals.
-2. User instructs Claude to change or implement stuff. User uploads only this `ARCHITECTURE.md`.
-3. Claude clones the repo itself and reads only the files the routing table points at.
-4. Claude delivers finished files as downloads. User uploads them to github by hand.
-5. Repeat.
+2. User instructs Claude to change or implement stuff.
+3. Claude clones the repo itself.
+4. Claude delivers the changed files as downloads.
+5. User saves them on his phone over his old set. Repeat.
 
 **Mode A delivery rules**
 - Never deliver a `.zip`.
-- Deliver **individual files**, one download link each, ready to drop into the repo.
+- Deliver **individual files**, one download link each.
 - Deliver **only the files that changed** — not the whole project.
+- Committing to the repo is optional and the user's choice. Never assume the
+  repo is current. He commits straight to `main`, no branches.
+- Every delivered file must be **cumulative**: original + all edits made earlier
+  in this session. He overwrites files, so a lost earlier edit is destroyed.
+- Deliver `ARCHITECTURE.md` too whenever it changes.
+- On request, build a single-file test build `bugbox-vXX.X.html` (all `.js` and
+  `.css` inlined into `index.html`) so he can run the game offline. Build it with
+  a script, never print it. ~600 tokens. Test copy, not for the repo.
+
+**Mode A session state**
+- The working copy lives in the container and can be wiped without warning.
+- **Before starting any task**, check the working copy exists (`ls` the clone).
+- If it is gone, say so at once and stop. Ask him to commit his phone files
+  (Chrome, github.com -> Add file -> Upload files -> Commit changes; the GitHub
+  Android app cannot upload). He replies when done, then clone again.
+- Fallback if he cannot commit: he uploads files into the chat, ~35k tokens.
 
 ### Mode B — Claude Code
 You are in mode B when the repo is checked out and you can commit.
@@ -82,6 +101,13 @@ You are in mode B when the repo is checked out and you can commit.
 - saving tokens! reading only parts that are necessary, not the whole repo
 - When changing project structure (removing, adding, splitting files) always update the routing table in this file.
 - Always bump the version by +1 minor: `GAME_VERSION` in `core.js`, line 1.
+  Code changes only; editing this file alone does not bump it.
+
+**Saved data**
+- `bugbox_records` in localStorage = cross-game **records** (games, kills, fights,
+  wins, best bug count, top killer, longest dynasty). Persists. Reset button only.
+- Tutorial and achievements (`prog`) are **one game each**. Never persist them.
+- Bugs, money and eggs are never saved. Reloading the page starts a new game.
 
 **User info:**
 - Android phone only. No desktop, no build tools, no terminal.
@@ -94,7 +120,8 @@ Context is expensive and sessions run all day. Therefore:
   files. Delete dead code when spotted.
 - Never print code, diffs, reasoning, or intermediate steps into the chat.
 - Chat output per code task = 2 short summary sentences + 1 improvement idea.
-- Read only the files the routing table points at, not the whole repo.
+- Files here are minified — one long line each. Never `grep -n` them, it dumps
+  the whole line. Use `grep -o`, `sed -n` with a line range, or a python script.
 
 ## Quick lookups
 | Thing | Where |

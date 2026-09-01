@@ -93,7 +93,7 @@ breedSt.pA && breedSt.pB ? (breedSt.larva = makeBug({
 ...computeOffspring(breedSt.pA, breedSt.pB),
 wins: 0,
 losses: 0
-}), breedSt.pA.mated = breedSt.pB.mated = 1, bugbox.push(breedSt.larva), achOwn(1), achChild(breedSt.larva), trackDynasty(breedSt.larva.gen), SFX.hatch(), breedSt.phase = "result", renderBreed()) : toast("Select two bugs!")
+}), breedSt.pA.mated = breedSt.pB.mated = 1, achKids(breedSt.pA, breedSt.pB), bugbox.push(breedSt.larva), achOwn(1), achChild(breedSt.larva), trackDynasty(breedSt.larva.gen), SFX.hatch(), breedSt.phase = "result", renderBreed()) : toast("Select two bugs!")
 }
 function breedApplyAll(grid) {
 grid.querySelectorAll(".bcard").forEach(div => {

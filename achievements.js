@@ -1,9 +1,9 @@
-let stats = { kills: 0, longestDynasty: 0 };
-try { const s = localStorage.getItem("bugbox_stats"); s && (stats = { ...stats, ...JSON.parse(s) }) } catch (e) {}
-function saveStats() { try { localStorage.setItem("bugbox_stats", JSON.stringify(stats)) } catch (e) {} }
+const RECORDS0 = { games: 0, kills: 0, fights: 0, wins: 0, maxBugs: 0, bestKill: 0, bestName: "\u2014", longestDynasty: 0 };
+let records = { ...RECORDS0 };
+try { const s = localStorage.getItem("bugbox_records"); s && (records = { ...records, ...JSON.parse(s) }) } catch (e) {}
+function saveRecords() { try { localStorage.setItem("bugbox_records", JSON.stringify(records)) } catch (e) {} }
+records.games++, saveRecords();
 let prog = { done: {}, own: 0, ownMax: 0, fed: 0, bought: 0, kills: 0, wins: 0, streak: 0, bred: 0, lost: 0, culled: 0, hatched: 0 };
-function saveProg() {}
-function resetProg() { prog = { done: {}, own: 0, ownMax: 0, fed: 0, bought: 0, kills: 0, wins: 0, streak: 0, bred: 0, lost: 0, culled: 0, hatched: 0 } }
 const TUTORIAL = [
 ["own", "own a bug"],
 ["feed", "feed a bug"],
@@ -71,13 +71,9 @@ const ACHIEVEMENTS = [
 ["lost10", "lose 10 bugs in combat"],
 ["bred10", "breed 10 bugs"],
 ["bred50", "breed 50 bugs"],
-["playboy", "Playboy (father 5 offspring)"],
-["familyMan", "Family Man (father 10 offspring)"],
-["rabbit", "Rabbit (father 15 offspring)"],
-["genghisKhan", "Genghis Khan (father 20 offspring)"],
 ["allFive", "breed a bug with every stat 5+"],
 ["statTen", "breed a bug with a stat at 10"],
-["perfect", "breed a perfect bug (all stats 10)"],
+["perfect", "breed a perfect bug (all records 10)"],
 ["cull", "cull a bug in the lab"],
 ["designer", "use the bug designer"],
 ["science", "turn on Science mode"],
@@ -87,19 +83,26 @@ const ACHIEVEMENTS = [
 ["breeder20", "master breeder (every ability in your bugs)"],
 ["elite4", "own 3 bugs with 4 abilities each"],
 ["fullBox", "fill the terrarium (100 bugs and eggs)"],
-["matedAll", "have every bug mated in one round"]
+["matedAll", "have every bug mated in one round"],
+["playboy", "Playboy (a bug with 5 offspring)"],
+["familyMan", "Family Man (a bug with 10 offspring)"],
+["rabbit", "Rabbit (a bug with 15 offspring)"],
+["genghisKhan", "Genghis Khan (a bug with 20 offspring)"]
 ];
 const ACH_TEXT = {};
 [...TUTORIAL, ...ACHIEVEMENTS].forEach(([k, t]) => ACH_TEXT[k] = t);
 function achieve(k) {
 if (!ACH_TEXT[k] || prog.done[k]) return;
-prog.done[k] = 1, saveProg(), toast("Achieved: " + ACH_TEXT[k])
+prog.done[k] = 1, toast("Achieved: " + ACH_TEXT[k])
 }
 function achStep(field, marks, prefix, add) {
-prog[field] += add == null ? 1 : add, saveProg(), marks.forEach(m => prog[field] >= m && achieve(prefix + m))
+prog[field] += add == null ? 1 : add; marks.forEach(m => prog[field] >= m && achieve(prefix + m))
 }
 function achOwn(added) {
-added && (prog.own += added), prog.ownMax = max(prog.ownMax, bugbox.length), saveProg();
+added && (prog.own += added), prog.ownMax = max(prog.ownMax, bugbox.length);
+records.maxBugs = max(records.maxBugs, bugbox.length);
+bugbox.forEach(b => (b.killsTotal || 0) > records.bestKill && (records.bestKill = b.killsTotal, records.bestName = b.name));
+saveRecords();
 bugbox.length && achieve("own"), prog.ownMax >= 10 && achieve("own10"),
 [50, 75, 100].forEach(m => prog.own >= m && achieve("own" + m));
 const kinds = new Set;
@@ -109,9 +112,15 @@ bugbox.filter(b => (b.abilities || []).length >= 4).length >= 3 && achieve("elit
 boxFull() && achieve("fullBox");
 bugbox.length > 1 && bugbox.every(b => b.mated) && achieve("matedAll")
 }
+function achKids(...parents) {
+parents.forEach(p => {
+if (!p) return;
+p.kids = (p.kids || 0) + 1;
+[[5, "playboy"], [10, "familyMan"], [15, "rabbit"], [20, "genghisKhan"]].forEach(([v, a]) => p.kids >= v && achieve(a))
+})
+}
 function achChild(b) {
 achieve("breed"), achStep("bred", [10, 50], "bred");
-[[5, "playboy"], [10, "familyMan"], [15, "rabbit"], [20, "genghisKhan"]].forEach(([v, a]) => prog.bred >= v && achieve(a));
 const sum = SK.reduce((t, k) => t + b[k], 0),
 na = (b.abilities || []).length;
 [["con", "heavy"], ["str", "strong"], ["agi", "fast"], ["int", "smart"], ["per", "aware"]].forEach(([k, a]) => b[k] >= 5 && achieve(a));
@@ -127,10 +136,11 @@ function achSurvive(b) {
 }
 function achFight(won, lostAny, alive) {
 achieve("fight");
-if (!won) return prog.streak = 0, void saveProg();
+records.fights++, won && records.wins++, saveRecords();
+if (!won) return void (prog.streak = 0);
 achieve(["beatWeak", "beatEven", "beatStrong"][enemyTier]), achieve(mayhem ? "winMayhem" : "win" + fightMode);
 prog.streak++, achStep("wins", [5, 25, 50], "win"),
-prog.streak >= 5 && achieve("streak5"), lostAny || achieve("flawless"), 1 === alive && achieve("lastStand"), saveProg()
+prog.streak >= 5 && achieve("streak5"), lostAny || achieve("flawless"), 1 === alive && achieve("lastStand")
 }
 function achList(list) {
 return list.map(([k, t]) => `<div style="color:${prog.done[k]?"#44ff88":"#445566"};">${prog.done[k]?"\u2714":"\u2610"} ${t}</div>`).join("")
@@ -139,8 +149,8 @@ function renderTutorial() { $("itab-tut").innerHTML = achList(TUTORIAL) }
 function renderAchievements() {
 $("itab-ach").innerHTML = `<div style="color:#ffdd44;margin-bottom:6px;">${ACHIEVEMENTS.filter(([k])=>prog.done[k]).length} / ${ACHIEVEMENTS.length}</div>` + achList(ACHIEVEMENTS)
 }
-function addKills(n) { n > 0 && (stats.kills += n, saveStats(), achStep("kills", [10, 50, 100], "kill", n)) }
+function addKills(n) { n > 0 && (records.kills += n, saveRecords(), achStep("kills", [10, 50, 100], "kill", n)) }
 function trackDynasty(gen) {
-gen > stats.longestDynasty && (stats.longestDynasty = gen, saveStats());
+gen > records.longestDynasty && (records.longestDynasty = gen, saveRecords());
 [5, 10, 15, 20, 25, 30, 33].forEach(m => gen >= m && achieve("gen" + m))
 }

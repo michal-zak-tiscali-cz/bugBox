@@ -92,13 +92,3 @@ overlay("gsettings-ov", 1)
 };
 $("gset-snd").onchange = e => { sound.on = e.target.checked };
 $("btn-fow") && ($("btn-fow").onclick = () => toggleFow());
-function newGame() {
-cancelOverWatch(), ecsClear();
-money = 500, bugbox = [], shopCart = [];
-boxEggs = [], mates = [], mateTouch = new Set();
-fightTeam = [], fightMode = 1, mayhem = !1, enemyTier = 0, lastSurvivors = null;
-breedSt = { phase: "pick", pA: null, pB: null, fA: 0, fB: 0, fL: 0, larva: null };
-inspected = null, dmgPops = [], groundMarks = [], enemies = [], savedWorld = null, fightNum = 0, fightDone = !1, combatMode = !1;
-resetProg();
-overlay("over-ov", 0), updateMoney(), goShop(), showScreen("s-shop")
-}
