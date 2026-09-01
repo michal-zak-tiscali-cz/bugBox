@@ -16,10 +16,10 @@ return { bodyLength: 3 * g("con") + 7, bodyWidth: g("str") + 1, headSize: 1 + fl
 }
 function randomMorph() {
 const m = {};
-for (const k in MORPH_FREE) { const [lo, hi] = MORPH_FREE[k]; m[k] = lo + ri(hi - lo + 1) }
+for (const k in MORPH_RANGE) { const [lo, hi] = MORPH_RANGE[k]; m[k] = lo + ri(hi - lo + 1) }
 return m.headGear = GEAR_KEYS[ri(GEAR_KEYS.length)], m
 }
-function ensureMorph(b) { return b.morph || (b.morph = Object.assign(randomMorph(), statMorph(b))), b.morph }
+function ensureMorph(b) { return b.morph || (b.morph = randomMorph()), b.morph }
 function syncMorph(b) { return Object.assign(ensureMorph(b), statMorph(b)) }
 function mixMorph(a, b) {
 const ma = ensureMorph(a), mb = ensureMorph(b), m = {};

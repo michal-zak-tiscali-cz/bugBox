@@ -10,11 +10,6 @@ dzHi = r => r[3] ?? MORPH_RANGE[r[0]][1],
 dzVal = k => k === "headGear" ? GEAR_KEYS.indexOf(design.headGear) : design[k],
 dzTxt = k => k === "headGear" ? GEAR_LABEL[design.headGear] : k === "headGearSize" ? SIZE_LABEL[design.headGearSize] : design[k],
 dzLocked = k => design.link && k in MORPH_STAT;
-function dzRandStat() {
-const m = {};
-for (const k in MORPH_STAT) { const [lo, hi] = MORPH_STAT[k]; m[k] = lo + ri(hi - lo + 1) }
-return m
-}
 function dzRefresh() {
 DZ_ROWS.forEach(r => {
 const k = r[0], el = $("dz-" + k);
@@ -84,7 +79,7 @@ design.link = e.target.checked ? 1 : 0;
 design.link && Object.assign(design, statMorph(design)), dzRefresh()
 };
 $("btn-design-random").onclick = () => {
-Object.assign(design, { hue: ri(360) }, randomMorph(), design.link ? statMorph(design) : dzRandStat());
+Object.assign(design, { hue: ri(360) }, randomMorph(), design.link ? statMorph(design) : {});
 dzRefresh(), renderDesignExtras()
 };
 $("btn-design-spawn").onclick = spawnDesignedBug

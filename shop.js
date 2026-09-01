@@ -16,7 +16,8 @@ shopPool = Array.from({ length: 6 }, () => {
 const st = {};
 let sum;
 do { sum = 0, SK.forEach(k => sum += st[k] = 1 + ri(3)) } while (sum < 7 || sum > 9);
-return { cost: 60 + ri(66), hue: ri(360), stats: st, morph: randomMorph(), bugName: genName() }
+const b = makeBug(st);
+return b.cost = 60 + ri(66), b
 }), renderShop()
 }
 function shopApplyCard(div, btn, item, i) {
@@ -33,9 +34,9 @@ function renderShop() {
 const g = $("shop-grid");
 g.innerHTML = "", shopPool.forEach((item, i) => {
 const div = makeBugCard({
-name: item.bugName,
+name: item.name,
 line3: `<span class="c-money">$${item.cost}</span>`,
-statsObj: item.stats,
+statsObj: item,
 abilB: item,
 dead: !1,
 showHp: !1,
@@ -76,9 +77,6 @@ overlay("over-ov", 1)
 }
 function shopDone() {
 if (!shopCart.length && !bugbox.length) return void toast("Buy at least 1 bug to start!");
-shopCart.forEach(i => {
-const item = shopPool[i];
-bugbox.push(makeBug({ ...item.stats, hue: item.hue, morph: item.morph, name: item.bugName, gen: 1 }))
-});
+shopCart.forEach(i => bugbox.push(shopPool[i]));
 achStep("bought", [10, 25], "buy", shopCart.length), achOwn(shopCart.length), shopCart = [], updateMoney(), initBugBox(), showScreen("s-terr")
 }
