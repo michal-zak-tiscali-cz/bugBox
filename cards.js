@@ -108,6 +108,7 @@ abilTags(b)
 }
 let toastTimer = null;
 function toast(m) {
-const el = $("toast");
+const el = $("toast"), r = $("terr-canvas").getBoundingClientRect();
+el.style.bottom = r.height ? innerHeight - r.bottom + 10 + "px" : "33%";
 el.textContent = m, el.classList.add("show"), toastTimer && clearTimeout(toastTimer), toastTimer = setTimeout(() => el.classList.remove("show"), 2800)
 }

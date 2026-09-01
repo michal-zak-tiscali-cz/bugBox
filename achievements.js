@@ -1,4 +1,4 @@
-const RECORDS0 = { games: 0, kills: 0, fights: 0, wins: 0, maxBugs: 0, bestKill: 0, bestName: "\u2014", longestDynasty: 0 };
+const RECORDS0 = { games: 0, kills: 0, fights: 0, wins: 0, maxBugs: 0, bestKill: 0, bestName: "\u2014", bestSum: 0, bestSumName: "\u2014", longestDynasty: 0 };
 let records = { ...RECORDS0 };
 try { const s = localStorage.getItem("bugbox_records"); s && (records = { ...records, ...JSON.parse(s) }) } catch (e) {}
 function saveRecords() { try { localStorage.setItem("bugbox_records", JSON.stringify(records)) } catch (e) {} }
@@ -101,7 +101,11 @@ prog[field] += add == null ? 1 : add; marks.forEach(m => prog[field] >= m && ach
 function achOwn(added) {
 added && (prog.own += added), prog.ownMax = max(prog.ownMax, bugbox.length);
 records.maxBugs = max(records.maxBugs, bugbox.length);
-bugbox.forEach(b => (b.killsTotal || 0) > records.bestKill && (records.bestKill = b.killsTotal, records.bestName = b.name));
+bugbox.forEach(b => {
+(b.killsTotal || 0) > records.bestKill && (records.bestKill = b.killsTotal, records.bestName = b.name);
+const s = round(statSum(b));
+s > records.bestSum && (records.bestSum = s, records.bestSumName = b.name)
+});
 saveRecords();
 bugbox.length && achieve("own"), prog.ownMax >= 10 && achieve("own10"),
 [50, 75, 100].forEach(m => prog.own >= m && achieve("own" + m));

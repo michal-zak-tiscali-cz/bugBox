@@ -2,12 +2,13 @@ function statColor(v) {
 const n = round(v);
 return n <= 2 ? "#cc3333" : n <= 4 ? "#cc7722" : n <= 6 ? "#cccc22" : n <= 8 ? "#00ff66" : "#22dddd"
 }
+const statSum = o => SK.reduce((s, k) => s + o[k], 0);
 const scaleMaxOf = list => list.some(b => SK.some(k => b[k] >= 6)) ? 10 : 5;
 function statBars(statsObj, opts) {
 const fs = (opts = opts || {}).fontSize || 8,
 dead = opts.dead || !1,
 scale = 100 / (opts.scaleMax || scaleMaxOf(bugbox)),
-total = SK.reduce((s, k) => s + statsObj[k], 0);
+total = statSum(statsObj);
 return `<div class="sbar" style="justify-content:flex-end;"><span class="sv" style="font-size:${fs}px;color:${dead?"#555":"#888"}">(${round(total)})</span></div>` + SK.map((k, i) => {
 const sv = statsObj[k],
 bc = dead ? "#444" : statColor(sv);

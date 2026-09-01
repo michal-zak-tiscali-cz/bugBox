@@ -1,4 +1,4 @@
-# BUGBOX v61.7 — file map
+# BUGBOX v61.8 — file map
 
 Simple bug life simulator. Plain `<script src>` files, no modules. Everything shares one global scope.
 Load order = the order in `index.html`. `main.js` is last and holds every
@@ -33,7 +33,8 @@ DOM event binding, so definition files never run DOM code at load time.
 | Bug designer overlay | `designer.js` |
 | Info / Morphology / Abilities texts | `wiki.js` |
 | Records screen | `records.js` |
-| Toast text | `cards.js` -> `toast()`; position `style.css` `#toast` |
+| Toast text and its position | `cards.js` -> `toast()`; style `style.css` `#toast` |
+| Morph-from-stats sandbox (standalone page, not loaded by the game) | `designer-lab.html` |
 
 ## Naming rules
 - `SCREAMING_SNAKE_CASE` — constants that never change.
@@ -70,7 +71,6 @@ You are in mode A when you have no write access to the repo.
   repo is current. He commits straight to `main`, no branches.
 - Every delivered file must be **cumulative**: original + all edits made earlier
   in this session. He overwrites files, so a lost earlier edit is destroyed.
-- Deliver `ARCHITECTURE.md` too whenever it changes.
 - On request, build a single-file test build `bugbox-vXX.X.html` (all `.js` and
   `.css` inlined into `index.html`) so he can run the game offline. Build it with
   a script, never print it. ~600 tokens. Test copy, not for the repo.
@@ -96,25 +96,27 @@ You are in mode B when the repo is checked out and you can commit.
 - One branch per task. Do not commit to `main` directly.
 - Commit message = one line, what changed, no version number.
 
-**Work rules**
+### Work rules
 - no dead code, no redundant code, no redundant names, less characters, smaller file size
 - saving tokens! reading only parts that are necessary, not the whole repo
-- When changing project structure (removing, adding, splitting files) always update the routing table in this file.
+- Never deliver or edit `ARCHITECTURE.md` on your own. Keep a running list of
+  needed routing-table changes in chat instead. Touch the file only when the user
+  asks for it, then deliver it alone.
 - Always bump the version by +1 minor: `GAME_VERSION` in `core.js`, line 1.
   Code changes only; editing this file alone does not bump it.
 
-**Saved data**
+### Saved data
 - `bugbox_records` in localStorage = cross-game **records** (games, kills, fights,
-  wins, best bug count, top killer, longest dynasty). Persists. Reset button only.
+  wins, best bug count, best stat sum, top killer, longest dynasty). Persists. Reset button only.
 - Tutorial and achievements (`prog`) are **one game each**. Never persist them.
 - Bugs, money and eggs are never saved. Reloading the page starts a new game.
 
-**User info:**
+### User info
 - Android phone only. No desktop, no build tools, no terminal.
 - **Not a programmer.** Never ask to read or edit code. LLM is the only one who looks at the code. Do not explain code, do not paste snippets in chat.
 - Has Asperger syndrome: answers must be terse, literal, bullet-pointed, exact. No vague qualifiers. "I don't know" is a valid and preferred answer.
 
-**Token budget:**
+### Token budget
 Context is expensive and sessions run all day. Therefore:
 - Keep the codebase **small**. Prefer editing existing functions over adding new
   files. Delete dead code when spotted.

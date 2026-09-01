@@ -12,6 +12,7 @@ r("Total wins", records.wins, "#4f8") +
 r("Win rate", winRate + "%", "#fa4") +
 r("Longest dynasty", "Gen " + records.longestDynasty, "#a4f") +
 r("Most bugs at once", records.maxBugs, "#4cf") +
+r("Best bug ever", records.bestSum > 0 ? `${records.bestSumName} (${records.bestSum})` : "\u2014", "#4f8") +
 r("Top killer", records.bestKill > 0 ? `${records.bestName} (${records.bestKill})` : "\u2014", "#fd4")
 }
 function resetRecords() {
