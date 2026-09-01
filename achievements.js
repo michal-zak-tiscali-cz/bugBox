@@ -2,8 +2,8 @@ let stats = { kills: 0, longestDynasty: 0 };
 try { const s = localStorage.getItem("bugbox_stats"); s && (stats = { ...stats, ...JSON.parse(s) }) } catch (e) {}
 function saveStats() { try { localStorage.setItem("bugbox_stats", JSON.stringify(stats)) } catch (e) {} }
 let prog = { done: {}, own: 0, ownMax: 0, fed: 0, bought: 0, kills: 0, wins: 0, streak: 0, bred: 0, lost: 0, culled: 0, hatched: 0 };
-try { const p = localStorage.getItem("bugbox_prog"); p && (prog = { ...prog, ...JSON.parse(p) }) } catch (e) {}
-function saveProg() { try { localStorage.setItem("bugbox_prog", JSON.stringify(prog)) } catch (e) {} }
+function saveProg() {}
+function resetProg() { prog = { done: {}, own: 0, ownMax: 0, fed: 0, bought: 0, kills: 0, wins: 0, streak: 0, bred: 0, lost: 0, culled: 0, hatched: 0 } }
 const TUTORIAL = [
 ["own", "own a bug"],
 ["feed", "feed a bug"],
@@ -71,6 +71,10 @@ const ACHIEVEMENTS = [
 ["lost10", "lose 10 bugs in combat"],
 ["bred10", "breed 10 bugs"],
 ["bred50", "breed 50 bugs"],
+["playboy", "Playboy (father 5 offspring)"],
+["familyMan", "Family Man (father 10 offspring)"],
+["rabbit", "Rabbit (father 15 offspring)"],
+["genghisKhan", "Genghis Khan (father 20 offspring)"],
 ["allFive", "breed a bug with every stat 5+"],
 ["statTen", "breed a bug with a stat at 10"],
 ["perfect", "breed a perfect bug (all stats 10)"],
@@ -107,6 +111,7 @@ bugbox.length > 1 && bugbox.every(b => b.mated) && achieve("matedAll")
 }
 function achChild(b) {
 achieve("breed"), achStep("bred", [10, 50], "bred");
+[[5, "playboy"], [10, "familyMan"], [15, "rabbit"], [20, "genghisKhan"]].forEach(([v, a]) => prog.bred >= v && achieve(a));
 const sum = SK.reduce((t, k) => t + b[k], 0),
 na = (b.abilities || []).length;
 [["con", "heavy"], ["str", "strong"], ["agi", "fast"], ["int", "smart"], ["per", "aware"]].forEach(([k, a]) => b[k] >= 5 && achieve(a));
