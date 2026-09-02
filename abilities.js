@@ -19,6 +19,7 @@ const ABILITIES = {};
 ["fake", "Fake Death", "int", 0, 3000],
 ["loud", "Loud", "per", 10e3, 4800],
 ["cry", "Cry", "per", 0, 7e3],
+["v360", "360", "per", 0, 0],
 ["braced", "Braced", "con", 0, 0],
 ["focus", "Focus", "int", 0, 0],
 ["tank", "Tank", "str", 0, 0],
@@ -44,6 +45,7 @@ const fovHalfOf = b => (FOV_MIN_DEG + (FOV_MAX_DEG - FOV_MIN_DEG) * (perOf(b) - 
 function seesPoint(b, p, x, y) {
 const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy, vr = visRangeOf(b);
 if (d2 >= vr * vr) return !1;
+if (hasAbil(b, "v360") && d2 < vr * vr * .0625) return !0;
 return abs(norm(atan2(dy, dx) - p.dir)) <= fovHalfOf(b)
 }
 const memMsOf = b => (intOf(b) + 2) * 1000;

@@ -275,6 +275,7 @@ cb.jumpDur = PI / (2 * turn); cb.jumpElapsed = 0;
 }
 const inRange = minD <= engageDist * (cb.wasInRange ? 1.1 : 1);
 cb.wasInRange = inRange ? 1 : 0;
+if (inRange && facingOK && !inJumpSeq && abs(norm(atan2(p.y - tp.y, p.x - tp.x) - tp.dir)) >= PI / 3) cb.bitePrep = 0;
 if (inRange && facingOK && !inJumpSeq) {
 if (cb.bitePrep > 0) cb.bitePrep -= dt;
 cb.preppingBite = 1;

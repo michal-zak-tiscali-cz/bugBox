@@ -73,8 +73,10 @@ const b = C.bug.get(e),
 p = C.pos.get(e);
 if (!inCombat) {
 drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, b === inspected, posPhase(p));
+b.hitT > 0 && drawMorphBug(boxCx, ensureMorph(b), "#ff2828", p.x, p.y, p.dir + HALF_PI, { alpha: b.hitT, shadow: !1 });
 const r = morphR(b);
 (b === inspected || scienceOn && viz("hp")) && drawHpBar(p, hpFrac(b), r);
+b.prepT > 0 && viz("bite") && drawPrepBar(p, 1 - b.prepT / BITE_PREP_MS, r);
 scienceOn && viz("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 4));
 return;
 }
@@ -109,10 +111,9 @@ if (viz("hp")) {
 drawHpBar(p, max(0, cb.curHp / cb.maxHp), r);
 }
 if (viz("nam")) { boxCx.fillStyle = 0 === tm.team ? "#44ccff" : "#ffaa44", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 4) }
-if (viz("bite")) {
-const pbW = 20, pbx = p.x - pbW / 2, pby = p.y + r + 3,
-prepR = cb.prepVisT > 0 ? max(0, min(1, 1 - cb.bitePrep / (cb.bitePrepMax || BITE_PREP_MS))) : 0;
-if (prepR > 0) { boxCx.fillStyle = "#1a1a1a", boxCx.fillRect(pbx, pby, pbW, 2); boxCx.fillStyle = "#ffffff", boxCx.fillRect(pbx, pby, pbW * prepR, 2) }
+if (viz("bite") && cb.prepVisT > 0) {
+const prepR = max(0, min(1, 1 - cb.bitePrep / (cb.bitePrepMax || BITE_PREP_MS)));
+prepR > 0 && drawPrepBar(p, prepR, r)
 }
 boxCx.globalAlpha = 1;
 });
@@ -120,7 +121,7 @@ if (fow && inspected != null) {
 const fe = ecsQuery("bug", "pos").find(en => C.bug.get(en) === inspected || C.bug.get(en).id === inspected.id);
 if (fe != null) {
 const fp = C.pos.get(fe), fb = C.bug.get(fe),
-fr = visRangeOf(fb), fh = fovHalfOf(fb), fhr = morphR(fb) + 2;
+fr = visRangeOf(fb), fh = fovHalfOf(fb), fhr = max(morphR(fb) + 2, hasAbil(fb, "v360") ? fr * .25 : 0);
 boxCx.save();
 boxCx.beginPath(), boxCx.rect(0, 0, boxLW, boxLH);
 boxCx.moveTo(fp.x, fp.y), boxCx.arc(fp.x, fp.y, fr, fp.dir - fh, fp.dir + fh), boxCx.closePath();

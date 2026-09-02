@@ -244,6 +244,7 @@ function sysRegen(dtS) {
 bugbox.forEach(b => {
 const mx = maxHpOf(b);
 b.curHp == null && (b.curHp = mx);
+b.hitT > 0 && (b.hitT = max(0, b.hitT - 5 * dtS));
 b.curHp < mx && (b.curHp = min(mx, b.curHp + mx / 330 * dtS))
 })
 }

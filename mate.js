@@ -7,18 +7,21 @@ sysThinkWander(dt, calm), sysSteer(dt / 1e3, calm);
 sysMove(dt / 1e3, all);
 sysResolve(all, dt / 1e3)
 }
-const MATE_CHANCE = .10, MATE_COOLDOWN_MS = 15000, BOX_CAP = 100;
+const INTERACT_CHANCE = .10, MATE_COOLDOWN_MS = 15000, BOX_CAP = 100;
 const boxFull = () => bugbox.length + boxEggs.length >= BOX_CAP;
 const MATE_HOLD_MIN = 3000, MATE_HOLD_MAX = 7000, MATE_TURN_MAX = 1500;
-let boxEggs = [], mates = [], mateTouch = new Set();
+let boxEggs = [], mates = [], scraps = [], mateTouch = new Set();
 function eggRadius(a, b) { return max(bodyLenOf(a), bodyLenOf(b)) * .25 }
-function mateEligible(b) {
-return !combatMode && "peace" === b.mood && hpFrac(b) >= 1 && !(b.mateCd > 0) && !b.mating
+const SCRAP_REACH = 2.5, SCRAP_CONE = 1;
+const mateOdds = () => bugbox.length <= 3 ? 1 : bugbox.length <= 10 ? .5 : .25;
+const nibble = (a, t) => (t.hitT = 1, t.curHp = max(1, (t.curHp == null ? maxHpOf(t) : t.curHp) - a.str * rollVar()));
+function interactEligible(b) {
+return !combatMode && "peace" === b.mood && !(b.mateCd > 0) && !b.mating && !b.scrap
 }
 function sysMate(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => { const b = C.bug.get(e); b.mateCd > 0 && (b.mateCd -= dt) });
-if (!combatMode && !boxFull()) {
+if (!combatMode) {
 const seen = new Set();
 for (let i = 0; i < ents.length; i++)
 for (let j = i + 1; j < ents.length; j++) {
@@ -28,14 +31,35 @@ ba = C.bug.get(ea), bbg = C.bug.get(eb);
 if (hypot(pb.x - pa.x, pb.y - pa.y) > sepPair(ea, eb) * 1.15) continue;
 seen.add(key);
 if (mateTouch.has(key)) continue;
-if (!mateEligible(ba) || !mateEligible(bbg)) continue;
-if (random() >= MATE_CHANCE) continue;
+if (!interactEligible(ba) || !interactEligible(bbg)) continue;
+if (random() >= INTERACT_CHANCE) continue;
+if (random() >= mateOdds() || boxFull() || hpFrac(ba) < 1 || hpFrac(bbg) < 1) {
+ba.scrap = bbg.scrap = 1;
+scraps.push({ a: ea, b: eb, ta: 1, tb: 1 });
+continue
+}
 const subFirst = ba.str < bbg.str || (ba.str === bbg.str && random() < .5),
 sub = subFirst ? ea : eb, top = subFirst ? eb : ea;
 ba.mating = bbg.mating = 1;
 mates.push({ sub, top, phase: "turn", t: 0, hold: 0 })
 }
 mateTouch = seen
+}
+for (let k = scraps.length - 1; k >= 0; k--) {
+const s = scraps[k];
+if (!combatMode && ECS.pos.has(s.a) && ECS.pos.has(s.b)) {
+const pa = C.pos.get(s.a), pb = C.pos.get(s.b);
+if (hypot(pb.x - pa.x, pb.y - pa.y) <= sepPair(s.a, s.b) * SCRAP_REACH) {
+for (const [x, y, k2] of [[s.a, s.b, "ta"], [s.b, s.a, "tb"]]) {
+if (!s[k2]) continue;
+const px = C.pos.get(x), py = C.pos.get(y), bx = C.bug.get(x), a = atan2(py.y - px.y, py.x - px.x);
+C.vel.get(x).wanderAngle = a, turnToward(px, a, turningOf(bx) * dtS);
+abs(norm(a - px.dir)) < SCRAP_CONE && (bx.prepT = (bx.prepT || BITE_PREP_MS) - dt) <= 0 && (s[k2] = bx.prepT = 0, nibble(bx, C.bug.get(y)), SFX.bite())
+}
+if (s.ta || s.tb) continue
+}
+}
+scrapEnd(s), scraps.splice(k, 1)
 }
 for (let k = mates.length - 1; k >= 0; k--) {
 const m = mates[k];
@@ -72,7 +96,18 @@ function mateSnap(m, away) {
 const sp = C.pos.get(m.sub), tp = C.pos.get(m.top), g = mateGap(m);
 sp.dir = away, tp.dir = away, tp.x = sp.x - cos(away) * g, tp.y = sp.y - sin(away) * g
 }
+function scrapEnd(s) {
+[s.a, s.b].forEach(en => {
+if (!ECS.bug.has(en)) return;
+const b = C.bug.get(en), t = C.think.get(en), v = C.vel.get(en);
+b.scrap = b.prepT = 0;
+v && (v.wanderAngle = random() * TAU);
+t && random() < .5 && (t.paused = !0, t.pauseTimer = intPause(b.int))
+})
+}
 function mateCancel(e) {
+for (let k = scraps.length - 1; k >= 0; k--)
+(scraps[k].a === e || scraps[k].b === e) && (scrapEnd(scraps[k]), scraps.splice(k, 1));
 for (let k = mates.length - 1; k >= 0; k--)
 (mates[k].sub === e || mates[k].top === e) && (mateEnd(mates[k], !1), mates.splice(k, 1))
 }

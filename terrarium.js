@@ -20,7 +20,7 @@ const VIZ_KEYS = [
 ["nam", "NAME", "bug names", 1],
 ["hp", "HP", "HP bars", 1],
 ["zone", "ZONE", "flank sectors + engage ring", 0],
-["bite", "BITE", "bite wind-up bar", 0],
+["bite", "BITE", "bite wind-up bar", 1],
 ["dmg", "DMG", "floating damage numbers", 0],
 ["rnd", "RND", "combat randomness (off = repeatable fight)", 0],
 ["col", "COL", "team colours instead of bug hue", 0]
@@ -152,7 +152,7 @@ savedWorld = null
 function spawnBoxBugs() {
 if (combatMode) {
 savedWorld = savedWorld || { obs: snapObstacles(), food: snapFood() };
-ecsClear(), inspected = null, mates = [], mateTouch = new Set();
+ecsClear(), inspected = null, mates = [], scraps = [], mateTouch = new Set();
 genObstacles(!0)
 } else {
 restoreTerrWorld();

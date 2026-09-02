@@ -16,6 +16,7 @@ mark: `On a hit, on spotting an enemy it marks that spot with a green X for 3s. 
 phoenix: `Once per fight: on death, lies still for ${(ABILITIES.phoenix.dur/1000).toFixed(0)}s, then rises again at 10% HP.`,
 fake: `Below 50% HP, drops and plays dead for ${(ABILITIES.fake.dur/1000).toFixed(0)}s. Enemies stop targeting it. Usable twice per fight.`,
 loud: `Screams for ${(ABILITIES.loud.dur / 1e3).toFixed(1)}s. Every enemy within 3 body lengths cannot use any ability at all.`,
+v360: "Passive, always on. Adds a blind-spot-free ring of awareness around the bug out to a quarter of its sight range \u2014 it notices anything that close beside or behind it.",
 cry: "Passive, always on. When bitten, it cries for 7s: every ally within 7 body lengths that cannot see an enemy itself comes to its aid, and keeps following it while it moves.",
 braced: "Passive, always on. Immune to stun; kickback shoves it only half as far and never spins it.",
 focus: "Passive, always on. Targets the weakest visible enemy by current HP instead of the closest one.",
@@ -61,16 +62,16 @@ function renderMorphWiki() {
 const el = $("itab-morph");
 if (el.dataset.done) return;
 el.dataset.done = "1";
-const baseCfg = { bodySegments: 2, segmentGradient: 3, bodyLength: 22, bodyWidth: 6, headSize: 4, legLen: 14, headGear: "eyes", headGearSize: 0 };
+const baseCfg = { bodySegments: 2, segmentGradient: 3, bodyLength: 22, bodyWidth: 6, headSize: 4, legLen: 9, headGear: "eyes", headGearSize: 0 };
 const row = (title, items) =>
 `<div class="mw-title">${title}</div><div class="mw-grid">` +
 items.map(([lbl], i) => `<div class="mw-item"><canvas class="mw-cv" data-r="${title}-${i}"></canvas><span>${lbl}</span></div>`).join("") + "</div>";
 const sections = [
 ["Head gear", GEAR_KEYS.flatMap(g => [0, 1, 2].map(z => [`${GEAR_LABEL[g]} ${SIZE_LABEL[z]}`, { headGear: g, headGearSize: z }]))],
 ["Head size (INT)", [2, 3, 4, 5, 6].map(v => [`Size ${v}`, { headSize: v }])],
-["Body (CON \u00d7 STR)", [["Short thin", { bodyLength: 10, bodyWidth: 2 }], ["Mid", { bodyLength: 22, bodyWidth: 6 }], ["Long", { bodyLength: 37, bodyWidth: 6 }], ["Long wide", { bodyLength: 37, bodyWidth: 11 }]]],
-["Segment gradient", [1, 2, 3, 4, 5].map(v => [`Grad ${v}`, { segmentGradient: v, bodySegments: 3, bodyLength: 30 }])],
-["Legs (AGI)", [6, 14, 24].map(v => [`Len ${v}`, { legLen: v }])]
+["Body (CON \u00d7 STR)", [["Short thin", { bodyLength: 9, bodyWidth: 2 }], ["Mid", { bodyLength: 17, bodyWidth: 6 }], ["Long", { bodyLength: 27, bodyWidth: 6 }], ["Long wide", { bodyLength: 27, bodyWidth: 11 }]]],
+["Segment gradient", [1, 2, 3, 4, 5].map(v => [`Grad ${v}`, { segmentGradient: v, bodySegments: 3, bodyLength: 24 }])],
+["Legs (AGI)", [5, 9, 14].map(v => [`Len ${v}`, { legLen: v }])]
 ];
 el.innerHTML = '<p>Length follows CON, width STR, head INT, legs AGI, head gear size PER. Segments, gradient, gear type and hue are independent.</p>' + sections.map(([t, items]) => row(t, items)).join("");
 sections.forEach(([t, items]) => items.forEach(([lbl, mod], i) => {

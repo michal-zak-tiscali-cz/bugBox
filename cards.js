@@ -18,6 +18,10 @@ c.strokeStyle = "#555566", c.lineWidth = 1, c.strokeRect(x, y, w, h);
 c.fillStyle = "#0a0a12", c.fillRect(x, y, w, h);
 c.fillStyle = hpColor(frac), c.fillRect(x, y + h * (1 - frac), w, h * frac)
 }
+function drawPrepBar(p, frac, r) {
+const c = boxCx, w = 20, x = p.x - w / 2, y = p.y + r + 3;
+c.fillStyle = "#1a1a1a", c.fillRect(x, y, w, 2), c.fillStyle = "#fff", c.fillRect(x, y, w * frac, 2)
+}
 function bugCardBody(o) {
 const hp = o.showHp ? vHpBar(o.dead ? 0 : o.hpFrac, 38) : "",
 img = `<div class="uc-img" id="${o.imgId}"></div>`,

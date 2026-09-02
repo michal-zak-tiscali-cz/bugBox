@@ -8,11 +8,11 @@ const GEAR_KEYS = Object.keys(GEAR);
 const GEAR_LABEL = { pincers: "Pincers", ant: "Antennae", antb: "Antennae Bwd", eyes: "Eyes" };
 const SIZE_LABEL = ["N", "W", "XW"];
 const MORPH_FREE = { bodySegments: [1, 3], segmentGradient: [1, 5] };
-const MORPH_STAT = { bodyLength: [10, 37], bodyWidth: [2, 11], headSize: [2, 6], legLen: [6, 24], headGearSize: [0, 2] };
+const MORPH_STAT = { bodyLength: [9, 27], bodyWidth: [2, 11], headSize: [2, 6], legLen: [5, 14], headGearSize: [0, 2] };
 const MORPH_RANGE = { ...MORPH_FREE, ...MORPH_STAT };
 function statMorph(s) {
 const g = k => clamp(round(s[k]), 1, 10), i = g("int"), p = g("per");
-return { bodyLength: 3 * g("con") + 7, bodyWidth: g("str") + 1, headSize: 1 + floor((i + 1) / 2), legLen: 2 * g("agi") + 4, headGearSize: p < 4 ? 0 : p < 7 ? 1 : 2 }
+return { bodyLength: 2 * g("con") + 7, bodyWidth: g("str") + 1, headSize: 1 + floor((i + 1) / 2), legLen: g("agi") + 4, headGearSize: p < 4 ? 0 : p < 7 ? 1 : 2 }
 }
 function randomMorph() {
 const m = {};
@@ -48,8 +48,8 @@ const bl = cfg.bodyLength, legSp = bl / 4, still = wLp === null, L = cfg.legLen,
 t.lineWidth = .8, t.lineCap = t.lineJoin = "round";
 for (let i = 1; i <= 3; i++) {
 const ly = -bl / 2 + i * legSp,
-wL = still ? 0 : sin(wLp + i) * 5,
-wR = still ? 0 : -sin(wRp + i) * 5;
+wL = still ? 0 : sin(wLp + i) * L * .28,
+wR = still ? 0 : -sin(wRp + i) * L * .28;
 for (const [s, w] of [[-1, wL], [1, wR]]) {
 const a = s * hx;
 t.beginPath(), t.moveTo(a, ly);
