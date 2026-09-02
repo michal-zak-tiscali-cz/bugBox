@@ -1,7 +1,5 @@
-const BUG_LEN = 22;
-const MARK_RADIUS = BUG_LEN * 6;
-const LOUD_RADIUS = BUG_LEN * 3;
-const DASH_RANGE = BUG_LEN * 3;
+const bugLen = b => b ? ensureMorph(b).bodyLength : 22;
+const markRadius = b => bugLen(b) * 6, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 3;
 const FLANK_WINDOW_MS = 1000;
 const FLANK_RANGE = 60;
 const GRAB_HOLD_MS = 2500;
@@ -40,7 +38,7 @@ function bodyLenOf(b) { const m = ensureMorph(b); return m.bodyLength }
 function engageDistOf(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize * 2 }
 const perOf = b => clamp(b.per || 5, 1, 10);
 const intOf = b => clamp(b.int || 5, 1, 10);
-const visRangeOf = b => BUG_LEN * perOf(b);
+const visRangeOf = b => bugLen(b) * perOf(b);
 const fovHalfOf = b => (FOV_MIN_DEG + (FOV_MAX_DEG - FOV_MIN_DEG) * (perOf(b) - 1) / 9) * PI / 360;
 function seesPoint(b, p, x, y) {
 const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy, vr = visRangeOf(b);

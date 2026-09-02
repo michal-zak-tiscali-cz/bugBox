@@ -45,7 +45,7 @@ ecsQuery("bug", "pos").forEach(en => {
 const cb = C.combat.get(en);
 if (cb && cb.dead) return;
 const p = C.pos.get(en), d = hypot(p.x - cx, p.y - cy);
-d < BUG_LEN && d < best && (best = d, hit = C.bug.get(en))
+d < bugLen(C.bug.get(en)) && d < best && (best = d, hit = C.bug.get(en))
 });
 if (hit) { inspected = hit === inspected ? null : hit, inspected && achieve("inspect"); return }
 if (!canPlaceFood()) return;

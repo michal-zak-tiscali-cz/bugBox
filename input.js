@@ -11,7 +11,7 @@ return hit
 }
 function obstacleAt(cx, cy) { return nearest(["obstacle", "pos"], cx, cy, en => C.obstacle.get(en).r + 8) }
 function draggableAt(cx, cy) {
-let e = nearest(["bug", "pos"], cx, cy, () => BUG_LEN);
+let e = nearest(["bug", "pos"], cx, cy, en => bugLen(C.bug.get(en)));
 if (e != null) return { e: e, kind: "bug", pad: 21 };
 e = nearest(["food", "pos"], cx, cy, () => 10);
 if (e != null) return { e: e, kind: "food", pad: 5 };

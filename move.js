@@ -143,14 +143,15 @@ else w.bounces = 0, w.noPause = 0;
 p.x = nx, p.y = ny, clampToBox(p)
 });
 }
-const SEP_DIST = BUG_LEN, SEP_ENGAGE_FRAC = .8;
+const sepBase = (a, b) => (bugLen(C.bug.get(a)) + bugLen(C.bug.get(b))) / 2, SEP_ENGAGE_FRAC = .8;
 function sepPair(a, b) {
 const ca = C.combat.get(a), cb = C.combat.get(b);
-if (!ca || !cb) return SEP_DIST;
+const sd = sepBase(a, b);
+if (!ca || !cb) return sd;
 if (ca.grabTarget === b || cb.grabTarget === a) return 0;
 if (ca.curTarget === b || cb.curTarget === a)
-return min(SEP_DIST, SEP_ENGAGE_FRAC * min(engageDistOf(C.bug.get(a)), engageDistOf(C.bug.get(b))));
-return SEP_DIST
+return min(sd, SEP_ENGAGE_FRAC * min(engageDistOf(C.bug.get(a)), engageDistOf(C.bug.get(b))));
+return sd
 }
 const BOX_MARGIN = 21;
 const RESOLVE_MAX = 60;
@@ -192,7 +193,7 @@ const p = C.pos.get(e);
 let ox = 0, oy = 0, deep = 0;
 obs.forEach(oe => {
 const op = C.pos.get(oe), o = C.obstacle.get(oe),
-dx = p.x - op.x, dy = p.y - op.y, d = hypot(dx, dy) || .001, minD = o.r + BUG_LEN / 2;
+dx = p.x - op.x, dy = p.y - op.y, d = hypot(dx, dy) || .001, minD = o.r + bugLen(C.bug.get(e)) / 2;
 if (d >= minD) return;
 ox += dx / d, oy += dy / d, deep = max(deep, minD - d)
 });

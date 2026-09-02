@@ -25,7 +25,7 @@ const b = {
 id: bid++,
 name: genName(),
 gen: 1,
-hue: ri(360),
+hue: 20 * ri(18),
 morph: randomMorph(),
 wins: 0,
 losses: 0,

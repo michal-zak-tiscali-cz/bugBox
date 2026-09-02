@@ -1,11 +1,12 @@
 let design = Object.assign({ hue: 120, con: 5, str: 5, agi: 5, int: 5, per: 5, link: 1, abils: ["", "", "", ""] }, randomMorph()),
 designAnim = null, designSide = 0;
 Object.assign(design, statMorph(design));
-const DZ_ROWS = [["hue", "Hue", 0, 359], ["bodySegments", "Segments"], ["segmentGradient", "Gradient"],
+const DZ_ROWS = [["hue", "Hue", 0, 340, 20], ["bodySegments", "Segments"], ["segmentGradient", "Gradient"],
 ["bodyLength", "Length"], ["bodyWidth", "Width"], ["headSize", "Head"], ["legLen", "Legs"],
 ["headGear", "Gear type", 0, GEAR_KEYS.length - 1], ["headGearSize", "Gear size"]],
 DZ_RED = ["hue", "bodySegments", "segmentGradient"],
 dzLo = r => r[2] ?? MORPH_RANGE[r[0]][0],
+dzStep = r => r[4] ?? 1,
 dzHi = r => r[3] ?? MORPH_RANGE[r[0]][1],
 dzVal = k => k === "headGear" ? GEAR_KEYS.indexOf(design.headGear) : design[k],
 dzTxt = k => k === "headGear" ? GEAR_LABEL[design.headGear] : k === "headGearSize" ? SIZE_LABEL[design.headGearSize] : design[k],
@@ -72,15 +73,20 @@ ctr.dataset.done = "1";
 ctr.innerHTML = `<div class="dz-row"><span class="dz-lbl">Stat-linked</span>
        <input type="checkbox" id="dz-link"${design.link?" checked":""}></div>` +
 DZ_ROWS.map(r => `<div class="dz-row"><span class="dz-lbl">${r[1]} <b id="dz-val-${r[0]}">${dzTxt(r[0])}</b></span>
-       <input type="range" id="dz-${r[0]}" min="${dzLo(r)}" max="${dzHi(r)}" value="${dzVal(r[0])}"></div>`).join("");
+       <input type="range" id="dz-${r[0]}" min="${dzLo(r)}" max="${dzHi(r)}" step="${dzStep(r)}" value="${dzVal(r[0])}"></div>`).join("");
 DZ_ROWS.forEach(r => bindRange(r[0]));
 $("dz-link").onchange = e => {
 design.link = e.target.checked ? 1 : 0;
 design.link && Object.assign(design, statMorph(design)), dzRefresh()
 };
-$("btn-design-random").onclick = () => {
-Object.assign(design, { hue: ri(360) }, randomMorph(), design.link ? statMorph(design) : {});
-dzRefresh(), renderDesignExtras()
+$("btn-design-rnd-m").onclick = () => {
+const m = randomMorph();
+design.link && Object.keys(MORPH_STAT).forEach(k => delete m[k]);
+Object.assign(design, { hue: 20 * ri(18) }, m), dzRefresh(), renderDesignExtras()
+};
+$("btn-design-rnd-s").onclick = () => {
+designDefaults(), SK.forEach(k => design[k] = 1 + ri(10));
+design.link && Object.assign(design, statMorph(design)), dzRefresh(), renderDesignExtras()
 };
 $("btn-design-spawn").onclick = spawnDesignedBug
 }

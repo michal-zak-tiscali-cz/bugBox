@@ -106,9 +106,9 @@ SK.map((k, i) => `<span style="color:#44ff88;font-size:9px;">${SN[i]}:${round(b[
 ` | <span style="color:${hp>=mhp?"#44ff88":"#ff5555"};">${hp}/${mhp}</span>` +
 abilTags(b)
 }
-let toastTimer = null;
+let toastTimer = null, toastBot = 96;
 function toast(m) {
 const el = $("toast"), r = $("terr-canvas").getBoundingClientRect();
-el.style.bottom = r.height ? innerHeight - r.bottom + 10 + "px" : "33%";
+r.height && (toastBot = innerHeight - r.bottom + 10), el.style.bottom = toastBot + "px";
 el.textContent = m, el.classList.add("show"), toastTimer && clearTimeout(toastTimer), toastTimer = setTimeout(() => el.classList.remove("show"), 2800)
 }
