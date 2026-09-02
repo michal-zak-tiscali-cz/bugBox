@@ -21,15 +21,21 @@ return m.headGear = GEAR_KEYS[ri(GEAR_KEYS.length)], m
 }
 function ensureMorph(b) { return b.morph || (b.morph = randomMorph()), b.morph }
 function syncMorph(b) { return Object.assign(ensureMorph(b), statMorph(b)) }
+function inheritThird(va, vb, pool) {
+const r = random();
+if (r < 1 / 3) return va;
+if (r < 2 / 3) return vb;
+const rest = pool.filter(v => v !== va && v !== vb);
+return rest.length ? rest[ri(rest.length)] : va
+}
 function mixMorph(a, b) {
 const ma = ensureMorph(a), mb = ensureMorph(b), m = {};
 for (const k in MORPH_FREE) {
-let v = (ma[k] + mb[k]) / 2;
-random() < .25 && (v += rf(-1.5, 1.5));
-const [lo, hi] = MORPH_FREE[k];
-m[k] = round(clamp(v, lo, hi))
+const [lo, hi] = MORPH_FREE[k], pool = [];
+for (let v = lo; v <= hi; v++) pool.push(v);
+m[k] = inheritThird(ma[k], mb[k], pool)
 }
-return m.headGear = random() < .08 ? GEAR_KEYS[ri(GEAR_KEYS.length)] : (random() < .5 ? ma : mb).headGear, m
+return m.headGear = inheritThird(ma.headGear, mb.headGear, GEAR_KEYS), m
 }
 function getSegmentScale(grad, s, segs) {
 let i = s, g = grad;

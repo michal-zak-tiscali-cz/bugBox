@@ -1,6 +1,6 @@
 const TEAM_HUE = [210, 30];
 function drawZoneVisOverlay() {
-if (!viz("zone") && !viz("vis")) return;
+if (!viz("zone") && !viz("vis") && !viz("vis1") && !viz("vis2")) return;
 ecsQuery("bug", "pos").forEach(e => {
 const cb = C.combat.get(e);
 if (cb && cb.dead) return;
@@ -15,7 +15,7 @@ boxCx.fillStyle = col, boxCx.fill()
 }
 boxCx.beginPath(), boxCx.arc(p.x, p.y, engageDistOf(b), 0, 7), boxCx.strokeStyle = "rgba(120,200,255,.25)", boxCx.lineWidth = 1, boxCx.stroke()
 }
-if (viz("vis")) {
+if (viz(combatMode ? ((C.team.get(e) || {}).team === 1 ? "vis2" : "vis1") : "vis")) {
 const visR = visRangeOf(b);
 const fovH = fovHalfOf(b);
 boxCx.beginPath(), boxCx.moveTo(p.x, p.y), boxCx.arc(p.x, p.y, visR, p.dir - fovH, p.dir + fovH), boxCx.closePath();
@@ -84,7 +84,7 @@ const cfg = ensureMorph(b), r = morphR(b);
 if (isGrey(e)) {
 cb.greyAt || (cb.greyAt = performance.now());
 const k = min(1, floor((performance.now() - cb.greyAt) / 160) / 10);
-drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, !1, null);
+drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, !1, null, viz("col") ? TEAM_HUE[tm.team] : null);
 k > 0 && drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha: k, shadow: !1 });
 return;
 }
@@ -92,14 +92,14 @@ cb.greyAt = 0;
 const hitFrac = cb.hitT || 0;
 let offX = 7 * hitFrac * (cb.hitDx || 0),
 offY = 7 * hitFrac * (cb.hitDy || 0);
-if (cb.loudT > 0) { const amp = (cfg.legSpan * 0.5 / 3) * sin(cb.loudT / 40), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
+if (cb.loudT > 0) { const amp = (cfg.legSpan * 0.5 / 3) * sin(cb.loudT / 20), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
 boxCx.globalAlpha = 1;
 drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), viz("col") ? TEAM_HUE[tm.team] : null);
 if (cb.hitT > 0) { boxCx.save(); boxCx.globalAlpha = cb.hitT; drawMorphBug(boxCx, cfg, "#ff2828", p.x + offX, p.y + offY, p.dir + HALF_PI, { alpha: cb.hitT, shadow: !1 }); boxCx.restore() }
 if (cb.stunT > 0) { boxCx.save(), boxCx.fillStyle = "#fd4", boxCx.font = "9px Courier New", boxCx.textAlign = "center", boxCx.fillText("\u2726", p.x, p.y - r - 13), boxCx.restore() }
-if (cb.callT > 0) { boxCx.save(), boxCx.strokeStyle = cb.callCry ? "#f88" : "#8f8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, cb.callR, 0, 7), boxCx.stroke(), boxCx.restore() }
-if (cb.loudT > 0) { boxCx.save(), boxCx.strokeStyle = "#ff8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, loudRadius(b), 0, 7), boxCx.stroke(), boxCx.restore() }
-if (cb.callT > 0 && !cb.callCry) {
+if (cb.callT > 0 && viz("visr")) { boxCx.save(), boxCx.strokeStyle = cb.callCry ? "#f88" : "#8f8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, cb.callR, 0, 7), boxCx.stroke(), boxCx.restore() }
+if (cb.loudT > 0 && viz("visr")) { boxCx.save(), boxCx.strokeStyle = "#ff8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, loudRadius(b), 0, 7), boxCx.stroke(), boxCx.restore() }
+if (cb.callT > 0 && !cb.callCry && viz("visr")) {
 boxCx.save(), boxCx.strokeStyle = "#8f8", boxCx.globalAlpha = .8, boxCx.lineWidth = 1.5, boxCx.beginPath();
 boxCx.moveTo(cb.callX - 4, cb.callY - 4), boxCx.lineTo(cb.callX + 4, cb.callY + 4);
 boxCx.moveTo(cb.callX + 4, cb.callY - 4), boxCx.lineTo(cb.callX - 4, cb.callY + 4);

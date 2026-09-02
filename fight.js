@@ -60,7 +60,7 @@ const lb = bugbox.find(b => b.id === f.b.id);
 lb && (lb.wins++, lb.fights = (lb.fights || 0) + 1, lb.killsTotal = (lb.killsTotal || 0) + (f.killsThis || 0), achSurvive(lb))
 }), updateMoney(), html += `<p style="color:#44ff88;font-size:10px;margin-bottom:8px;">+${prize}</p>`
 } else updateMoney();
-achFight(won, dead0.length > 0, alive0.length), achOwn(0), bugbox.forEach(b => b.mated = 0);
+achFight(won, dead0.length, alive0.length), achOwn(0), bugbox.forEach(b => b.mated = 0);
 const playerScale = scaleMaxOf(allPlayer.map(f => f.b)),
 enemyScale = scaleMaxOf(allEnemy.map(f => f.b));
 const buildCard = (f, isPlayer) => {

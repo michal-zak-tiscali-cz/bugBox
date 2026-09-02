@@ -70,14 +70,21 @@ const ACHIEVEMENTS = [
 ["flawless", "win a fight without losing a bug"],
 ["lastStand", "win a fight with one bug left"],
 ["lost1", "lose a bug in combat"],
+["lost5", "lose 5 bugs in combat"],
 ["lost10", "lose 10 bugs in combat"],
+["lost25", "lose 25 bugs in combat"],
+["lost50", "lose 50 bugs in combat"],
+["lostM3", "lose 3 bugs in one match"],
+["lostM6", "lose 6 bugs in one match"],
+["lostM9", "lose 9 bugs in one match"],
+["lostM15", "lose 15 bugs in one match"],
+["lostM20", "lose 20 bugs in one match"],
 ["bred10", "breed 10 bugs"],
 ["bred50", "breed 50 bugs"],
 ["allFive", "breed a bug with every stat 5+"],
 ["statTen", "breed a bug with a stat at 10"],
 ["perfect", "breed a perfect bug (all records 10)"],
 ["cull", "cull a bug in the lab"],
-["designer", "use the bug designer"],
 ["science", "turn on Science mode"],
 ["abandon", "abandon a fight"],
 ["breeder10", "good breeder (10 different abilities in your bugs)"],
@@ -139,13 +146,15 @@ SK.every(k => b[k] >= 10) && achieve("perfect")
 function achSurvive(b) {
 [[5, "tough"], [10, "rough"], [15, "veteran"], [20, "hero"], [30, "legendary"]].forEach(([v, a]) => (b.fights || 0) >= v && achieve(a))
 }
-function achFight(won, lostAny, alive) {
+function achFight(won, lost, alive) {
 achieve("fight");
+lost && achStep("lost", [1, 5, 10, 25, 50], "lost", lost);
+[3, 6, 9, 15, 20].forEach(m => lost >= m && achieve("lostM" + m));
 records.fights++, won && records.wins++, saveRecords();
 if (!won) return void (prog.streak = 0);
 achieve(["beatWeak", "beatEven", "beatStrong"][enemyTier]), achieve(mayhem ? "winMayhem" : "win" + fightMode);
 prog.streak++, achStep("wins", [5, 25, 50], "win"),
-prog.streak >= 5 && achieve("streak5"), lostAny || achieve("flawless"), 1 === alive && achieve("lastStand")
+prog.streak >= 5 && achieve("streak5"), lost || achieve("flawless"), 1 === alive && achieve("lastStand")
 }
 function achList(list) {
 return list.map(([k, t]) => `<div style="color:${prog.done[k]?"#44ff88":"#445566"};">${prog.done[k]?"\u2714":"\u2610"} ${t}</div>`).join("")

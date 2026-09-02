@@ -168,22 +168,24 @@ Gen = generation · K = kills · F = fights fought</p>
 <div id="info-foot" style="display:flex;gap:8px;justify-content:center;"></div>
 </div>
 </div>
-<div id="design-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:150;align-items:center;justify-content:center;padding:20px;">
-<div class="intro-frame" style="max-width:420px;width:100%;">
-<div class="dos-title" style="font-size:15px;margin-bottom:4px;">🎨 BUG DESIGNER</div>
+<div id="design-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:150;align-items:flex-start;justify-content:center;padding:6px;box-sizing:border-box;">
+<div class="intro-frame" id="design-box" style="max-width:100vw;width:100%;box-sizing:border-box;display:flex;flex-direction:column;">
+<div class="dos-title" style="font-size:15px;margin-bottom:2px;">🎨 BUG DESIGNER</div>
+<div style="color:#886;font-size:9px;text-align:center;margin:0 0 3px;">Temporary tool - free while movement and combat are being tuned. Can be opened during a fight.</div>
 <hr class="dos-hr">
-<div style="display:flex;gap:8px;align-items:flex-start;">
+<div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
 <canvas id="design-cv" style="background:#0a0a12;border:1px solid #2a2a4a;flex-shrink:0;"></canvas>
-<input type="range" id="dz-zoom" class="dz-zoom" min="100" max="400" value="100">
-<div id="design-abils" style="flex:1;min-width:150px;"></div>
+<input type="range" id="dz-zoom" class="dz-zoom" min="100" max="400" value="400">
+<div id="design-abils" style="flex:1 1 150px;min-width:0;"></div>
 </div>
-<div style="max-height:34vh;overflow:auto;margin-top:4px;">
+<div class="dz-wrap">
+<div class="dz-scroll">
 <div id="design-controls"></div>
 <div id="design-extras"></div>
 </div>
-<div style="color:#886;font-size:9px;text-align:center;margin:4px 0;">Temporary tool: free, and open during a fight, only while movement and fighting are being tuned.</div>
+</div>
 <hr class="dos-hr">
-<div style="display:flex;gap:8px;justify-content:center;">
+<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
 <button class="btn-std" id="btn-design-rnd-m">🎲 RND M</button>
 <button class="btn-std" id="btn-design-rnd-s">🎲 RND S</button>
 <button class="ok" id="btn-design-spawn" style="padding:6px 18px;"></button>

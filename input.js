@@ -1,5 +1,5 @@
 let drag = null, suppressClick = !1;
-const DRAG_SLOP = 4;
+const DRAG_SLOP = 8;
 const boxPt = e => { const r = boxCv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top] };
 function nearest(comps, cx, cy, radius) {
 let hit = null, best = 1 / 0;

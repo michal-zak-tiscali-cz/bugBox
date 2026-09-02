@@ -67,7 +67,8 @@ return card
 };
 if (pA || st.pAdead) parentsRow.appendChild(mkCard(pA, st.pAdead, !1, "A"));
 if (pB || st.pBdead) parentsRow.appendChild(mkCard(pB, st.pBdead, !1, "B"));
-childRow.appendChild(mkCard(l.dead ? null : l, l.dead, !0));
+const cc = mkCard(l.dead ? null : l, l.dead, !0);
+childRow.appendChild(cc), markMeta(cc, l);
 return
 }
 }
@@ -155,18 +156,30 @@ if (!window.killPh) return;
 window.killPhClose && window.killPhClose();
 window.killPhClose = null, window.killPh = null
 }
+const HUE_OFF = [-40, -20, 20, 40];
+const mutQ4 = () => { const r = random(); return r < .25 ? -1 : r < .5 ? 0 : r < .75 ? 1 : 2 };
+function markMeta(card, b) {
+if (!b.meta) return;
+const rows = card.querySelectorAll(".sbar");
+SK.forEach((k, i) => {
+const row = rows[i + 1], m = b.meta[k];
+if (!row || !m) return;
+const sp = document.createElement("span");
+sp.className = "sv", sp.style = "font-size:8px;width:24px;text-align:left;color:" + (m.d > 0 ? "#4f8" : m.d < 0 ? "#e44" : "#888");
+sp.textContent = m.src + (m.d ? (m.d > 0 ? " +" : " ") + m.d : ""), row.appendChild(sp)
+})
+}
 function computeOffspring(a, b) {
-const child = {
-gen: max(a.gen, b.gen) + 1
-};
-child.hue = random() < .5 ? a.hue : b.hue, child.morph = mixMorph(a, b), child.name = genName(), SK.forEach(k => {
-const hi = max(a[k], b[k]), lo = min(a[k], b[k]);
-let v = (hi + lo) / 2 + STAT_ELITE_BIAS * (hi - lo) / 2;
-const head = clamp((10 - v) / 9, 0, 1),
-up = STAT_UP_BASE + STAT_UP_HEAD * head,
-r = random();
-r < up ? v += 1 + (random() < STAT_UP_BIG ? 1 : 0) : r < up + STAT_DOWN && (v -= 1);
-child[k] = round(clamp(v, 1, 10))
+const child = { gen: max(a.gen, b.gen) + 1, name: genName(), meta: {} };
+const hr = random();
+child.hue = hr < 1 / 3 ? a.hue : hr < 2 / 3 ? b.hue : ((random() < .5 ? a.hue : b.hue) + HUE_OFF[ri(4)] + 360) % 360, child.morph = mixMorph(a, b);
+SK.forEach(k => {
+const fromA = random() < .5;
+child[k] = fromA ? a[k] : b[k], child.meta[k] = { src: fromA ? "A" : "B", d: 0 }
+});
+shuf(SK.slice()).slice(0, 2).forEach(k => {
+const was = child[k];
+child[k] = clamp(was + mutQ4(), 1, 10), child.meta[k].d = child[k] - was
 });
 return inheritAbilities(child, a, b), child
 }

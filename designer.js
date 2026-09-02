@@ -2,9 +2,9 @@ let design = Object.assign({ hue: 120, con: 5, str: 5, agi: 5, int: 5, per: 5, l
 designAnim = null, designSide = 0, designZoom = 1;
 Object.assign(design, statMorph(design));
 const DZ_ROWS = [["hue", "Hue", 0, 340, 20], ["bodySegments", "Segments"], ["segmentGradient", "Gradient"],
-["bodyLength", "Length"], ["bodyWidth", "Width"], ["legLen", "Legs"], ["headSize", "Head"],
-["headGearSize", "Gear size"], ["headGear", "Gear type", 0, GEAR_KEYS.length - 1]],
-DZ_RED = ["hue", "bodySegments", "segmentGradient"],
+["headGear", "Gear type", 0, GEAR_KEYS.length - 1], ["bodyLength", "Length"], ["bodyWidth", "Width"],
+["legLen", "Legs"], ["headSize", "Head"], ["headGearSize", "Gear size"]],
+DZ_RED = ["hue", "bodySegments", "segmentGradient", "headGear"],
 dzLo = r => r[2] ?? MORPH_RANGE[r[0]][0],
 dzStep = r => r[4] ?? 1,
 dzHi = r => r[3] ?? MORPH_RANGE[r[0]][1],
@@ -28,7 +28,7 @@ SK.forEach(k => design[k] == null && (design[k] = 5))
 function designAbilOptions(slot) {
 designDefaults();
 const taken = design.abils.filter((a, i) => a && i !== slot);
-return '<option value="">-- none --</option>' + ABIL_IDS.filter(id => !taken.includes(id))
+return `<option value="">Ability ${slot + 1}</option>` + ABIL_IDS.filter(id => !taken.includes(id))
 .sort((a, b) => SK.indexOf(ABILITIES[a].stat) - SK.indexOf(ABILITIES[b].stat) || ABILITIES[a].name.localeCompare(ABILITIES[b].name))
 .map(id => `<option value="${id}"${design.abils[slot] === id ? " selected" : ""}>(${ABILITIES[id].stat.toUpperCase()}) ${ABILITIES[id].name}</option>`).join("")
 }
@@ -41,8 +41,7 @@ function renderDesignExtras() {
 designDefaults();
 $("design-extras").innerHTML = designStatRows();
 $("design-abils").innerHTML =
-[0, 1, 2, 3].map(i => `<div class="dz-row"><span class="dz-lbl">Ability ${i+1}</span>
-       <select id="dz-abil-${i}">${designAbilOptions(i)}</select></div>`).join("") +
+[0, 1, 2, 3].map(i => `<div class="dz-row"><select id="dz-abil-${i}">${designAbilOptions(i)}</select></div>`).join("") +
 (combatMode ? `<div class="dz-row"><span class="dz-lbl">Add to</span>
        <button class="btn-std" id="dz-side" style="padding:2px 8px;">${designSide === 0 ? "YOUR TEAM" : "ENEMY"}</button></div>` : "");
 SK.forEach(bindRange);
@@ -66,7 +65,7 @@ SK.includes(k) && design.link && Object.assign(design, statMorph(design)), dzRef
 }
 }
 function openDesignOverlay() {
-overlay("design-ov", 1), achieve("designer");
+overlay("design-ov", 1);
 const ctr = $("design-controls");
 if (!ctr.dataset.done) {
 ctr.dataset.done = "1";
@@ -88,12 +87,11 @@ $("btn-design-rnd-s").onclick = () => {
 designDefaults(), SK.forEach(k => design[k] = 1 + ri(10));
 design.link && Object.assign(design, statMorph(design)), dzRefresh(), renderDesignExtras()
 };
-$("dz-zoom").oninput = ev => designZoom = ev.target.value / 100;
+$("dz-zoom").oninput = ev => designZoom = (500 - ev.target.value) / 100;
 $("btn-design-spawn").onclick = spawnDesignedBug
 }
 renderDesignExtras(), dzRefresh();
-const bar = $("terr-bar-row").getBoundingClientRect(), ov = $("design-ov");
-bar.height && (ov.style.alignItems = "flex-end", ov.firstElementChild.style.marginBottom = max(0, innerHeight - bar.bottom - 20) + "px");
+fitDesignOverlay();
 $("btn-design-spawn").textContent = combatMode ? "DROP INTO FIGHT" : "SPAWN";
 const cv = $("design-cv"), ctx = hidpi(cv, 150, 130);
 cancelAnimationFrame(designAnim);
@@ -103,6 +101,12 @@ drawMorphBug(ctx, design, morphColor(design.hue), 75, 65 + 2 * design.headSize *
 { scale: designZoom, walkL: .006 * performance.now(), walkR: .006 * performance.now() });
 designAnim = requestAnimationFrame(tick)
 }()
+}
+function fitDesignOverlay() {
+const r = boxCv.getBoundingClientRect(), fr = $("design-box");
+if (!r.height) return;
+fr.style.maxHeight = (r.height - 8) + "px";
+fr.style.marginTop = max(4, r.top + (r.height - fr.offsetHeight) / 2) + "px"
 }
 function closeDesignOverlay() {
 cancelAnimationFrame(designAnim), overlay("design-ov", 0)

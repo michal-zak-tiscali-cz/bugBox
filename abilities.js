@@ -28,9 +28,11 @@ const ABILITIES = {};
 ["chitin", "Chitin", "con", 0, 0]
 ].forEach(([id, name, stat, cd, dur]) => ABILITIES[id] = { name, stat, cd, dur });
 const ABIL_IDS = Object.keys(ABILITIES);
-const ABIL_MAX = 4, ABIL_INHERIT_ONE = .5, ABIL_INHERIT_BOTH = .85, ABIL_NEW_CHANCE = .3;
-const ABIL_SLOT_CHANCE = [.55, .34, .16, .06];
-const STAT_ELITE_BIAS = .35, STAT_UP_BASE = .10, STAT_UP_HEAD = .26, STAT_UP_BIG = .14, STAT_DOWN = .06;
+const ABIL_MAX = 4, ABIL_INHERIT_ONE = .5, ABIL_INHERIT_BOTH = .75;
+const ABIL_ROLL_CHANCE = [.5, .5, .25, .25, 0];
+const ABIL_BY_STAT = {};
+SK.forEach(k => ABIL_BY_STAT[k] = ABIL_IDS.filter(id => ABILITIES[id].stat === k));
+const shuf = a => a.sort(() => random() - .5);
 const BITE_PREP_MS = 800;
 const FOV_MIN_DEG = 50, FOV_MAX_DEG = 140;
 function bodyLenOf(b) { const m = ensureMorph(b); return m.bodyLength }
@@ -107,35 +109,29 @@ imX: 0, imY: 0,
 phoenixUsed: 0, phoenixT: 0, fakeUsed: 0, fakeT: 0
 };
 CD_KEYS.forEach(k => COMBAT_DEFAULTS[k] = 0);
-function eligibleAbilities(b) {
-return ABIL_IDS.filter(id => b[ABILITIES[id].stat] >= 5)
+const abilOrder = b => SK.filter(k => b[k] >= 5).sort((x, y) => b[y] - b[x] || (x < y ? -1 : 1));
+function rollAbilities(b, out, used) {
+for (const k of abilOrder(b)) {
+if (out.length >= ABIL_MAX) break;
+if (used.has(k) || !(random() < (ABIL_ROLL_CHANCE[out.length] || 0))) continue;
+const pool = ABIL_BY_STAT[k].filter(id => !out.includes(id));
+pool.length && (out.push(pool[ri(pool.length)]), used.add(k))
 }
-function abilSlots(b) { return min(ABIL_MAX, SK.filter(k => b[k] >= 5).length) }
-function rollAbilCount(b) {
-const m = abilSlots(b);
-let n = 0;
-for (let i = 0; i < m; i++) { if (!(random() < ABIL_SLOT_CHANCE[i])) break; n++ }
-return n
-}
-function pickRandom(pool) { return pool.splice(floor(random() * pool.length), 1)[0] }
-function assignBirthAbilities(b) {
-const out = (b.abilities || []).slice(0, ABIL_MAX),
-target = max(out.length, rollAbilCount(b)),
-pool = eligibleAbilities(b).filter(id => !out.includes(id));
-while (out.length < target && pool.length) out.push(pickRandom(pool));
 return out
 }
+function assignBirthAbilities(b) {
+const out = (b.abilities || []).slice(0, ABIL_MAX);
+return rollAbilities(b, out, new Set(out.map(id => ABILITIES[id].stat)))
+}
 function inheritAbilities(child, a, b) {
-const pa = a.abilities || [], pb = b.abilities || [], out = [],
-target = rollAbilCount(child),
-union = [...new Set([...pa, ...pb])].filter(id => child[ABILITIES[id].stat] >= 5),
-both = union.filter(id => pa.includes(id) && pb.includes(id)),
-one = union.filter(id => !(pa.includes(id) && pb.includes(id)));
-for (const id of both) { if (out.length >= target) break; random() < ABIL_INHERIT_BOTH && out.push(id) }
-for (const id of one) { if (out.length >= target) break; random() < ABIL_INHERIT_ONE && out.push(id) }
-const pool = eligibleAbilities(child).filter(id => !out.includes(id));
-while (out.length < target && pool.length && random() < ABIL_NEW_CHANCE) out.push(pickRandom(pool));
-return child.abilities = out.slice(0, ABIL_MAX), child.abilities
+const pa = a.abilities || [], pb = b.abilities || [], out = [], used = new Set();
+for (const k of abilOrder(child)) {
+if (out.length >= ABIL_MAX) break;
+for (const c of shuf(ABIL_BY_STAT[k].map(id => ({ id: id, n: pa.includes(id) + pb.includes(id) })).filter(c => c.n)))
+if (random() < (2 === c.n ? ABIL_INHERIT_BOTH : ABIL_INHERIT_ONE)) { out.push(c.id), used.add(k); break }
+}
+rollAbilities(child, out, used);
+return child.abilities = out, out
 }
 function hasAbil(b, id) { return b && b.abilities && b.abilities.includes(id) }
 function abilTags(b) {

@@ -211,7 +211,10 @@ let len = hypot(ox, oy);
 if (len < .001) ox = cos(p.dir), oy = sin(p.dir), len = 1;
 p.pushV = min(RESOLVE_MAX, (p.pushV || 0) + UNSTICK_ACC * dtS);
 const st = min(deep, p.pushV * dtS);
-p.x += ox / len * st, p.y += oy / len * st, clampToBox(p)
+p.x += ox / len * st, p.y += oy / len * st;
+const wx = p.x, wy = p.y;
+clampToBox(p);
+(p.x !== wx || p.y !== wy) && (p.x -= oy / len * st, p.y += ox / len * st, clampToBox(p))
 })
 }
 function clampToBox(p) {

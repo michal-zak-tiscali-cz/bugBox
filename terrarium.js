@@ -12,7 +12,10 @@ dmgPops = [],
 enemies = [],
 savedWorld = null;
 const VIZ_KEYS = [
-["vis", "VIS", "vision cone + peripheral circle", 1],
+["vis", "VIS", "vision cone + peripheral circle", 1, 0],
+["vis1", "VIS 1", "vision range of your bugs", 0, 1],
+["vis2", "VIS 2", "vision range of enemy bugs", 0, 1],
+["visr", "VIS R", "ability range rings (mark, cry, loud)", 0, 1],
 ["abi", "ABI", "ability cooldown readout", 1],
 ["nam", "NAME", "bug names", 1],
 ["hp", "HP", "HP bars", 1],
@@ -22,10 +25,10 @@ const VIZ_KEYS = [
 ["rnd", "RND", "combat randomness (off = repeatable fight)", 0],
 ["col", "COL", "team colours instead of bug hue", 0]
 ];
-const vizShown = () => VIZ_KEYS.filter(([, , , a]) => combatMode || a);
-const VIZ_OFF = { zone: 0, vis: 0, bite: 1, dmg: 1, abi: 0, rnd: 1, nam: 1, hp: 1, col: 0 };
+const vizShown = () => VIZ_KEYS.filter(([, , , a, c]) => combatMode ? c !== 0 : a);
+const VIZ_OFF = { zone: 0, vis: 0, vis1: 0, vis2: 0, visr: 1, bite: 1, dmg: 1, abi: 0, rnd: 1, nam: 1, hp: 1, col: 0 };
 let scienceOn = !1,
-vizState = { zone: 0, vis: 1, bite: 0, dmg: 0, abi: 0, rnd: 0, nam: 0, hp: 0, col: 1 };
+vizState = { zone: 0, vis: 1, vis1: 1, vis2: 1, visr: 1, bite: 0, dmg: 0, abi: 0, rnd: 1, nam: 0, hp: 0, col: 1 };
 const viz = k => scienceOn ? vizState[k] : VIZ_OFF[k];
 function setScience(on) {
 scienceOn = !!on, on && achieve("science"), syncSciHud()
@@ -62,7 +65,8 @@ boxCv.style.borderColor = c ? "#fa4" : "#4cf";
 syncSciHud()
 }
 function canDrag(kind) { return !hudCombat() }
-function canPlaceFood() { return !hudCombat() }
+const MAX_FOOD = 30;
+function canPlaceFood() { return !hudCombat() && ecsQuery("food").length < MAX_FOOD }
 function spawnDmgPop(x, y, amount, isMiss, team) { dmgPops.push({ x, y, amount, isMiss, team: team || 0, t: 1 }) }
 function initBugBox() {
 simLastT = 0, updateMoney(), achOwn(0), resizeBoxCV(), syncSimLoop()
