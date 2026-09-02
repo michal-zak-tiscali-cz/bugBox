@@ -43,7 +43,7 @@ el.innerHTML +=
 `<p><b class="c-hdr">ABILITIES</b><br>
       Max <b>4</b> per bug, passive or active alike. Gained at birth if the required stat is <b>5 or higher</b> (~15% chance each). Inherited with ~50% chance from one parent, ~85% if both parents share it.</p>
      <p><b class="c-hdr">VISION</b><br>
-      A bug sees a cone in front of it and nothing else. PER sets both how far and how wide: <b>${FOV_MIN_DEG}&deg; wide at PER 1</b>, <b>${FOV_MAX_DEG}&deg; at PER 10</b>, reaching <b>25 &times; PER</b> pixels. Nothing behind that cone exists for it &mdash; but a bite in the side or the back makes it turn on whoever bit it. It remembers an enemy it has lost for <b>INT + 2 seconds</b>.</p>
+      A bug sees a cone in front of it and nothing else. PER sets both how far and how wide: <b>${FOV_MIN_DEG}&deg; wide at PER 1</b>, <b>${FOV_MAX_DEG}&deg; at PER 10</b>, reaching <b>25 &times; PER + 50</b> pixels. Nothing behind that cone exists for it &mdash; but a bite in the side or the back makes it turn on whoever bit it. It remembers an enemy it has lost for <b>INT + 2 seconds</b>.</p>
      <p><b class="c-hdr">SPEED</b><br>
       Walking is <b>${BASE_WALK} &times; AGI</b> px/s, and a half turn takes <b>${(PI / turningOf({ agi: 1 })).toFixed(1)}s at AGI 1</b> down to <b>${(PI / turningOf({ agi: 10 })).toFixed(2)}s at AGI 10</b>. Every walk in the game is that speed or a plain multiple of it: <b>&times;2</b> dashing, <b>&times;0.5</b> dragging a grabbed bug.</p>
      <p><b class="c-hdr">BITE WIND-UP</b><br>

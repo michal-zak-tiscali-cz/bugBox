@@ -1,4 +1,6 @@
 const TEAM_HUE = [210, 30];
+const VIS_COL = "rgba(180,255,120,.35)";
+const nearVisR = b => max(morphR(b) + 2, hasAbil(b, "v360") ? visRangeOf(b) * .25 : 0);
 function drawZoneVisOverlay() {
 if (!viz("zone") && !viz("vis") && !viz("vis1") && !viz("vis2")) return;
 ecsQuery("bug", "pos").forEach(e => {
@@ -19,7 +21,8 @@ if (viz(combatMode ? ((C.team.get(e) || {}).team === 1 ? "vis2" : "vis1") : "vis
 const visR = visRangeOf(b);
 const fovH = fovHalfOf(b);
 boxCx.beginPath(), boxCx.moveTo(p.x, p.y), boxCx.arc(p.x, p.y, visR, p.dir - fovH, p.dir + fovH), boxCx.closePath();
-boxCx.strokeStyle = "rgba(180,255,120,.35)", boxCx.lineWidth = 1, boxCx.stroke(), boxCx.fillStyle = "rgba(180,255,120,.06)", boxCx.fill();
+boxCx.strokeStyle = VIS_COL, boxCx.lineWidth = 1, boxCx.stroke(), boxCx.fillStyle = "rgba(180,255,120,.06)", boxCx.fill();
+boxCx.beginPath(), boxCx.arc(p.x, p.y, nearVisR(b), 0, 7), boxCx.stroke(), boxCx.fill();
 }
 })
 }
@@ -75,7 +78,7 @@ if (!inCombat) {
 drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, b === inspected, posPhase(p));
 b.hitT > 0 && drawMorphBug(boxCx, ensureMorph(b), "#ff2828", p.x, p.y, p.dir + HALF_PI, { alpha: b.hitT, shadow: !1 });
 const r = morphR(b);
-(b === inspected || scienceOn && viz("hp")) && drawHpBar(p, hpFrac(b), r);
+(!fow && (b === inspected || scienceOn && viz("hp"))) && drawHpBar(p, hpFrac(b), r);
 b.prepT > 0 && viz("bite") && drawPrepBar(p, 1 - b.prepT / BITE_PREP_MS, r);
 scienceOn && viz("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 4));
 return;
@@ -85,7 +88,7 @@ cb = C.combat.get(e);
 const cfg = ensureMorph(b), r = morphR(b);
 if (isGrey(e)) {
 cb.greyAt || (cb.greyAt = performance.now());
-const k = min(1, floor((performance.now() - cb.greyAt) / 160) / 10);
+const k = min(1, floor((performance.now() - cb.greyAt) / 80) / 10);
 drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, !1, null, viz("col") ? TEAM_HUE[tm.team] : null);
 k > 0 && drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha: k, shadow: !1 });
 return;
@@ -121,13 +124,18 @@ if (fow && inspected != null) {
 const fe = ecsQuery("bug", "pos").find(en => C.bug.get(en) === inspected || C.bug.get(en).id === inspected.id);
 if (fe != null) {
 const fp = C.pos.get(fe), fb = C.bug.get(fe),
-fr = visRangeOf(fb), fh = fovHalfOf(fb), fhr = max(morphR(fb) + 2, hasAbil(fb, "v360") ? fr * .25 : 0);
+fr = visRangeOf(fb), fh = fovHalfOf(fb), fhr = nearVisR(fb);
 boxCx.save();
 boxCx.beginPath(), boxCx.rect(0, 0, boxLW, boxLH);
 boxCx.moveTo(fp.x, fp.y), boxCx.arc(fp.x, fp.y, fr, fp.dir - fh, fp.dir + fh), boxCx.closePath();
-boxCx.moveTo(fp.x + fhr, fp.y), boxCx.arc(fp.x, fp.y, fhr, 0, 7, !0);
+boxCx.clip("evenodd");
+boxCx.beginPath(), boxCx.rect(0, 0, boxLW, boxLH);
+boxCx.moveTo(fp.x + fhr, fp.y), boxCx.arc(fp.x, fp.y, fhr, 0, 7);
 boxCx.fillStyle = "#000", boxCx.fill("evenodd");
-boxCx.restore()
+boxCx.restore();
+boxCx.beginPath(), boxCx.moveTo(fp.x, fp.y), boxCx.arc(fp.x, fp.y, fr, fp.dir - fh, fp.dir + fh), boxCx.closePath();
+boxCx.moveTo(fp.x + fhr, fp.y), boxCx.arc(fp.x, fp.y, fhr, 0, 7);
+boxCx.strokeStyle = VIS_COL, boxCx.lineWidth = 1, boxCx.stroke()
 }
 }
 if (inCombat && viz("dmg")) {

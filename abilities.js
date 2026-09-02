@@ -35,12 +35,12 @@ const ABIL_BY_STAT = {};
 SK.forEach(k => ABIL_BY_STAT[k] = ABIL_IDS.filter(id => ABILITIES[id].stat === k));
 const shuf = a => a.sort(() => random() - .5);
 const BITE_PREP_MS = 800;
-const FOV_MIN_DEG = 50, FOV_MAX_DEG = 140;
+const FOV_MIN_DEG = 90, FOV_MAX_DEG = 94.5;
 function bodyLenOf(b) { const m = ensureMorph(b); return m.bodyLength }
 function engageDistOf(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize * 2 }
 const perOf = b => clamp(b.per || 5, 1, 10);
 const intOf = b => clamp(b.int || 5, 1, 10);
-const visRangeOf = b => 25 * perOf(b);
+const visRangeOf = b => 25 * perOf(b) + 50;
 const fovHalfOf = b => (FOV_MIN_DEG + (FOV_MAX_DEG - FOV_MIN_DEG) * (perOf(b) - 1) / 9) * PI / 360;
 function seesPoint(b, p, x, y) {
 const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy, vr = visRangeOf(b);

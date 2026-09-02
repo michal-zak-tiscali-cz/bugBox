@@ -8,11 +8,11 @@ const GEAR_KEYS = Object.keys(GEAR);
 const GEAR_LABEL = { pincers: "Pincers", ant: "Antennae", antb: "Antennae Bwd", eyes: "Eyes" };
 const SIZE_LABEL = ["N", "W", "XW"];
 const MORPH_FREE = { bodySegments: [1, 3], segmentGradient: [1, 5] };
-const MORPH_STAT = { bodyLength: [9, 27], bodyWidth: [2, 11], headSize: [2, 6], legLen: [5, 14], headGearSize: [0, 2] };
+const MORPH_STAT = { bodyLength: [16, 29], bodyWidth: [2, 11], headSize: [2, 6], legLen: [5, 14], headGearSize: [0, 2] };
 const MORPH_RANGE = { ...MORPH_FREE, ...MORPH_STAT };
 function statMorph(s) {
 const g = k => clamp(round(s[k]), 1, 10), i = g("int"), p = g("per");
-return { bodyLength: 2 * g("con") + 7, bodyWidth: g("str") + 1, headSize: 1 + floor((i + 1) / 2), legLen: g("agi") + 4, headGearSize: p < 4 ? 0 : p < 7 ? 1 : 2 }
+return { bodyLength: 1.5 * g("con") + 14, bodyWidth: g("str") + 1, headSize: 1 + floor((i + 1) / 2), legLen: g("agi") + 4, headGearSize: p < 4 ? 0 : p < 7 ? 1 : 2 }
 }
 function randomMorph() {
 const m = {};

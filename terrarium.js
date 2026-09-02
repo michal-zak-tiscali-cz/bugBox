@@ -29,7 +29,8 @@ const vizShown = () => VIZ_KEYS.filter(([, , , a, c]) => combatMode ? c !== 0 : 
 const VIZ_OFF = { zone: 0, vis: 0, vis1: 0, vis2: 0, visr: 1, bite: 1, dmg: 1, abi: 0, rnd: 1, nam: 1, hp: 1, col: 0 };
 let scienceOn = !1,
 vizState = { zone: 0, vis: 1, vis1: 1, vis2: 1, visr: 1, bite: 0, dmg: 0, abi: 0, rnd: 1, nam: 0, hp: 0, col: 1 };
-const viz = k => scienceOn ? vizState[k] : VIZ_OFF[k];
+const FOW_HIDE = "zone visr bite dmg abi nam hp col vis vis1 vis2".split(" ");
+const viz = k => fow && FOW_HIDE.includes(k) ? 0 : scienceOn ? vizState[k] : VIZ_OFF[k];
 function setScience(on) {
 scienceOn = !!on, on && achieve("science"), syncSciHud()
 }
