@@ -48,6 +48,7 @@ const p = C.pos.get(en), d = hypot(p.x - cx, p.y - cy);
 d < bugLen(C.bug.get(en)) && d < best && (best = d, hit = C.bug.get(en))
 });
 if (hit) { inspected = hit === inspected ? null : hit, inspected && achieve("inspect"); return }
+if (inspected) return void(inspected = null);
 if (!canPlaceFood()) return;
 const fHit = ecsQuery("food", "pos").find(en => {
 const fp = C.pos.get(en);

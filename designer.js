@@ -1,9 +1,9 @@
 let design = Object.assign({ hue: 120, con: 5, str: 5, agi: 5, int: 5, per: 5, link: 1, abils: ["", "", "", ""] }, randomMorph()),
-designAnim = null, designSide = 0;
+designAnim = null, designSide = 0, designZoom = 1;
 Object.assign(design, statMorph(design));
 const DZ_ROWS = [["hue", "Hue", 0, 340, 20], ["bodySegments", "Segments"], ["segmentGradient", "Gradient"],
-["bodyLength", "Length"], ["bodyWidth", "Width"], ["headSize", "Head"], ["legLen", "Legs"],
-["headGear", "Gear type", 0, GEAR_KEYS.length - 1], ["headGearSize", "Gear size"]],
+["bodyLength", "Length"], ["bodyWidth", "Width"], ["legLen", "Legs"], ["headSize", "Head"],
+["headGearSize", "Gear size"], ["headGear", "Gear type", 0, GEAR_KEYS.length - 1]],
 DZ_RED = ["hue", "bodySegments", "segmentGradient"],
 dzLo = r => r[2] ?? MORPH_RANGE[r[0]][0],
 dzStep = r => r[4] ?? 1,
@@ -39,8 +39,8 @@ return SK.map(k => `<div class="dz-row"><span class="dz-lbl">${k.toUpperCase()} 
 }
 function renderDesignExtras() {
 designDefaults();
-const el = $("design-extras");
-el.innerHTML = designStatRows() +
+$("design-extras").innerHTML = designStatRows();
+$("design-abils").innerHTML =
 [0, 1, 2, 3].map(i => `<div class="dz-row"><span class="dz-lbl">Ability ${i+1}</span>
        <select id="dz-abil-${i}">${designAbilOptions(i)}</select></div>`).join("") +
 (combatMode ? `<div class="dz-row"><span class="dz-lbl">Add to</span>
@@ -88,16 +88,19 @@ $("btn-design-rnd-s").onclick = () => {
 designDefaults(), SK.forEach(k => design[k] = 1 + ri(10));
 design.link && Object.assign(design, statMorph(design)), dzRefresh(), renderDesignExtras()
 };
+$("dz-zoom").oninput = ev => designZoom = ev.target.value / 100;
 $("btn-design-spawn").onclick = spawnDesignedBug
 }
 renderDesignExtras(), dzRefresh();
+const bar = $("terr-bar-row").getBoundingClientRect(), ov = $("design-ov");
+bar.height && (ov.style.alignItems = "flex-end", ov.firstElementChild.style.marginBottom = max(0, innerHeight - bar.bottom - 20) + "px");
 $("btn-design-spawn").textContent = combatMode ? "DROP INTO FIGHT" : "SPAWN";
 const cv = $("design-cv"), ctx = hidpi(cv, 150, 130);
 cancelAnimationFrame(designAnim);
 ! function tick() {
 ctx.clearRect(0, 0, 150, 130), ctx.fillStyle = "#0a0a12", ctx.fillRect(0, 0, 150, 130);
-drawMorphBug(ctx, design, morphColor(design.hue), 75, 65 + 2 * design.headSize, 0,
-{ walkL: .006 * performance.now(), walkR: .006 * performance.now() });
+drawMorphBug(ctx, design, morphColor(design.hue), 75, 65 + 2 * design.headSize * designZoom, 0,
+{ scale: designZoom, walkL: .006 * performance.now(), walkR: .006 * performance.now() });
 designAnim = requestAnimationFrame(tick)
 }()
 }

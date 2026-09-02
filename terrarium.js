@@ -25,7 +25,7 @@ const VIZ_KEYS = [
 const vizShown = () => VIZ_KEYS.filter(([, , , a]) => combatMode || a);
 const VIZ_OFF = { zone: 0, vis: 0, bite: 1, dmg: 1, abi: 0, rnd: 1, nam: 1, hp: 1, col: 0 };
 let scienceOn = !1,
-vizState = { ...VIZ_OFF };
+vizState = { zone: 0, vis: 1, bite: 0, dmg: 0, abi: 0, rnd: 0, nam: 0, hp: 0, col: 1 };
 const viz = k => scienceOn ? vizState[k] : VIZ_OFF[k];
 function setScience(on) {
 scienceOn = !!on, on && achieve("science"), syncSciHud()

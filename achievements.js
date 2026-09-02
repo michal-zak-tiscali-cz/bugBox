@@ -8,8 +8,10 @@ const TUTORIAL = [
 ["own", "own a bug"],
 ["feed", "feed a bug"],
 ["drag", "drag a bug"],
+["inspect", "inspect a bug"],
 ["breed", "breed a bug"],
-["fight", "fight a bug"]
+["fight", "fight a bug"],
+["kill", "kill a bug"]
 ];
 const ACHIEVEMENTS = [
 ["own10", "own 10 bugs (at the same time)"],
@@ -77,7 +79,6 @@ const ACHIEVEMENTS = [
 ["cull", "cull a bug in the lab"],
 ["designer", "use the bug designer"],
 ["science", "turn on Science mode"],
-["inspect", "inspect a bug"],
 ["abandon", "abandon a fight"],
 ["breeder10", "good breeder (10 different abilities in your bugs)"],
 ["breeder20", "master breeder (every ability in your bugs)"],

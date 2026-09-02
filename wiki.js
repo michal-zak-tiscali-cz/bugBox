@@ -7,16 +7,16 @@ dash: `Charges from up to 3 body lengths out at double walking speed and bites t
 jump: "Leaps clean over the target and lands behind it. Both bugs then spin around \u2014 the target reacts 2s late, so the rear strike usually lands first.",
 knockout: "Stuns the target. Duration scales with your STR and with how far it beats the target's STR (up to 3x). Resilient bugs are immune.",
 kickback: "Shoves the target away and spins it 0-180 degrees. Distance scales with STR. Resilient bugs take half the shove and no spin.",
-flanking: `Tries to circle around to the target's rear for up to ${FLANK_WINDOW_MS / 1e3}s once inside ${FLANK_RANGE} px, then bites. Can flank again after a successful bite.`,
+flanking: `Tries to circle around to the target's rear for up to ${FLANK_WINDOW_MS / 1e3}s once inside 2 body lengths of the target, then bites. Can flank again after a successful bite.`,
 strongbite: "Charges up: the next bite deals double damage.",
 swiftbite: `The next bite needs only half the usual wind-up: ${BITE_PREP_MS/2} ms instead of ${BITE_PREP_MS} ms.`,
 backflip: `After landing a bite, hops backward and retreats at walking pace for ${ABILITIES.backflip.dur / 1e3}s before re-engaging.`,
 grab: `Seizes an enemy approached from its side or rear and drags it backward at half walking speed for up to ${GRAB_HOLD_MS / 1e3}s. The victim cannot act at all.`,
-mark: `On a hit, broadcasts the target to every ally within 6 body lengths. They all switch to it for ${ABILITIES.mark.dur / 1e3}s.`,
+mark: `On a hit, on spotting an enemy it marks that spot with a green X for 3s. Every ally within 7 body lengths that cannot see an enemy itself heads there. An ally that reaches the X without seeing anything turns 270 degrees on the spot, then goes back to its normal search. The X stays put, and the bug can mark again 6s after the last one. They all switch to it for ${ABILITIES.mark.dur / 1e3}s.`,
 phoenix: `Once per fight: on death, lies still for ${(ABILITIES.phoenix.dur/1000).toFixed(0)}s, then rises again at 10% HP.`,
 fake: `Below 50% HP, drops and plays dead for ${(ABILITIES.fake.dur/1000).toFixed(0)}s. Enemies stop targeting it. Usable twice per fight.`,
 loud: `Screams for ${(ABILITIES.loud.dur / 1e3).toFixed(1)}s. Every enemy within 3 body lengths cannot use any ability at all.`,
-alarm: "Passive, always on. Every single bite it takes calls in the whole team: allies not already fighting head straight for the spot where it was bitten.",
+cry: "Passive, always on. When bitten, it cries for 7s: every ally within 7 body lengths that cannot see an enemy itself comes to its aid, and keeps following it while it moves.",
 braced: "Passive, always on. Immune to stun; kickback shoves it only half as far and never spins it.",
 focus: "Passive, always on. Targets the weakest visible enemy by current HP instead of the closest one.",
 resilient: "Passive, always on. Carries 50% more health than its CON alone would give. Nothing else changes: bites land as hard as ever, there is simply more bug to chew through.",
@@ -42,7 +42,7 @@ el.innerHTML +=
 `<p><b class="c-hdr">ABILITIES</b><br>
       Max <b>4</b> per bug, passive or active alike. Gained at birth if the required stat is <b>5 or higher</b> (~15% chance each). Inherited with ~50% chance from one parent, ~85% if both parents share it.</p>
      <p><b class="c-hdr">VISION</b><br>
-      A bug sees a cone in front of it and nothing else. PER sets both how far and how wide: <b>${FOV_MIN_DEG}&deg; wide at PER 1</b>, <b>${FOV_MAX_DEG}&deg; at PER 10</b>, reaching <b>body length &times; PER</b> pixels. Nothing behind that cone exists for it &mdash; but a bite in the side or the back makes it turn on whoever bit it. It remembers an enemy it has lost for <b>INT + 2 seconds</b>.</p>
+      A bug sees a cone in front of it and nothing else. PER sets both how far and how wide: <b>${FOV_MIN_DEG}&deg; wide at PER 1</b>, <b>${FOV_MAX_DEG}&deg; at PER 10</b>, reaching <b>25 &times; PER</b> pixels. Nothing behind that cone exists for it &mdash; but a bite in the side or the back makes it turn on whoever bit it. It remembers an enemy it has lost for <b>INT + 2 seconds</b>.</p>
      <p><b class="c-hdr">SPEED</b><br>
       Walking is <b>${BASE_WALK} &times; AGI</b> px/s, and a half turn takes <b>${(PI / turningOf({ agi: 1 })).toFixed(1)}s at AGI 1</b> down to <b>${(PI / turningOf({ agi: 10 })).toFixed(2)}s at AGI 10</b>. Every walk in the game is that speed or a plain multiple of it: <b>&times;2</b> dashing, <b>&times;0.5</b> dragging a grabbed bug.</p>
      <p><b class="c-hdr">BITE WIND-UP</b><br>

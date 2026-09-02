@@ -83,7 +83,7 @@ cb = C.combat.get(e);
 const cfg = ensureMorph(b), r = morphR(b);
 if (isGrey(e)) {
 cb.greyAt || (cb.greyAt = performance.now());
-const k = min(1, floor((performance.now() - cb.greyAt) / 200) / 4);
+const k = min(1, floor((performance.now() - cb.greyAt) / 160) / 10);
 drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, !1, null);
 k > 0 && drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha: k, shadow: !1 });
 return;
@@ -97,23 +97,16 @@ boxCx.globalAlpha = 1;
 drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), viz("col") ? TEAM_HUE[tm.team] : null);
 if (cb.hitT > 0) { boxCx.save(); boxCx.globalAlpha = cb.hitT; drawMorphBug(boxCx, cfg, "#ff2828", p.x + offX, p.y + offY, p.dir + HALF_PI, { alpha: cb.hitT, shadow: !1 }); boxCx.restore() }
 if (cb.stunT > 0) { boxCx.save(), boxCx.fillStyle = "#fd4", boxCx.font = "9px Courier New", boxCx.textAlign = "center", boxCx.fillText("\u2726", p.x, p.y - r - 13), boxCx.restore() }
+if (cb.callT > 0) { boxCx.save(), boxCx.strokeStyle = cb.callCry ? "#f88" : "#8f8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, cb.callR, 0, 7), boxCx.stroke(), boxCx.restore() }
 if (cb.loudT > 0) { boxCx.save(), boxCx.strokeStyle = "#ff8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, loudRadius(b), 0, 7), boxCx.stroke(), boxCx.restore() }
-if (cb.markFlash > 0) {
-const blink = sin((1200 - cb.markFlash) / 1200 * TAU);
-if (blink > 0) {
-boxCx.save(); boxCx.globalAlpha = blink; boxCx.fillStyle = "#8f8"; boxCx.font = "bold 11px Courier New"; boxCx.textAlign = "center"; boxCx.textBaseline = "middle";
-const arrowR = r + 6;
-for (let k = 0; k < 3; k++) {
-const ang = -HALF_PI + k * (TAU / 3);
-const ax = p.x + cos(ang) * arrowR, ay = p.y + sin(ang) * arrowR;
-boxCx.save(); boxCx.translate(ax, ay); boxCx.rotate(ang + HALF_PI); boxCx.fillText("\u25bc", 0, 0); boxCx.restore();
-}
-boxCx.restore();
-}
+if (cb.callT > 0 && !cb.callCry) {
+boxCx.save(), boxCx.strokeStyle = "#8f8", boxCx.globalAlpha = .8, boxCx.lineWidth = 1.5, boxCx.beginPath();
+boxCx.moveTo(cb.callX - 4, cb.callY - 4), boxCx.lineTo(cb.callX + 4, cb.callY + 4);
+boxCx.moveTo(cb.callX + 4, cb.callY - 4), boxCx.lineTo(cb.callX - 4, cb.callY + 4);
+boxCx.stroke(), boxCx.restore();
 }
 if (viz("hp")) {
 drawHpBar(p, max(0, cb.curHp / cb.maxHp), r);
-if (scienceOn) { boxCx.fillStyle = "#9ab", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(max(0, round(cb.curHp)), p.x - r - 5, p.y - 15) }
 }
 if (viz("nam")) { boxCx.fillStyle = 0 === tm.team ? "#44ccff" : "#ffaa44", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 4) }
 if (viz("bite")) {

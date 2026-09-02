@@ -1,6 +1,6 @@
 const INFO_TABS = ["info", "tut", "ach", "morph", "abil", "rec"];
 function openInfoTab(t) { overlay("settings-ov", 1), infoTab(t) }
-function openSettingsOverlay() { openInfoTab("info") }
+function openSettingsOverlay() { openInfoTab("tut") }
 function infoTab(t) {
 document.querySelectorAll(".info-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
 INFO_TABS.forEach(k => $("itab-" + k).style.display = k === t ? "" : "none");

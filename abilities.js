@@ -1,7 +1,6 @@
 const bugLen = b => b ? ensureMorph(b).bodyLength : 22;
-const markRadius = b => bugLen(b) * 6, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 3;
+const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 2, flankRange = b => bugLen(b) * 2;
 const FLANK_WINDOW_MS = 1000;
-const FLANK_RANGE = 60;
 const GRAB_HOLD_MS = 2500;
 const FLEE_MIN_MS = 3000, FLEE_MAX_MS = 6000;
 const ABILITIES = {};
@@ -15,11 +14,11 @@ const ABILITIES = {};
 ["swiftbite", "Swift Bite", "agi", 7e3, 0],
 ["backflip", "Backflip", "agi", 6e3, 1000],
 ["grab", "Grab", "str", 9e3, 0],
-["mark", "Mark", "int", 8e3, 5000],
+["mark", "Mark", "int", 6e3, 3e3],
 ["phoenix", "Phoenix", "con", 0, 5000],
 ["fake", "Fake Death", "int", 0, 3000],
 ["loud", "Loud", "per", 10e3, 4800],
-["alarm", "Alarm", "per", 0, 0],
+["cry", "Cry", "per", 0, 7e3],
 ["braced", "Braced", "con", 0, 0],
 ["focus", "Focus", "int", 0, 0],
 ["tank", "Tank", "str", 0, 0],
@@ -38,7 +37,7 @@ function bodyLenOf(b) { const m = ensureMorph(b); return m.bodyLength }
 function engageDistOf(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize * 2 }
 const perOf = b => clamp(b.per || 5, 1, 10);
 const intOf = b => clamp(b.int || 5, 1, 10);
-const visRangeOf = b => bugLen(b) * perOf(b);
+const visRangeOf = b => 25 * perOf(b);
 const fovHalfOf = b => (FOV_MIN_DEG + (FOV_MAX_DEG - FOV_MIN_DEG) * (perOf(b) - 1) / 9) * PI / 360;
 function seesPoint(b, p, x, y) {
 const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy, vr = visRangeOf(b);
@@ -60,7 +59,7 @@ b.mood = "fighting", t.paused = !1, t.pauseTimer = 0, t.scanRemain = 0, t.seekX 
 const w = C.wall.get(e);
 w && (w.phase = null)
 }
-function alarmBitten(te) {
+function biteNoticed(te) {
 wakeToFight(te);
 const tp = C.pos.get(te), ttm = C.team.get(te);
 if (!tp || !ttm) return;
@@ -69,14 +68,6 @@ if (oe === te || C.team.get(oe).team !== ttm.team) return;
 const ocb = C.combat.get(oe);
 if (ocb && ocb.dead) return;
 seesPoint(C.bug.get(oe), C.pos.get(oe), tp.x, tp.y) && wakeToFight(oe)
-})
-}
-function alarmCall(tp, team) {
-ecsQuery("bug", "pos", "team", "think").forEach(oe => {
-const ocb = C.combat.get(oe);
-if (C.team.get(oe).team !== team || ocb && ocb.dead || "fighting" === C.bug.get(oe).mood) return;
-const t = C.think.get(oe);
-t.seekX = tp.x, t.seekY = tp.y, t.paused = !1, t.pauseTimer = 0
 })
 }
 function applyBite(cb, ab, p, tcb, tb, tp, mult, atkTeam, atkE) {
@@ -89,7 +80,7 @@ tcb.curHp -= dmg, tcb.hitT = 1;
 const ha = atan2(tp.y - p.y, tp.x - p.x);
 tcb.hitDx = cos(ha), tcb.hitDy = sin(ha);
 spawnDmgPop(tp.x, tp.y, dmg, !1, atkTeam);
-hasAbil(tb, "alarm") && alarmCall(tp, atkTeam ? 0 : 1);
+hasAbil(tb, "cry") && (tcb.callT = ABILITIES.cry.dur, tcb.callR = callRadius(tb), tcb.callTeam = atkTeam ? 0 : 1, tcb.callCry = 1, tcb.callX = tp.x, tcb.callY = tp.y);
 if (tcb.curHp <= 0 && !(hasAbil(tb, "phoenix") && !tcb.phoenixUsed)) {
 tcb.dead = !0, tcb.curHp = 0, cb.killsThis = (cb.killsThis || 0) + 1;
 groundMarks.push({ x: tp.x, y: tp.y, hue: tb.hue, t: 1 })
@@ -108,7 +99,7 @@ turn180: 0, turn180Delay: 0, dashT: 0, dashHitPend: 0,
 strongPend: 0, swiftPend: 0, backflipT: 0,
 grabTarget: -1, grabbedBy: -1, grabDragLeft: 0, grabTimeLeft: 0, grabDx: 0, grabDy: 0,
 flankReady: !0, flankT: 0, flankArmed: 0,
-markTarget: -1, markT: 0, markFlash: 0, loudT: 0, curTarget: -1,
+callT: 0, callR: 0, callTeam: -1, callX: 0, callY: 0, callCry: 0, callDoneX: 0, callDoneY: 0, goOn: 0, goX: 0, goY: 0, loudT: 0, curTarget: -1,
 aimTarget: -1, aimLock: 0, avengeE: -1, avengeA: 0, lostSide: 1, wasInRange: 0,
 memT: 0, memX: 0, memY: 0, memA: 0, searchPhase: 0, fleeT: 0, fleeA: 0, fledLvl: 0,
 mvA: 0, mvSpd: 0, mvOn: 0,

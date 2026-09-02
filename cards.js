@@ -69,7 +69,7 @@ opts.onImgTap && opts.onImgTap(div)
 }
 }
 skullWrap.onclick = e2 => {
-e2.stopPropagation(), flashBlocked(div), achieve("cull"), setTimeout(() => {
+e2.stopPropagation(), flashBlocked(div), achieve("cull"), achieve("kill"), setTimeout(() => {
 window.killPh = null, window.killPhClose = null;
 opts.onKill && opts.onKill(div)
 }, 150)

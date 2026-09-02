@@ -163,8 +163,9 @@ function resolveBodies(ents, step) {
 for (let i = 0; i < ents.length; i++)
 for (let j = i + 1; j < ents.length; j++) {
 const ca = C.combat.get(ents[i]),
-cbb = C.combat.get(ents[j]);
-if (ca && ca.dead || cbb && cbb.dead) continue;
+cbb = C.combat.get(ents[j]),
+da = ca && ca.dead ? 1 : 0, db = cbb && cbb.dead ? 1 : 0;
+if (da && db) continue;
 if (C.bug.get(ents[i]).mating && C.bug.get(ents[j]).mating) continue;
 const minD = sepPair(ents[i], ents[j]);
 if (minD <= 0) continue;
@@ -181,7 +182,8 @@ ba = C.bug.get(ents[i]),
 bb = C.bug.get(ents[j]);
 const fast = "fighting" === ba.mood || "fighting" === bb.mood,
 h = min(ov / 2, step * (fast ? SEP_FIGHT_MULT : 1));
-a.x -= nx * h, a.y -= ny * h, c.x += nx * h, c.y += ny * h
+const wa = da ? 0 : db ? 2 : 1, wb = db ? 0 : da ? 2 : 1;
+a.x -= nx * h * wa, a.y -= ny * h * wa, c.x += nx * h * wb, c.y += ny * h * wb
 }
 }
 function resolveObstacles(ents, dtS) {
@@ -189,6 +191,8 @@ const obs = ecsQuery("obstacle", "pos");
 if (!obs.length) return;
 ents.forEach(e => {
 if (drag && drag.e === e) return;
+const dcb = C.combat.get(e);
+if (dcb && dcb.dead) return;
 const p = C.pos.get(e);
 let ox = 0, oy = 0, deep = 0;
 obs.forEach(oe => {

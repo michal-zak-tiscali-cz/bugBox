@@ -137,7 +137,7 @@ Looks like you have ran out of bugs to kill... Good!
 <div id="toast"></div>
 <div id="settings-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:350;align-items:center;justify-content:center;padding:20px;">
 <div class="intro-frame" style="max-width:560px;width:100%;">
-<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(134px,1fr));gap:6px;margin-bottom:6px;">
 <button class="btn-std info-tab" data-tab="tut" onclick="infoTab('tut')">🎓 Tutorial</button>
 <button class="btn-std info-tab" data-tab="ach" onclick="infoTab('ach')">🏅 Achievements</button>
 <button class="btn-std info-tab" data-tab="rec" onclick="infoTab('rec')">🏆 Records</button>
@@ -172,12 +172,14 @@ Gen = generation · K = kills · F = fights fought</p>
 <div class="intro-frame" style="max-width:420px;width:100%;">
 <div class="dos-title" style="font-size:15px;margin-bottom:4px;">🎨 BUG DESIGNER</div>
 <hr class="dos-hr">
-<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+<div style="display:flex;gap:8px;align-items:flex-start;">
 <canvas id="design-cv" style="background:#0a0a12;border:1px solid #2a2a4a;flex-shrink:0;"></canvas>
-<div style="flex:1;min-width:190px;max-height:46vh;overflow:auto;">
+<input type="range" id="dz-zoom" class="dz-zoom" min="100" max="400" value="100">
+<div id="design-abils" style="flex:1;min-width:150px;"></div>
+</div>
+<div style="max-height:34vh;overflow:auto;margin-top:4px;">
 <div id="design-controls"></div>
 <div id="design-extras"></div>
-</div>
 </div>
 <div style="color:#886;font-size:9px;text-align:center;margin:4px 0;">Temporary tool: free, and open during a fight, only while movement and fighting are being tuned.</div>
 <hr class="dos-hr">
