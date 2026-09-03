@@ -34,7 +34,8 @@ const ABIL_ROLL_CHANCE = [.5, .5, .25, .25, 0];
 const ABIL_BY_STAT = {};
 SK.forEach(k => ABIL_BY_STAT[k] = ABIL_IDS.filter(id => ABILITIES[id].stat === k));
 const shuf = a => a.sort(() => random() - .5);
-const BITE_PREP_MS = 800;
+const BITE_PREP_MS = 800, BITE_PREP_MAX = 1000, BITE_PREP_MIN = 600;
+const bitePrepOf = b => BITE_PREP_MAX - (BITE_PREP_MAX - BITE_PREP_MIN) * (clamp(b.agi || 5, 1, 10) - 1) / 9;
 const FOV_MIN_DEG = 90, FOV_MAX_DEG = 94.5;
 function bodyLenOf(b) { const m = ensureMorph(b); return m.bodyLength }
 function engageDistOf(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize * 2 }
@@ -81,16 +82,18 @@ seesPoint(C.bug.get(oe), C.pos.get(oe), tp.x, tp.y) && wakeToFight(oe)
 function applyBite(cb, ab, p, tcb, tb, tp, mult, atkTeam, atkE) {
 const fd = abs(norm(atan2(p.y - tp.y, p.x - tp.x) - tp.dir)),
 flankMult = fd < PI / 3 ? 1 : fd < TAU / 3 ? 1.5 : 2;
-if (fd >= PI / 3 && atkE != null) { tcb.avengeE = atkE, tcb.avengeA = atan2(p.y - tp.y, p.x - tp.x) }
+if (fd >= PI / 3 && atkE != null && intOf(tb) < 5) { tcb.avengeE = atkE, tcb.avengeA = atan2(p.y - tp.y, p.x - tp.x) }
 let dmg = ab.str * rollVar() * flankMult * mult;
 if (hasAbil(tb, "chitin")) dmg *= .5;
 tcb.curHp -= dmg, tcb.hitT = 1;
 const ha = atan2(tp.y - p.y, tp.x - p.x);
 tcb.hitDx = cos(ha), tcb.hitDy = sin(ha);
+const sh = bodyLenOf(tb) * .3 * (random() < .5 ? -1 : 1);
+tcb.imX -= tcb.hitDy * sh, tcb.imY += tcb.hitDx * sh;
 spawnDmgPop(tp.x, tp.y, dmg, !1, atkTeam);
 hasAbil(tb, "cry") && (tcb.callT = ABILITIES.cry.dur, tcb.callR = callRadius(tb), tcb.callTeam = atkTeam ? 0 : 1, tcb.callCry = 1, tcb.callX = tp.x, tcb.callY = tp.y);
 if (tcb.curHp <= 0 && !(hasAbil(tb, "phoenix") && !tcb.phoenixUsed)) {
-tcb.dead = !0, tcb.curHp = 0, cb.killsThis = (cb.killsThis || 0) + 1;
+tcb.dead = !0, tcb.curHp = 0, cb.killsThis = (cb.killsThis || 0) + 1, cb.memT = 0, cb.searchPhase = 0;
 groundMarks.push({ x: tp.x, y: tp.y, hue: tb.hue, t: 1 })
 }
 }
@@ -109,6 +112,7 @@ grabTarget: -1, grabbedBy: -1, grabDragLeft: 0, grabTimeLeft: 0, grabDx: 0, grab
 flankReady: !0, flankT: 0, flankArmed: 0,
 callT: 0, callR: 0, callTeam: -1, callX: 0, callY: 0, callCry: 0, callDoneX: 0, callDoneY: 0, goOn: 0, goX: 0, goY: 0, loudT: 0, curTarget: -1,
 aimTarget: -1, aimLock: 0, avengeE: -1, avengeA: 0, lostSide: 1, wasInRange: 0, regather: 0,
+panicT: 0, panicT2: 0, panicA: 0, pickE: -1, swT: 0, biteE: -1, biteN: 0,
 memT: 0, memX: 0, memY: 0, memA: 0, searchPhase: 0, fleeT: 0, fleeA: 0, fledLvl: 0,
 mvA: 0, mvSpd: 0, mvOn: 0,
 imX: 0, imY: 0,

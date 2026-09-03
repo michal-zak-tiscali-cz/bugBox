@@ -16,7 +16,7 @@ p.walk = (p.walk || 0) + .32 * hypot(dx, dy), p.turnAcc = (p.turnAcc || 0) + dd;
 p._px = p.x, p._py = p.y, p._pd = p.dir
 })
 }
-function bugCardH(b, w = 54, h = 44) {
+function bugCardH(b, w = 54, h = 54) {
 const c = document.createElement("canvas");
-return drawMorphCentered(hidpi(c, w, h), b, w, h), c
+return drawMorphCentered(hidpi(c, w, h), b, w, h, PI / 4), c
 }

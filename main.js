@@ -35,6 +35,8 @@ e.preventDefault()
 function endDrag() { drag && (suppressClick = drag.moved, drag = null) }
 boxCv.addEventListener("pointerup", endDrag);
 boxCv.addEventListener("pointercancel", endDrag);
+let tapT = [];
+const TAP_R = 29, TAP_MS = 1000;
 boxCv.onclick = e => {
 const r = boxCv.getBoundingClientRect(),
 cx = e.clientX - r.left,
@@ -42,19 +44,22 @@ cy = e.clientY - r.top;
 if (suppressClick) { suppressClick = !1; return }
 let hit = null, best = 999;
 ecsQuery("bug", "pos").forEach(en => {
-const cb = C.combat.get(en);
-if (cb && cb.dead) return;
 const p = C.pos.get(en), d = hypot(p.x - cx, p.y - cy);
 d < bugLen(C.bug.get(en)) && d < best && (best = d, hit = C.bug.get(en))
 });
 if (hit) { inspected = hit === inspected ? null : hit, inspected && achieve("inspect"); return }
+if (combatMode) {
+const now = performance.now();
+tapT = tapT.filter(o => now - o.t < TAP_MS && hypot(o.x - cx, o.y - cy) < TAP_R), tapT.push({ x: cx, y: cy, t: now });
+if (tapT.length >= 3) return tapT = [], void panicAll()
+}
 if (inspected) return void(inspected = null);
 if (!canPlaceFood()) return;
 const fHit = ecsQuery("food", "pos").find(en => {
 const fp = C.pos.get(en);
 return hypot(fp.x - cx, fp.y - cy) < 8
 });
-if (fHit != null) return void ecsKill(fHit);
+if (fHit != null) return;
 if (obstacleAt(cx, cy) != null) return;
 ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed()
 }, window.addEventListener("resize", () => {

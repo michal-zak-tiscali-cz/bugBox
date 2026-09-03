@@ -48,8 +48,9 @@ const bl = cfg.bodyLength, legSp = bl / 4, still = wLp === null, L = cfg.legLen,
 t.lineWidth = .8, t.lineCap = t.lineJoin = "round";
 for (let i = 1; i <= 3; i++) {
 const ly = -bl / 2 + i * legSp,
-wL = still ? 0 : sin(wLp + i) * L * .28,
-wR = still ? 0 : -sin(wRp + i) * L * .28;
+ph = gait ? (i % 2 ? 0 : PI) : i,
+wL = still ? 0 : sin(wLp + ph) * L * .28,
+wR = still ? 0 : -sin(wRp + ph) * L * .28;
 for (const [s, w] of [[-1, wL], [1, wR]]) {
 const a = s * hx;
 t.beginPath(), t.moveTo(a, ly);
@@ -94,14 +95,18 @@ ctx.save(), ctx.translate(x, y), ctx.rotate(rot), ctx.scale(scale, scale);
 glow && (ctx.shadowColor = glow, ctx.shadowBlur = 14);
 ctx.fillStyle = ctx.strokeStyle = color, renderMorphParts(ctx, cfg, walkL, walkR), ctx.restore(), ctx.restore()
 }
-function morphColor(hue) { return `hsl(${hue},70%,45%)` }
+let palette = 0, gait = 0;
+function setPalette(v) { palette = +v }
+function setGait(v) { gait = +v }
+function morphColor(hue) { return 1 === palette ? `hsl(${15+hue%60},${15+hue%40}%,${8+hue*7%28}%)` : 2 === palette ? `hsl(${20+hue%40},30%,${18+hue%12}%)` : `hsl(${hue},70%,45%)` }
 function morphR(b) { const m = ensureMorph(b); return max(m.bodyWidth / 2 + .733 * m.legLen, m.bodyLength / 2 + 3.4 * m.headSize) }
 function morphFitScale(cfg, w, h) {
 const bl = cfg.bodyLength + 3.4 * cfg.headSize,
 bw = max(cfg.bodyWidth + 1.47 * cfg.legLen, 2.2 * cfg.bodyWidth, 4 * cfg.headSize);
 return min(w / bw, h / bl) * .9
 }
-function drawMorphCentered(ctx, b, w, h) {
+function drawMorphCentered(ctx, b, w, h, rot) {
 const cfg = ensureMorph(b), top = cfg.bodyLength / 2 + 3.4 * cfg.headSize, tot = cfg.bodyLength + 3.4 * cfg.headSize;
+if (rot) { const d = 1.7 * cfg.headSize; return void drawMorphBug(ctx, cfg, morphColor(b.hue), w / 2 - d * sin(rot), h / 2 + d * cos(rot), rot, { shadow: !1 }) }
 drawMorphBug(ctx, cfg, morphColor(b.hue), w / 2, max(2, (h - tot) / 2) + top, 0, { shadow: !1 })
 }

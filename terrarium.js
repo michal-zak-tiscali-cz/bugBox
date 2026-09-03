@@ -27,18 +27,20 @@ const VIZ_KEYS = [
 ];
 const vizShown = () => VIZ_KEYS.filter(([, , , a, c]) => combatMode ? c !== 0 : a);
 const VIZ_OFF = { zone: 0, vis: 0, vis1: 0, vis2: 0, visr: 1, bite: 1, dmg: 1, abi: 0, rnd: 1, nam: 1, hp: 1, col: 0 };
-let scienceOn = !1,
-vizState = { zone: 0, vis: 1, vis1: 1, vis2: 1, visr: 1, bite: 0, dmg: 0, abi: 0, rnd: 1, nam: 0, hp: 0, col: 1 };
+let scienceOn = !1;
+const vizNew = () => VIZ_KEYS.reduce((o, [k]) => (o[k] = 0, o), {}),
+vizSt = [vizNew(), vizNew()],
+vz = () => vizSt[combatMode ? 1 : 0];
 const FOW_HIDE = "zone visr bite dmg abi nam hp col vis vis1 vis2".split(" ");
-const viz = k => fow && FOW_HIDE.includes(k) ? 0 : scienceOn ? vizState[k] : VIZ_OFF[k];
+const viz = k => fow && FOW_HIDE.includes(k) ? 0 : scienceOn ? vz()[k] : VIZ_OFF[k];
 function setScience(on) {
 scienceOn = !!on, on && achieve("science"), syncSciHud()
 }
-function toggleViz(k) { vizState[k] = vizState[k] ? 0 : 1, syncSciHud() }
-const allViz = () => vizShown().every(([k]) => vizState[k]);
+function toggleViz(k) { vz()[k] = vz()[k] ? 0 : 1, syncSciHud() }
+const allViz = () => vizShown().every(([k]) => vz()[k]);
 function toggleVizAll() {
 const v = allViz() ? 0 : 1;
-vizShown().forEach(([k]) => vizState[k] = v), syncSciHud()
+vizShown().forEach(([k]) => vz()[k] = v), syncSciHud()
 }
 const vizBtn = (k, lbl, tip, on) =>
 `<button title="${tip}" onclick="${k?`toggleViz('${k}')`:"toggleVizAll()"}" style="font:8px 'Courier New';padding:2px 4px;cursor:pointer;border:1px solid #2a2a4a;background:${on?"#2b4":"#0a0a12"};color:${on?"#031":"#9ab"};">${lbl}</button>`;
@@ -49,7 +51,7 @@ const show = scienceOn && !(combatMode && fightDone);
 el.style.display = show ? "flex" : "none";
 if (!show) return;
 el.innerHTML = vizBtn(null, "ALL", "turn every toggle below on or off", allViz()) +
-vizShown().map(([k, lbl, tip]) => vizBtn(k, lbl, tip, vizState[k])).join("")
+vizShown().map(([k, lbl, tip]) => vizBtn(k, lbl, tip, vz()[k])).join("")
 }
 let hudWas = null;
 const HUD_FIGHT_ONLY = ["btn-leave", "btn-step"],

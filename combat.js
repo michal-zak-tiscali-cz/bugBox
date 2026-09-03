@@ -10,6 +10,18 @@ d <= ccb.callR && d < bd && (bd = d, best = ccb)
 });
 return best
 }
+const PANIC_MIN = 500, PANIC_SPAN = 2500, PANIC_HOME_MS = 1500;
+function panicAll() {
+boxCv.classList.remove("shake"), void boxCv.offsetWidth, boxCv.classList.add("shake");
+setTimeout(() => boxCv.classList.remove("shake"), 500);
+ecsQuery("bug", "pos", "combat").forEach(e => {
+const cb = C.combat.get(e), p = C.pos.get(e);
+if (cb.dead) return;
+wakeToFight(e);
+cb.panicA = norm(p.dir + (random() < .5 ? -1 : 1) * (HALF_PI + random() * HALF_PI));
+cb.panicT = PANIC_MIN + random() * PANIC_SPAN, cb.panicT2 = 0, cb.stunT = 0
+})
+}
 let abilBlocked = false;
 const abilReady = (e, id) => !abilBlocked && hasAbil(C.bug.get(e), id) && C.combat.get(e)[cdFieldOf(id)] <= 0;
 const abilFire = (e, id) => C.combat.get(e)[cdFieldOf(id)] = ABILITIES[id].cd;
@@ -124,6 +136,12 @@ if (!spotted && !callFor(e, p, tm.team, ents, cb)) return;
 wakeToFight(e)
 }
 if (cb.stunT > 0) return;
+if (cb.panicT > 0 || cb.panicT2 > 0) {
+if (cb.panicT > 0) { cb.panicT -= dt; cb.panicT <= 0 && (cb.panicA = atan2(boxLH / 2 - p.y + rf(-30, 30), boxLW / 2 - p.x + rf(-30, 30)), cb.panicT2 = PANIC_HOME_MS) }
+else cb.panicT2 -= dt;
+turnToward(p, cb.panicA, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1;
+return
+}
 if (t.paused) { t.pauseTimer -= dt; if (t.pauseTimer > 0) return; t.paused = !1 }
 let target = null,
 minD2 = 1 / 0;
@@ -156,6 +174,24 @@ else {
 const dOf = te => { const ts2 = snap.get(te); return ts2 ? hypot(ts2.x - myS.x, ts2.y - myS.y) : 1 / 0 };
 if (!(target != null && dOf(target) <= engageDist)) target = cb.avengeE;
 if (target === cb.avengeE && dOf(cb.avengeE) <= engageDist) cb.avengeE = -1
+}
+}
+if (intOf(b) >= 5) {
+if ((cb.swT -= dt) <= 0) {
+cb.swT = 3000;
+let pick = -1, pickHp = 1 / 0, n = 0;
+const near = bugLen(b) * 3;
+ents.forEach(oe => {
+const ocb = C.combat.get(oe);
+if (ocb.dead || ocb.curTarget !== e || C.team.get(oe).team === tm.team) return;
+const os = snap.get(oe);
+hypot(os.x - myS.x, os.y - myS.y) < near && (n++, ocb.curHp < pickHp && (pickHp = ocb.curHp, pick = oe))
+});
+cb.pickE = n > 1 ? pick : -1
+}
+if (cb.pickE >= 0) {
+const pcb = ECS.combat.has(cb.pickE) ? C.combat.get(cb.pickE) : null;
+!pcb || pcb.dead || pcb.curHp <= 0 ? cb.pickE = -1 : target = cb.pickE
 }
 }
 let minD = 1 / 0;
@@ -214,7 +250,7 @@ cb.dashT = ABILITIES.dash.dur; abilFire(e, "dash"); cb.dashHitPend = 1;
 if (cb.dashHitPend && minD <= attackReach) {
 cb.dashHitPend = 0; cb.dashT = 0;
 biteDodged(b, tb, tp, tm.team, tcb) || (applyBite(cb, b, p, tcb, tb, tp, 1, tm.team, e), biteNoticed(target));
-cb.bitePrep = cb.bitePrepMax || BITE_PREP_MS;
+cb.bitePrep = cb.bitePrepMax || bitePrepOf(b);
 SFX.bite();
 }
 let moveSpd = cb.dashT > 0 ? spd * 8 : spd;
@@ -292,19 +328,19 @@ let strongMult = 1;
 if (cb.strongPend) { strongMult = 2; cb.strongPend = 0 }
 applyBite(cb, b, p, tcb, tb, tp, strongMult, tm.team, e), biteNoticed(target);
 cb.flankReady = true; cb.flankT = 0; cb.flankArmed = 0;
-const kbA = atan2(tp.y - p.y, tp.x - p.x), kbBase = 1.2;
-tcb.kbX = (tcb.kbX || 0) + cos(kbA) * kbBase, tcb.kbY = (tcb.kbY || 0) + sin(kbA) * kbBase;
+const kbA = atan2(tp.y - p.y, tp.x - p.x);
 const braced = hasAbil(tb, "braced");
 if (abilReady(e, "kickback")) { const stub = braced; const kbDist = max(0, 8 + .5 * (b.str - tb.con)) * (stub ? 0.5 : 1); tcb.kbX += cos(kbA) * kbDist, tcb.kbY += sin(kbA) * kbDist; if (!stub) { tcb.stunT = max(tcb.stunT, ABILITIES.kickback.dur); const spinAmt = rnd() * PI, spinDir = (rnd() < 0.5 ? -1 : 1); tcb.spinRemain = spinAmt; tcb.spinDir = spinDir; tcb.spinRate = 3 * turningOf(tb); tcb.regather = 1 } abilFire(e, "kickback") }
 if (abilReady(e, "knockout")) {
 if (!braced) { tcb.stunT = max(200, 2400 + 200 * (b.str - tb.con)); tcb.regather = 1 }
 abilFire(e, "knockout");
 }
-if (abilReady(e, "backflip")) { cb.backflipT = ABILITIES.backflip.dur; abilFire(e, "backflip") }
+cb.biteE === target || (cb.biteE = target, cb.biteN = 0), cb.biteN++;
+if (cb.biteN >= 3 && tcb.stunT <= 0 && abilReady(e, "backflip")) { cb.backflipT = ABILITIES.backflip.dur; abilFire(e, "backflip") }
 SFX.bite();
 }
-let baseCd = BITE_PREP_MS;
-if (cb.swiftPend) { baseCd = BITE_PREP_MS / 2; cb.swiftPend = 0 }
+let baseCd = bitePrepOf(b);
+if (cb.swiftPend) { baseCd /= 2; cb.swiftPend = 0 }
 cb.bitePrep = baseCd, cb.bitePrepMax = baseCd;
 if (abilReady(e, "strongbite") && !cb.strongPend) { cb.strongPend = 1; abilFire(e, "strongbite") }
 if (abilReady(e, "swiftbite") && !cb.swiftPend) { cb.swiftPend = 1; abilFire(e, "swiftbite") }

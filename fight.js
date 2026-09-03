@@ -25,9 +25,10 @@ return eb
 })
 }
 function startFight() {
-fightNum++, enemies = buildEnemies(mayhem ? fightTeam.length : fightMode), groundMarks = [], dmgPops = [], fightDone = !1, combatMode = !0, simSpd = 1, tickDebt = 0, syncSpeedLabel();
+fightNum++, enemies = buildEnemies(mayhem ? fightTeam.length : fightMode), groundMarks = [], dmgPops = [], fightDone = !1, combatMode = !0, simSpd = 0, tickDebt = 0, syncSpeedLabel();
 markEggsReady();
-showScreen("s-terr"), resizeBoxCV(), spawnBoxBugs()
+showScreen("s-terr"), resizeBoxCV(), spawnBoxBugs(), toast("Morituri te salutant");
+setTimeout(() => { combatMode && (simSpd = 1, syncSpeedLabel()) }, 1000)
 }
 function endCombatMode() {
 resultTimer && (clearTimeout(resultTimer), resultTimer = null);

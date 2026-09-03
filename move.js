@@ -3,6 +3,10 @@ const agiOf     = b => clamp(b.agi || 5, 1, 10);
 const sf        = b => hasAbil(b, "steadfast") ? 2 : 1;
 const spdOf     = b => BASE_WALK * agiOf(b) * sf(b);
 const turningOf = b => TAU / (6.6 - .61 * agiOf(b)) * sf(b);
+const STUCK_CHECK_MS = 2000;
+const slideChance = b => intOf(b) >= 5 ? .2 : .8;
+const SLIDE_MIN = 600, SLIDE_SPAN = 1200;
+const CORPSE_SLOW = .25;
 const COMBAT_STEP_MS = 16, MAX_STEPS_PER_FRAME = 64;
 const WALL_BOUNCE_PAIRS = [{ right: 3, bottom: 8 }, { bottom: 5, left: 2 }, { left: 7, top: 4 }, { top: 1, right: 6 }];
 const wallBounce = (oct, wall) => (WALL_BOUNCE_PAIRS[(oct - 1) >> 1] || {})[wall];
@@ -25,10 +29,14 @@ if ("postPause" === w.phase) return t.pauseTimer -= dt, void(t.pauseTimer <= 0 &
 if (t.paused) return t.pauseTimer -= dt, void(t.pauseTimer <= 0 && (t.paused = !1, v.wanderAngle = random() * TAU));
 t.thinkTimer -= dt, t.thinkTimer <= 0 && (t.thinkTimer = THINK_MIN + THINK_SPAN * random(), t.paused = !0, t.pauseTimer = intPause(b.int));
 const px = p.x, py = p.y;
-if (hypot(px - (p.lastX == null ? px : p.lastX), py - (p.lastY == null ? py : p.lastY)) > 1.5) p.lastX = px, p.lastY = py, p.frozenMs = 0;
-else if ((p.frozenMs = (p.frozenMs || 0) + dt) > 6000) {
-p.frozenMs = 0, p.lastX = px, p.lastY = py;
-v.wanderAngle = random() * TAU, w.targetAngle = v.wanderAngle, w.phase = "rotating", w.noPause = 1, t.paused = !1, p.hold = 0
+if (b.mating || b.scrap) return void(p.frzMs = 0, p.lastX = px, p.lastY = py);
+if ((p.frzMs = (p.frzMs || 0) + dt) >= STUCK_CHECK_MS) {
+p.frzMs = 0;
+if (hypot(px - (p.lastX == null ? px : p.lastX), py - (p.lastY == null ? py : p.lastY)) < bugLen(b)) {
+p.frzSide = p.frzSide || (random() < .5 ? -1 : 1);
+v.wanderAngle = norm(p.dir + p.frzSide * (HALF_PI + random() * HALF_PI)), w.targetAngle = v.wanderAngle, w.phase = "rotating", w.noPause = 1, t.paused = !1, p.hold = 0
+} else p.frzSide = 0;
+p.lastX = px, p.lastY = py
 }
 })
 }
@@ -38,7 +46,7 @@ ents.forEach(e => {
 const t = C.think.get(e),
 w = C.wall.get(e),
 bm = C.bug.get(e);
-if (t.paused || w.phase || bm.mating || bm.scrap) return;
+if (t.paused || w.phase || w.slideT > 0 || bm.mating || bm.scrap) return;
 const p = C.pos.get(e),
 v = C.vel.get(e);
 p.hold = 0;
@@ -97,7 +105,8 @@ function sysMove(dtS, ents) {
 const lw = boxLW,
 lh = boxLH,
 dt = dtS * 1e3,
-obs = ecsQuery("obstacle", "pos");
+corpses = ents.filter(en => { const c = C.combat.get(en); return c && c.dead });
+const slowOf = (e, p) => corpses.some(oe => oe !== e && hypot(C.pos.get(oe).x - p.x, C.pos.get(oe).y - p.y) < bugRadius(C.bug.get(oe))) ? CORPSE_SLOW : 1;
 ents.forEach(e => {
 const t = C.think.get(e),
 w = C.wall.get(e),
@@ -105,23 +114,31 @@ b = C.bug.get(e),
 p = C.pos.get(e),
 cb = C.combat.get(e);
 if (cb && cb.dead) return;
+const slow = corpses.length ? slowOf(e, p) : 1;
 if (cb && "fighting" === b.mood) {
 let moved = 0;
 if (cb.mvSpd) {
-const step = cb.mvSpd * dtS;
+const step = cb.mvSpd * dtS * slow;
 let ax = cos(cb.mvA), ay = sin(cb.mvA);
 (p.x <= BOX_MARGIN && ax < 0 || p.x >= lw - BOX_MARGIN && ax > 0) && (ax = -ax);
 (p.y <= BOX_MARGIN && ay < 0 || p.y >= lh - BOX_MARGIN && ay > 0) && (ay = -ay);
 p.x += ax * step, p.y += ay * step, moved = 1
 }
-if (cb.imX || cb.imY) p.x += cb.imX, p.y += cb.imY, cb.imX = 0, cb.imY = 0, moved = 1;
+if (cb.imX || cb.imY) { const lim = bugLen(b) * 2; p.x += clamp(cb.imX || 0, -lim, lim), p.y += clamp(cb.imY || 0, -lim, lim), cb.imX = 0, cb.imY = 0, moved = 1 }
 cb.mvSpd = 0;
 cb.mvOn = 0;
 if (moved) clampToBox(p);
 return
 }
 if (t.paused || w.phase || p.hold || b.mating || b.scrap) return;
-const spd = spdOf(b);
+const spd = spdOf(b) * slow;
+if (w.slideT > 0) {
+w.slideT -= dt;
+const st = spd * dtS;
+p.x += cos(w.slideA) * st, p.y += sin(w.slideA) * st, clampToBox(p);
+w.slideT <= 0 && (w.phase = "rotating", w.targetAngle = w.slideA, w.noPause = 1);
+return
+}
 let nx = p.x + cos(p.dir) * spd * dtS,
 ny = p.y + sin(p.dir) * spd * dtS;
 const hitX = nx < BOX_MARGIN || nx > lw - BOX_MARGIN,
@@ -133,6 +150,11 @@ const targetOct = wallBounce(octantOf(p.dir), wall),
 inward = "left" === wall ? 0 : "right" === wall ? PI : "top" === wall ? HALF_PI : -HALF_PI;
 w.bounces = (w.bounces || 0) + 1;
 const trapped = w.bounces >= 2;
+if (!trapped && random() < slideChance(b)) {
+w.slideA = hitX ? (sin(p.dir) >= 0 ? HALF_PI : -HALF_PI) : (cos(p.dir) >= 0 ? 0 : PI);
+w.slideT = SLIDE_MIN + random() * SLIDE_SPAN, w.bounces = 0;
+return
+}
 w.targetAngle = trapped ? atan2(boxLH / 2 - p.y, boxLW / 2 - p.x) :
 targetOct ? randAngleInOctant(targetOct) : inward;
 !trapped && random() < intChance(b.int) ? (w.phase = "prePause", t.pauseTimer = intPause(b.int)) : w.phase = "rotating";
@@ -159,9 +181,8 @@ function resolveBodies(ents, step) {
 for (let i = 0; i < ents.length; i++)
 for (let j = i + 1; j < ents.length; j++) {
 const ca = C.combat.get(ents[i]),
-cbb = C.combat.get(ents[j]),
-da = ca && ca.dead ? 1 : 0, db = cbb && cbb.dead ? 1 : 0;
-if (da && db) continue;
+cbb = C.combat.get(ents[j]);
+if (ca && ca.dead || cbb && cbb.dead) continue;
 if (C.bug.get(ents[i]).mating && C.bug.get(ents[j]).mating) continue;
 const minD = sepPair(ents[i], ents[j]);
 if (minD <= 0) continue;
@@ -178,8 +199,7 @@ ba = C.bug.get(ents[i]),
 bb = C.bug.get(ents[j]);
 const fast = "fighting" === ba.mood || "fighting" === bb.mood,
 h = min(ov / 2, step * (fast ? SEP_FIGHT_MULT : 1));
-const wa = da ? 0 : db ? 2 : 1, wb = db ? 0 : da ? 2 : 1;
-a.x -= nx * h * wa, a.y -= ny * h * wa, c.x += nx * h * wb, c.y += ny * h * wb
+a.x -= nx * h, a.y -= ny * h, c.x += nx * h, c.y += ny * h
 }
 }
 function resolveObstacles(ents, dtS) {
