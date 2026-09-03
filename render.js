@@ -95,8 +95,8 @@ return;
 }
 cb.greyAt = 0;
 const hitFrac = cb.hitT || 0;
-let offX = 7 * hitFrac * (cb.hitDx || 0),
-offY = 7 * hitFrac * (cb.hitDy || 0);
+let offX = 7 * hitFrac * (cb.hitDx || 0) + 7 * (cb.dodT || 0) * (cb.dodDx || 0),
+offY = 7 * hitFrac * (cb.hitDy || 0) + 7 * (cb.dodT || 0) * (cb.dodDy || 0);
 if (cb.loudT > 0) { const amp = (cfg.legSpan * 0.5 / 3) * sin(cb.loudT / 20), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
 boxCx.globalAlpha = 1;
 drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), viz("col") ? TEAM_HUE[tm.team] : null);

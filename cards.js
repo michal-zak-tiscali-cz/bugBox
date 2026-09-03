@@ -92,6 +92,7 @@ function gkfLine(b) { return `Gen ${b.gen} \u00b7 K${b.killsTotal||0}/F${b.fight
 let fow = 0;
 function toggleFow() { fow = fow ? 0 : 1, syncFowBtn(), syncHud(!0) }
 function syncFowBtn() {
+inspected == null && (fow = 0);
 const el = $("btn-fow");
 if (!el) return;
 const show = inspected != null;

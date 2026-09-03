@@ -1,5 +1,5 @@
 const bugLen = b => b ? ensureMorph(b).bodyLength : 22;
-const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 2, flankRange = b => bugLen(b) * 2;
+const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 7, flankRange = b => bugLen(b) * 2;
 const FLANK_WINDOW_MS = 1000;
 const GRAB_HOLD_MS = 2500;
 const FLEE_MIN_MS = 3000, FLEE_MAX_MS = 6000;
@@ -38,6 +38,8 @@ const BITE_PREP_MS = 800;
 const FOV_MIN_DEG = 90, FOV_MAX_DEG = 94.5;
 function bodyLenOf(b) { const m = ensureMorph(b); return m.bodyLength }
 function engageDistOf(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize * 2 }
+function bugRadius(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize }
+function biteReach(b) { const m = ensureMorph(b); return m.headSize * 2 }
 const perOf = b => clamp(b.per || 5, 1, 10);
 const intOf = b => clamp(b.int || 5, 1, 10);
 const visRangeOf = b => 25 * perOf(b) + 50;
@@ -52,8 +54,10 @@ const memMsOf = b => (intOf(b) + 2) * 1000;
 const huntTierOf = b => { const i = intOf(b); return i <= 3 ? 1 : i <= 6 ? 2 : i <= 8 ? 3 : 4 };
 function rollVar() { return viz("rnd") ? 0.8 + 0.4 * random() : 1.0 }
 function rollDodge(chance) { return viz("rnd") && random() < chance }
-function biteDodged(tb, tp, atkTeam) {
-if (!rollDodge(clamp(.025 * tb.agi, 0, .25))) return !1;
+function biteDodged(atkB, tb, tp, atkTeam, tcb) {
+const chance = clamp(.12 + .04 * (tb.agi - atkB.agi), 0, .25);
+if (!rollDodge(chance)) return !1;
+if (tcb) { const a = tp.dir + HALF_PI * (random() < .5 ? -1 : 1); tcb.dodT = 1, tcb.dodDx = cos(a), tcb.dodDy = sin(a) }
 return spawnDmgPop(tp.x, tp.y, 0, !0, atkTeam), !0
 }
 function wakeToFight(e) {
@@ -95,7 +99,7 @@ const CD_KEYS = ["cdDash", "cdJump", "cdKnockout", "cdKickback", "cdStrong", "cd
 const COMBAT_DEFAULTS = {
 dead: !1, killsThis: 0,
 bitePrep: BITE_PREP_MS, bitePrepMax: BITE_PREP_MS, preppingBite: 0, prepVisT: 0,
-kbX: 0, kbY: 0, hitT: 0, hitDx: 0, hitDy: 0,
+kbX: 0, kbY: 0, hitT: 0, hitDx: 0, hitDy: 0, dodT: 0, dodDx: 0, dodDy: 0,
 spinRemain: 0, spinDir: 1, spinRate: 0,
 stunT: 0,
 jumpT: 0, jumpDur: 1, jumpElapsed: 0, jumpFromX: 0, jumpFromY: 0, jumpToX: 0, jumpToY: 0,
@@ -104,7 +108,7 @@ strongPend: 0, swiftPend: 0, backflipT: 0,
 grabTarget: -1, grabbedBy: -1, grabDragLeft: 0, grabTimeLeft: 0, grabDx: 0, grabDy: 0,
 flankReady: !0, flankT: 0, flankArmed: 0,
 callT: 0, callR: 0, callTeam: -1, callX: 0, callY: 0, callCry: 0, callDoneX: 0, callDoneY: 0, goOn: 0, goX: 0, goY: 0, loudT: 0, curTarget: -1,
-aimTarget: -1, aimLock: 0, avengeE: -1, avengeA: 0, lostSide: 1, wasInRange: 0,
+aimTarget: -1, aimLock: 0, avengeE: -1, avengeA: 0, lostSide: 1, wasInRange: 0, regather: 0,
 memT: 0, memX: 0, memY: 0, memA: 0, searchPhase: 0, fleeT: 0, fleeA: 0, fledLvl: 0,
 mvA: 0, mvSpd: 0, mvOn: 0,
 imX: 0, imY: 0,

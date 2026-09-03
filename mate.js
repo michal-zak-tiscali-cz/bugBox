@@ -117,6 +117,7 @@ if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
 b.mating = 0, b.mateCd = MATE_COOLDOWN_MS, ok && (b.mated = 1)
 });
+if (ok && ECS.think.has(m.sub)) { const t = C.think.get(m.sub); t.paused = !0, t.pauseTimer = 2 * intPause(C.bug.get(m.sub).int) }
 if (ok && ECS.pos.has(m.sub) && ECS.pos.has(m.top)) {
 const sp = C.pos.get(m.sub), tp = C.pos.get(m.top);
 ECS.vel.has(m.sub) && (C.vel.get(m.sub).wanderAngle = sp.dir);

@@ -38,7 +38,7 @@ ents.forEach(e => {
 const t = C.think.get(e),
 w = C.wall.get(e),
 bm = C.bug.get(e);
-if (t.paused || w.phase || bm.mating) return;
+if (t.paused || w.phase || bm.mating || bm.scrap) return;
 const p = C.pos.get(e),
 v = C.vel.get(e);
 p.hold = 0;
@@ -120,7 +120,7 @@ cb.mvOn = 0;
 if (moved) clampToBox(p);
 return
 }
-if (t.paused || w.phase || p.hold || b.mating) return;
+if (t.paused || w.phase || p.hold || b.mating || b.scrap) return;
 const spd = spdOf(b);
 let nx = p.x + cos(p.dir) * spd * dtS,
 ny = p.y + sin(p.dir) * spd * dtS;
@@ -143,15 +143,11 @@ else w.bounces = 0, w.noPause = 0;
 p.x = nx, p.y = ny, clampToBox(p)
 });
 }
-const sepBase = (a, b) => (bugLen(C.bug.get(a)) + bugLen(C.bug.get(b))) / 2, SEP_ENGAGE_FRAC = .8;
+const sepBase = (a, b) => bugRadius(C.bug.get(a)) + bugRadius(C.bug.get(b));
 function sepPair(a, b) {
 const ca = C.combat.get(a), cb = C.combat.get(b);
-const sd = sepBase(a, b);
-if (!ca || !cb) return sd;
-if (ca.grabTarget === b || cb.grabTarget === a) return 0;
-if (ca.curTarget === b || cb.curTarget === a)
-return min(sd, SEP_ENGAGE_FRAC * min(engageDistOf(C.bug.get(a)), engageDistOf(C.bug.get(b))));
-return sd
+if (ca && cb && (ca.grabTarget === b || cb.grabTarget === a)) return 0;
+return sepBase(a, b)
 }
 const BOX_MARGIN = 21;
 const RESOLVE_MAX = 60;
