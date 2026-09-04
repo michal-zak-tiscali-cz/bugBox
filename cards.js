@@ -65,8 +65,8 @@ if (phEl) {
 phEl.style.cursor = "pointer";
 const bc = phEl.firstChild;
 bc.onclick = ev => {
-if (ev.stopPropagation(), window.killPh === phEl) return closeKillOverlay(), void flashBlocked(div);
-closeKillOverlay(), window.killPh = phEl, flashBlocked(div);
+if (ev.stopPropagation(), window.killPh === phEl) return closeKill(), void flashBlocked(div);
+closeKill(), window.killPh = phEl, flashBlocked(div);
 infoKids().forEach(k => k.style.visibility = "hidden"), skullWrap.style.display = "flex";
 window.killPhClose = () => { infoKids().forEach(k => k.style.visibility = ""), skullWrap.style.display = "none" };
 opts.onImgTap && opts.onImgTap(div)
@@ -93,7 +93,7 @@ let fow = 0;
 function toggleFow() { fow = fow ? 0 : 1, syncFowBtn(), syncHud(!0) }
 function syncFowBtn() {
 inspected == null && (fow = 0);
-const el = $("btn-fow");
+const el = $("bt-fow");
 if (!el) return;
 const show = inspected != null;
 el.style.display = show ? "" : "none";

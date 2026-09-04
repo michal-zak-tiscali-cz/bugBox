@@ -40,7 +40,6 @@ const FOV_MIN_DEG = 90, FOV_MAX_DEG = 94.5;
 function bodyLenOf(b) { const m = ensureMorph(b); return m.bodyLength }
 function engageDistOf(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize * 2 }
 function bugRadius(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize }
-function biteReach(b) { const m = ensureMorph(b); return m.headSize * 2 }
 const perOf = b => clamp(b.per || 5, 1, 10);
 const intOf = b => clamp(b.int || 5, 1, 10);
 const visRangeOf = b => 25 * perOf(b) + 50;
@@ -53,8 +52,8 @@ return abs(norm(atan2(dy, dx) - p.dir)) <= fovHalfOf(b)
 }
 const memMsOf = b => (intOf(b) + 2) * 1000;
 const huntTierOf = b => { const i = intOf(b); return i <= 3 ? 1 : i <= 6 ? 2 : i <= 8 ? 3 : 4 };
-function rollVar() { return viz("rnd") ? 0.8 + 0.4 * random() : 1.0 }
-function rollDodge(chance) { return viz("rnd") && random() < chance }
+function rollVar() { return sci("rnd") ? 0.8 + 0.4 * random() : 1.0 }
+function rollDodge(chance) { return sci("rnd") && random() < chance }
 function biteDodged(atkB, tb, tp, atkTeam, tcb) {
 const chance = clamp(.12 + .04 * (tb.agi - atkB.agi), 0, .25);
 if (!rollDodge(chance)) return !1;
@@ -97,7 +96,7 @@ tcb.dead = !0, tcb.curHp = 0, cb.killsThis = (cb.killsThis || 0) + 1, cb.memT = 
 groundMarks.push({ x: tp.x, y: tp.y, hue: tb.hue, t: 1 })
 }
 }
-function rnd() { return viz("rnd") ? random() : 0.5 }
+function rnd() { return sci("rnd") ? random() : 0.5 }
 const CD_KEYS = ["cdDash", "cdJump", "cdKnockout", "cdKickback", "cdStrong", "cdSwift", "cdBackflip", "cdGrab", "cdMark", "cdLoud"];
 const COMBAT_DEFAULTS = {
 dead: !1, killsThis: 0,

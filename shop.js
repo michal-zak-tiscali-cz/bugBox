@@ -22,12 +22,12 @@ return b.cost = 60 + ri(66), b
 }
 function shopApplyCard(div, btn, item, i) {
 const inCart = shopCart.includes(i);
-btn.className = "ba card-sel-btn", btn.textContent = inCart ? "✓ In cart — remove" : "Buy $" + item.cost, div.classList.toggle("card-sel", inCart)
+btn.className = "ba bt-sel", btn.textContent = inCart ? "✓ In cart — remove" : "Buy $" + item.cost, div.classList.toggle("card-sel", inCart)
 }
 function updateShopFooter() {
 const n = shopCart.length;
 $("shop-cart-info").textContent = `${n} bug${1!==n?"s":""} selected`;
-const doneBtn = $("btn-shop-done");
+const doneBtn = $("bt-buy");
 doneBtn.textContent = n > 0 ? "Buy →" : "BugBox →", doneBtn.disabled = !1
 }
 function renderShop() {
@@ -72,7 +72,7 @@ overTimer = setTimeout(() => {
 overTimer = null;
 if (!runIsOver()) return;
 if (boxEggs.length) return void(initBugBox(), showScreen("s-terr"));
-overlay("over-ov", 1)
+ov("ov-over", 1)
 }, OVER_DELAY)
 }
 function shopDone() {

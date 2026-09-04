@@ -6,7 +6,8 @@ function intChance(iv) {
 return (11 - clamp(iv, 1, 10)) / 10 * .5
 }
 const SN = ["CON", "STR", "AGI", "INT", "PER"];
-let money = 500,
+let dzAnim = 0,
+money = 500,
 bugbox = [],
 bid = 1,
 fightTeam = [],
@@ -14,7 +15,7 @@ fightMode = 1,
 mayhem = !1,
 enemyTier = 0,
 lastSurvivors = null,
-breedSt = {
+labSt = {
 phase: "pick",
 pA: null,
 pB: null,

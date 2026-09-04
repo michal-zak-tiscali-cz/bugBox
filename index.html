@@ -8,13 +8,15 @@
 </head>
 <body>
 <script>
-/* v61.5 crash reporter — shows load errors on screen (no desktop console on Android) */
+/* crash reporter — shows load errors on screen (no desktop console on Android) */
 (function(){
 function bar(){var e=document.getElementById("err-bar");if(!e){e=document.createElement("div");e.id="err-bar";e.style="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#300;border-top:2px solid #f44;color:#f99;font:9px 'Courier New',monospace;padding:5px;white-space:pre-wrap;max-height:45%;overflow:auto";(document.body||document.documentElement).appendChild(e)}return e}
 window.addEventListener("error",function(ev){
-if(ev.target&&ev.target.tagName==="SCRIPT"){bar().textContent+="MISSING FILE: "+ev.target.getAttribute("src")+"\n";return}
-bar().textContent+=(ev.filename||"").split("/").pop()+":"+ev.lineno+"  "+ev.message+"\n"
+var t=ev.target;
+if(t&&t.tagName){bar().textContent+="LOAD FAIL: "+t.tagName+" "+(t.getAttribute&&(t.getAttribute("src")||t.getAttribute("href"))||"")+"\n";return}
+bar().textContent+=(ev.filename||"?").split("/").pop()+":"+ev.lineno+"  "+(ev.message||(ev.error&&ev.error.stack)||("EVENT "+ev.type+" on "+(t&&(t.nodeName||t.constructor&&t.constructor.name)||typeof t)))+"\n"
 },true);
+window.addEventListener("unhandledrejection",function(ev){bar().textContent+="PROMISE: "+(ev.reason&&(ev.reason.stack||ev.reason.message)||ev.reason)+"\n"});
 window.addEventListener("load",function(){
 ["shopDone","toggleFow","syncFowBtn","inspectLine"].forEach(function(n){
 if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
@@ -40,7 +42,7 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <div class="sep"></div>
 <span>Budget:</span><span class="money" id="shop-money">$500</span>
 <span class="dim" id="shop-cart-info">0 bugs selected</span>
-<button class="bugbox-nav btn-std" id="btn-shop-done" style="margin-left:auto;">BugBox →</button>
+<button class="nav-terr bt" id="bt-buy" style="margin-left:auto;">BugBox →</button>
 </div>
 <div class="scroll">
 <p style="font-size:9px;color:#555566;margin-bottom:10px;">
@@ -54,72 +56,73 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <span class="title" id="terr-title" style="color:#4f8;">BUGBOX</span>
 <div class="sep"></div>
 <span class="money" id="terr-money">$0</span>
-<button class="btn-std" id="btn-game-settings" style="margin-left:auto;">⚙ Settings</button>
-<button class="go-btn btn-std" id="btn-buy-more">Market 🛒</button>
-<button class="warn btn-std" id="btn-go-combatMode">⚔ ARENA →</button>
-<button class="warn btn-std" id="btn-leave" style="display:none;margin-left:auto;">← Leave</button>
+<button class="bt" id="bt-set" style="margin-left:auto;">⚙ Settings</button>
+<button class="nav-shop bt bt-shop" id="bt-terr-shop">Market 🛒</button>
+<button class="warn bt" id="bt-chal">⚔ CHALLENGE →</button>
+<button class="warn bt" id="bt-leave" style="display:none;margin-left:auto;">← Leave</button>
 </div>
 <canvas id="terr-canvas"></canvas>
 <div id="terr-bar">
 <div id="terr-bar-row" style="justify-content:flex-end;">
-<button class="btn-std" id="btn-fow" style="display:none;" title="fog of war: hide everything outside the focused bug's field of view">👁 FOW</button>
-<button class="breed-nav btn-std" id="btn-go-breed">↓ BREED 🧬</button>
-<button id="btn-open-design" class="btn-std">🎨 DESIGN</button>
-<button class="btn-std" onclick="openSettingsOverlay()">📖 INFO</button>
-<button id="btn-speed" class="btn-std">Speed 1×</button>
-<button id="btn-step" class="btn-std" style="display:none;" title="pause the fight, then step it one 16 ms tick at a time">❚❚ PAUSE</button>
+<button class="bt" id="bt-fow" style="display:none;" title="fog of war: hide everything outside the focused bug's field of view">👁 FOW</button>
+<button class="nav-lab bt" id="bt-lab">↓ BREED 🧬</button>
+<button id="bt-des" class="bt">🎨 DESIGN</button>
+<button class="bt" id="bt-inf" onclick="openInfoTab('tut')">📖 INFO</button>
+<button id="bt-speed" class="bt">Speed 1×</button>
+<button id="bt-pause" class="bt" style="display:none;" title="pause the fight, then step it one 16 ms tick at a time">❚❚ PAUSE</button>
 </div>
 <span id="terr-info">— select a bug to inspect —</span>
 </div>
-<div id="sci-hud" style="display:none;position:absolute;right:6px;top:40px;z-index:40;flex-direction:column;align-items:stretch;gap:2px;"></div>
-<div id="result-ov">
-<h2 id="result-title"></h2>
-<div class="result-content" id="result-body"></div>
+<div id="hud-sci" style="display:none;position:absolute;right:6px;top:40px;z-index:40;flex-direction:column;align-items:stretch;gap:2px;"></div>
+<div id="ov-res">
+<h2 id="res-title"></h2>
+<div class="res-content" id="res-body"></div>
 </div>
 </div>
-<div class="screen" id="s-breed">
+<div class="screen" id="s-lab">
 <div class="topbar">
 <span class="title" style="color:#a4f;">BREEDING LAB</span>
 <div class="sep"></div>
-<span class="money" id="breed-money"></span>
-<button class="go-btn btn-std" id="btn-breed-market" style="margin-left:auto;">Market 🛒</button>
-<button class="bugbox-nav btn-std" id="btn-breed-back">↑ BugBox</button>
+<span class="money" id="lab-money"></span>
+<button class="nav-shop bt bt-shop" style="margin-left:auto;">Market 🛒</button>
+<button class="nav-terr bt bt-terr">↑ BugBox</button>
 </div>
-<div class="breed-layout" id="breed-layout">
+<div class="lab-layout" id="lab-layout">
 </div>
 </div>
-<div class="screen" id="s-arena">
+<div class="screen" id="s-chal">
 <div class="topbar">
-<span class="title" style="color:#fa4;">ARENA</span>
+<span class="title" style="color:#fa4;">CHALLENGE</span>
 <div class="sep"></div>
-<span id="arena-info" style="color:#888;font-size:10px;"></span>
-<button id="btn-arena-market" class="go-btn btn-std" style="margin-left:auto;display:none;">← Market</button>
-<button id="btn-arena-back" class="bugbox-nav btn-std" style="margin-left:auto;">← BugBox</button>
-<button class="warn btn-std" id="btn-arena-go" disabled>⚔ FIGHT →</button>
+<span id="chal-info" style="color:#888;font-size:10px;"></span>
+<button id="bt-chal-shop" class="nav-shop bt bt-shop" style="margin-left:auto;display:none;">← Market</button>
+<button id="bt-chal-terr" class="nav-terr bt bt-terr" style="margin-left:auto;">← BugBox</button>
+<button class="warn bt" id="bt-combat" disabled>⚔ FIGHT →</button>
 </div>
-<div class="arena-layout">
+<div class="chal-layout">
 <div>
 <span style="font-size:10px;color:#888;">Mode: </span>
 <div class="mode-row">
-<button class="mode-btn prim" id="btn-mode-1v1" onclick="setMode(1)">1 v 1</button>
-<button class="mode-btn" id="btn-mode-3v3" onclick="setMode(3)">3 v 3</button>
-<button class="mode-btn" id="btn-mode-6v6" onclick="setMode(6)">6 v 6</button>
-<button class="mode-btn" id="btn-mode-mayhem" onclick="setMayhem()">MAYHEM</button>
+<button class="bt-mode prim" id="bt-1v1" onclick="setMode(1)">1 v 1</button>
+<button class="bt-mode" id="bt-2v2" onclick="setMode(2)">2 v 2</button>
+<button class="bt-mode" id="bt-3v3" onclick="setMode(3)">3 v 3</button>
+<button class="bt-mode" id="bt-6v6" onclick="setMode(6)">6 v 6</button>
+<button class="bt-mode" id="bt-mayhem" onclick="setMayhem()">MAYHEM</button>
 </div>
 <span style="font-size:9px;color:#555566;">Enemy tier: </span>
 <div class="mode-row" style="margin-top:4px;">
-<button style="font-size:9px;padding:3px 10px;" id="btn-t0" onclick="setTier(0)">Weak (+$80)</button>
-<button style="font-size:9px;padding:3px 10px;" id="btn-t1" onclick="setTier(1)">Even (+$180)</button>
-<button style="font-size:9px;padding:3px 10px;" id="btn-t2" onclick="setTier(2)">Strong (+$350)</button>
+<button class="bt-tier" id="bt-t0" onclick="setTier(0)">Weak (+$80)</button>
+<button class="bt-tier" id="bt-t1" onclick="setTier(1)">Even (+$180)</button>
+<button class="bt-tier" id="bt-t2" onclick="setTier(2)">Strong (+$350)</button>
 </div>
 <p style="font-size:9px;color:#555566;margin-top:4px;">
 <span style="color:#ff4444;">⚠</span> Bugs that LOSE a fight DIE permanently.
 </p>
 </div>
-<div class="arena-grid" id="arena-grid"></div>
+<div class="chal-grid" id="chal-grid"></div>
 </div>
 </div>
-<div id="over-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:300;align-items:center;justify-content:center;padding:20px;">
+<div id="ov-over" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:300;align-items:center;justify-content:center;padding:20px;">
 <div class="intro-frame" style="max-width:520px;width:94%;height:33vh;min-height:190px;display:flex;flex-direction:column;justify-content:center;">
 <div style="flex:0.85;"></div>
 <div class="dos-title" style="font-size:clamp(20px,8vw,40px);color:#f44;text-shadow:0 0 16px #ff444488;">GAME OVER</div>
@@ -129,21 +132,21 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 Looks like you have ran out of bugs to kill... Good!
 </div>
 <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-<button class="btn-std" onclick="openInfoTab('ach')">🏅 Achievements</button>
-<button class="btn-std" onclick="openInfoTab('rec')">🏆 Records</button>
+<button class="bt" onclick="openInfoTab('ach')">🏅 Achievements</button>
+<button class="bt" onclick="openInfoTab('rec')">🏆 Records</button>
 </div>
 </div>
 </div>
 <div id="toast"></div>
-<div id="settings-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:350;align-items:center;justify-content:center;padding:20px;">
+<div id="ov-inf" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:350;align-items:center;justify-content:center;padding:20px;">
 <div class="intro-frame" style="max-width:560px;width:100%;">
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(134px,1fr));gap:6px;margin-bottom:6px;">
-<button class="btn-std info-tab" data-tab="tut" onclick="infoTab('tut')">🎓 Tutorial</button>
-<button class="btn-std info-tab" data-tab="ach" onclick="infoTab('ach')">🏅 Achievements</button>
-<button class="btn-std info-tab" data-tab="rec" onclick="infoTab('rec')">🏆 Records</button>
-<button class="btn-std info-tab" data-tab="info" onclick="infoTab('info')">📖 Info</button>
-<button class="btn-std info-tab" data-tab="morph" onclick="infoTab('morph')">🐞 Morphology</button>
-<button class="btn-std info-tab" data-tab="abil" onclick="infoTab('abil')">⬢ Abilities</button>
+<button class="bt info-tab" data-tab="tut" onclick="infoTab('tut')">🎓 Tutorial</button>
+<button class="bt info-tab" data-tab="ach" onclick="infoTab('ach')">🏅 Achievements</button>
+<button class="bt info-tab" data-tab="rec" onclick="infoTab('rec')">🏆 Records</button>
+<button class="bt info-tab" data-tab="info" onclick="infoTab('info')">📖 Info</button>
+<button class="bt info-tab" data-tab="morph" onclick="infoTab('morph')">🐞 Morphology</button>
+<button class="bt info-tab" data-tab="abil" onclick="infoTab('abil')">⬢ Abilities</button>
 </div>
 <hr class="dos-hr">
 <div id="itab-info" class="itab" style="font-size:10px;color:#aabbaa;line-height:1.8;max-height:60vh;overflow-y:auto;padding:0 4px;">
@@ -168,32 +171,32 @@ Gen = generation · K = kills · F = fights fought</p>
 <div id="info-foot" style="display:flex;gap:8px;justify-content:center;"></div>
 </div>
 </div>
-<div id="design-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:150;align-items:flex-start;justify-content:center;padding:6px;box-sizing:border-box;">
-<div class="intro-frame" id="design-box" style="max-width:100vw;width:100%;box-sizing:border-box;display:flex;flex-direction:column;">
+<div id="ov-design" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:150;align-items:flex-start;justify-content:center;padding:6px;box-sizing:border-box;">
+<div class="intro-frame" id="dz-box" style="max-width:100vw;width:100%;box-sizing:border-box;display:flex;flex-direction:column;">
 <div class="dos-title" style="font-size:15px;margin-bottom:2px;">🎨 BUG DESIGNER</div>
 <div style="color:#886;font-size:9px;text-align:center;margin:0 0 3px;">Temporary tool - free while movement and combat are being tuned. Can be opened during a fight.</div>
 <hr class="dos-hr">
 <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
-<canvas id="design-cv" style="background:#0a0a12;border:1px solid #2a2a4a;flex-shrink:0;"></canvas>
+<canvas id="dz-cv" style="background:#0a0a12;border:1px solid #2a2a4a;flex-shrink:0;"></canvas>
 <input type="range" id="dz-zoom" class="dz-zoom" min="100" max="400" value="400">
-<div id="design-abils" style="flex:1 1 150px;min-width:0;"></div>
+<div id="dz-abils" style="flex:1 1 150px;min-width:0;"></div>
 </div>
 <div class="dz-wrap">
 <div class="dz-scroll">
-<div id="design-controls"></div>
-<div id="design-extras"></div>
+<div id="dz-ctr"></div>
+<div id="dz-extras"></div>
 </div>
 </div>
 <hr class="dos-hr">
 <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-<button class="btn-std" id="btn-design-rnd-m">🎲 RND M</button>
-<button class="btn-std" id="btn-design-rnd-s">🎲 RND S</button>
-<button class="ok" id="btn-design-spawn" style="padding:6px 18px;"></button>
-<button class="btn-std" onclick="closeDesignOverlay()">Close</button>
+<button class="bt" id="bt-dz-rnd-m">🎲 RND M</button>
+<button class="bt" id="bt-dz-rnd-s">🎲 RND S</button>
+<button class="ok" id="bt-dz-spawn" style="padding:6px 18px;"></button>
+<button class="bt" onclick="ov('ov-design',0)">Close</button>
 </div>
 </div>
 </div>
-<div id="gsettings-ov" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:150;align-items:center;justify-content:center;padding:20px;">
+<div id="ov-set" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:150;align-items:center;justify-content:center;padding:20px;">
 <div class="intro-frame" style="max-width:320px;width:100%;">
 <div class="dos-title" style="font-size:15px;margin-bottom:4px;">⚙ SETTINGS</div>
 <hr class="dos-hr">
@@ -207,14 +210,14 @@ Science!
 </label>
 <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#aabbaa;padding:6px 2px;">
 Walk
-<select id="gset-gait" onchange="setGait(this.value)" style="flex:1;background:#0a0a12;color:#aabbaa;border:1px solid #2a2a4a;font-size:11px;padding:2px;">
+<select onchange="setGait(this.value)" style="flex:1;background:#0a0a12;color:#aabbaa;border:1px solid #2a2a4a;font-size:11px;padding:2px;">
 <option value="0">Funny (sin)</option>
 <option value="1">Realish (tripod)</option>
 </select>
 </label>
 <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#aabbaa;padding:6px 2px;">
 Bug palette
-<select id="gset-pal" onchange="setPalette(this.value)" style="flex:1;background:#0a0a12;color:#aabbaa;border:1px solid #2a2a4a;font-size:11px;padding:2px;">
+<select onchange="setPalette(this.value)" style="flex:1;background:#0a0a12;color:#aabbaa;border:1px solid #2a2a4a;font-size:11px;padding:2px;">
 <option value="0">Original</option>
 <option value="1">Pastel</option>
 <option value="2">Realistic</option>
@@ -222,7 +225,7 @@ Bug palette
 </label>
 <hr class="dos-hr">
 <div style="text-align:center;">
-<button class="ok" onclick="overlay('gsettings-ov',0)" style="font-size:12px;padding:6px 28px;">OK</button>
+<button class="ok" onclick="ov('ov-set',0)" style="font-size:12px;padding:6px 28px;">OK</button>
 </div>
 </div>
 </div>
@@ -237,18 +240,18 @@ Bug palette
 <script src="drawbug.js"></script>
 <script src="shop.js"></script>
 <script src="ecs.js"></script>
-<script src="terrarium.js"></script>
+<script src="terr.js"></script>
 <script src="move.js"></script>
 <script src="mate.js"></script>
-<script src="breed.js"></script>
-<script src="arena.js"></script>
-<script src="combat.js"></script>
+<script src="lab.js"></script>
+<script src="chal.js"></script>
+<script src="combatai.js"></script>
 <script src="render.js"></script>
 <script src="input.js"></script>
 <script src="loop.js"></script>
 <script src="fight.js"></script>
 <script src="speed.js"></script>
-<script src="designer.js"></script>
+<script src="dz.js"></script>
 <script src="wiki.js"></script>
 <script src="records.js"></script>
 <script src="main.js"></script>

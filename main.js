@@ -10,9 +10,7 @@ drawMorphBug(ctx, m, morphColor([120, 30, 275][i]), cx, 32, 0, { scale: morphFit
 [190, 52]
 ].forEach(([x, y]) => ctx.fillRect(x, y, 2, 2))
 }();
-$("btn-shop-done").onclick = shopDone;
-$("btn-buy-more").onclick = () => { openShop(), showScreen("s-shop") };
-$("btn-arena-market").onclick = () => { openShop(), showScreen("s-shop") };
+$("bt-buy").onclick = shopDone;
 boxCv.addEventListener("pointerdown", e => {
 const [cx, cy] = boxPt(e), t = draggableAt(cx, cy);
 if (!t || !canDrag(t.kind)) return;
@@ -64,37 +62,30 @@ if (obstacleAt(cx, cy) != null) return;
 ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed()
 }, window.addEventListener("resize", () => {
 resizeBoxCV(), $("s-terr").classList.contains("active") && !combatMode && spawnBoxBugs()
-}), $("btn-go-breed").onclick = () => openBreedScreen(), $("btn-go-combatMode").onclick = () => {
-openArena(), showScreen("s-arena")
-}, $("btn-breed-back").onclick = () => {
-if ("result" === breedSt.phase && breedSt.larva) {
-const l = breedSt.larva;
-bugbox.some(x => x.id === l.id) || bugbox.push(l), breedSt.larva = null
-}
-showScreen("s-terr"), initBugBox()
-}, $("btn-breed-market").onclick = () => {
-goShop(), showScreen("s-shop")
-}, document.addEventListener("click", closeKillOverlay), $("btn-arena-go").onclick = startFight, $("btn-arena-back").onclick = () => {
-backToBugBox()
-};
-$("btn-speed").onclick = () => {
+}), $("bt-lab").onclick = () => openLab(), $("bt-chal").onclick = () => {
+openChal(), showScreen("s-chal")
+}, document.addEventListener("click", e => {
+if (e.target.closest(".bt-shop")) return combatMode && goTerr(), goShop();
+e.target.closest(".bt-terr") && goTerr()
+}), document.addEventListener("click", closeKill), $("bt-combat").onclick = startFight;
+$("bt-speed").onclick = () => {
 const seq = [.5, 1, 2, 4, 16],
 cur = simSpd === 0 ? speedBeforePause : simSpd,
 next = seq[(seq.indexOf(cur) + 1) % seq.length];
 speedBeforePause = next, simSpd === 0 || (simSpd = next), tickDebt = 0, syncSpeedLabel()
-}, $("btn-step").onclick = () => {
+}, $("bt-pause").onclick = () => {
 simSpd === 0 ? simSpd = speedBeforePause : (speedBeforePause = simSpd, simSpd = 0);
 tickDebt = 0, syncSpeedLabel()
-}, $("btn-leave").onclick = () => {
+}, $("bt-leave").onclick = () => {
 achieve("abandon");
 const survivors = boxBugs.filter(f => 0 === f.team && !f.dead).map(f => f.b);
-endCombatMode(), spawnBoxBugs(), openArena(!0, survivors), showScreen("s-arena"), toast("Fight abandoned. Your bugs are safe.")
+endCombatMode(), spawnBoxBugs(), openChal(!0, survivors), showScreen("s-chal"), toast("Fight abandoned. Your bugs are safe.")
 }, updateMoney();
-$("btn-open-design").onclick = openDesignOverlay;
-$("btn-game-settings").onclick = () => {
+$("bt-des").onclick = openDz;
+$("bt-set").onclick = () => {
 $("gset-snd").checked = sound.on;
 $("gset-sci").checked = scienceOn;
-overlay("gsettings-ov", 1)
+ov("ov-set", 1)
 };
 $("gset-snd").onchange = e => { sound.on = e.target.checked };
-$("btn-fow") && ($("btn-fow").onclick = () => toggleFow());
+$("bt-fow") && ($("bt-fow").onclick = () => toggleFow());
