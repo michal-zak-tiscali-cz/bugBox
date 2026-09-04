@@ -1,5 +1,5 @@
 function renderRecords() {
-const liveGen = bugbox.reduce((m, b) => max(m, b.gen || 1), 0);
+const liveGen = bugsOwned.reduce((m, b) => max(m, b.gen || 1), 0);
 liveGen > records.longestDynasty && (records.longestDynasty = liveGen, saveRecords());
 const winRate = records.fights ? round(records.wins / records.fights * 100) : 0,
 r = (l, v, c) => `<div>${l}: <b style="color:${c};">${v}</b></div>`;

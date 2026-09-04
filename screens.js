@@ -16,15 +16,15 @@ function ov(id, on) { on || cancelAnimationFrame(dzAnim), $(id).style.display = 
 function showScreen(id) {
 "s-shop" === id || cancelOverWatch();
 "s-terr" === id || markEggsReady();
-("s-terr" !== id || !combatMode) && ov("ov-res", 0);
-"s-terr" !== id || combatMode || (simSpd = 1, tickDebt = 0, syncSpeedLabel());
+("s-terr" !== id || !combatState) && ov("ov-res", 0);
+"s-terr" !== id || combatState || (simSpd = 1, tickDebt = 0, syncSpeedLabel());
 document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")), $(id).classList.add("active"), syncSimLoop();
 if ("s-terr" === id) {
-combatMode || hatchReadyEggs();
-const wantCombat = combatMode;
+combatState || hatchReadyEggs();
+const wantCombat = combatState;
 requestAnimationFrame(() => {
 requestAnimationFrame(() => {
-combatMode === wantCombat && (resizeBoxCV(), combatMode && ecsQuery("bug").length || spawnBoxBugs())
+combatState === wantCombat && (resizeBoxCV(), combatState && ecsQuery("bug").length || spawnTerr())
 })
 })
 }

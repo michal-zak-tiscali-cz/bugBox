@@ -18,7 +18,7 @@ p = C.pos.get(e),
 v = C.vel.get(e),
 t = C.think.get(e),
 w = C.wall.get(e);
-combatMode || ("fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = hpFrac(b) < 1 ? "seeking" : "peace"));
+combatState || ("fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = hpFrac(b) < 1 ? "seeking" : "peace"));
 if ("prePause" === w.phase) return t.pauseTimer -= dt, void(t.pauseTimer <= 0 && (w.phase = "rotating"));
 if ("rotating" === w.phase) {
 if (!turnToward(p, w.targetAngle, turningOf(b) * dtS)) return;
@@ -257,7 +257,7 @@ boxCx.restore()
 })
 }
 function sysRegen(dtS) {
-bugbox.forEach(b => {
+bugsOwned.forEach(b => {
 const mx = maxHpOf(b);
 b.curHp == null && (b.curHp = mx);
 b.hitT > 0 && (b.hitT = max(0, b.hitT - 5 * dtS));

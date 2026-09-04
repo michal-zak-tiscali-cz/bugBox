@@ -7,12 +7,12 @@ const scaleMaxOf = list => list.some(b => SK.some(k => b[k] >= 6)) ? 10 : 5;
 function statBars(statsObj, opts) {
 const fs = (opts = opts || {}).fontSize || 8,
 dead = opts.dead || !1,
-scale = 100 / (opts.scaleMax || scaleMaxOf(bugbox)),
+scale = 100 / (opts.scaleMax || scaleMaxOf(bugsOwned)),
 total = statSum(statsObj);
-return `<div class="sbar" style="justify-content:flex-end;"><span class="sv" style="font-size:${fs}px;color:${dead?"#555":"#888"}">(${round(total)})</span></div>` + SK.map((k, i) => {
+return `<div class="sr" style="justify-content:flex-end;"><span class="sv" style="font-size:${fs}px;color:${dead?"#555":"#888"}">(${round(total)})</span></div>` + SK.map((k, i) => {
 const sv = statsObj[k],
 bc = dead ? "#444" : statColor(sv);
-return `<div class="sbar"><span class="sl" style="font-size:${fs}px;">${SN[i]}</span><div class="st"${opts.barW?` style="width:${opts.barW}px;flex:none;"`:""}><div class="sf" style="width:${clamp(scale*sv,0,100)}%;background:${bc}"></div></div><span class="sv" style="font-size:${fs}px;color:${dead?"#555":"#888"}">${round(sv)}</span></div>`
+return `<div class="sr"><span class="sl" style="font-size:${fs}px;">${SN[i]}</span><div class="st"${opts.barW?` style="width:${opts.barW}px;flex:none;"`:""}><div class="sf" style="width:${clamp(scale*sv,0,100)}%;background:${bc}"></div></div><span class="sv" style="font-size:${fs}px;color:${dead?"#555":"#888"}">${round(sv)}</span></div>`
 }).join("")
 }
 const SYL1 = ["Kr", "Veth", "Dor", "Br", "Zeph", "Th", "Ol", "Nex", "Grix", "Vael", "Mir", "Jex", "Wyr", "Sk", "Ph"],

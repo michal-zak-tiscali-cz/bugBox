@@ -42,8 +42,8 @@ dzDefaults();
 $("dz-extras").innerHTML = dzStatRows();
 $("dz-abils").innerHTML =
 [0, 1, 2, 3].map(i => `<div class="dz-row"><select id="dz-abil-${i}">${dzAbils(i)}</select></div>`).join("") +
-(combatMode ? `<div class="dz-row"><span class="dz-lbl">Add to</span>
-       <button class="bt" id="bt-dz-side" style="padding:2px 8px;">${dzSide === 0 ? "YOUR TEAM" : "ENEMY"}</button></div>` : "");
+(combatState ? `<div class="dz-row"><span class="dz-lbl">Add to</span>
+       <button class="bt" id="bt-des-side" style="padding:2px 8px;">${dzSide === 0 ? "YOUR TEAM" : "ENEMY"}</button></div>` : "");
 SK.forEach(bindRange);
 [0, 1, 2, 3].forEach(i => {
 $("dz-abil-" + i).onchange = ev => {
@@ -53,7 +53,7 @@ if (id) { const k = ABILITIES[id].stat; dz[k] = max(dz[k], 5) }
 dz.link && Object.assign(dz, statMorph(dz)), dzExtras(), dzRefresh()
 }
 });
-const sideBtn = $("bt-dz-side");
+const sideBtn = $("bt-des-side");
 sideBtn && (sideBtn.onclick = () => { dzSide = dzSide ? 0 : 1, dzExtras() })
 }
 function bindRange(k) {
@@ -78,21 +78,21 @@ $("dz-link").onchange = e => {
 dz.link = e.target.checked ? 1 : 0;
 dz.link && Object.assign(dz, statMorph(dz)), dzRefresh()
 };
-$("bt-dz-rnd-m").onclick = () => {
+$("bt-des-rnd-m").onclick = () => {
 const m = randomMorph();
 dz.link && Object.keys(MORPH_STAT).forEach(k => delete m[k]);
 Object.assign(dz, { hue: 20 * ri(18) }, m), dzRefresh(), dzExtras()
 };
-$("bt-dz-rnd-s").onclick = () => {
+$("bt-des-rnd-s").onclick = () => {
 dzDefaults(), SK.forEach(k => dz[k] = 1 + ri(10));
 dz.link && Object.assign(dz, statMorph(dz)), dzRefresh(), dzExtras()
 };
 $("dz-zoom").oninput = ev => dzZoom = (500 - ev.target.value) / 100;
-$("bt-dz-spawn").onclick = dzSpawn
+$("bt-des-spawn").onclick = dzSpawn
 }
 dzExtras(), dzRefresh();
 dzFit();
-$("bt-dz-spawn").textContent = "Spawn";
+$("bt-des-spawn").textContent = "Spawn";
 const cv = $("dz-cv"), ctx = hidpi(cv, 150, 130);
 cancelAnimationFrame(dzAnim);
 ! function tick() {
@@ -113,7 +113,7 @@ dzDefaults();
 const { hue, con, str, agi, int: intel, per, abils, link, ...m } = dz,
 picked = abils.filter(a => a),
 nb = makeBug({ hue: hue, morph: { ...m }, con: con, str: str, agi: agi, int: intel, per: per, abilities: picked });
-if (link || Object.assign(nb.morph, m), !combatMode) return bugbox.push(nb), achOwn(1), void updateMoney();
+if (link || Object.assign(nb.morph, m), !combatState) return bugsOwned.push(nb), achOwn(1), void updateMoney();
 const mhp = maxHpOf(nb);
 nb.mood = "seeking", nb.curHp = mhp;
 const lw = boxLW, lh = boxLH,

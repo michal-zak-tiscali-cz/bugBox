@@ -22,7 +22,7 @@ window.addEventListener("load",function(){
 if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 })})();
 </script>
-<div class="screen active" id="s-intro1" onclick="goShop()">
+<div class="screen active" id="s-intro1" onclick="openShop()">
 <div class="intro-frame">
 <canvas id="intro-art" width="200" height="60" style="display:block;margin:0 auto 10px;image-rendering:pixelated;"></canvas>
 <div class="dos-title" style="font-size:clamp(14px,5vw,24px);">★ BUGBOX ★</div>
@@ -67,7 +67,7 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <button class="bt" id="bt-fow" style="display:none;" title="fog of war: hide everything outside the focused bug's field of view">👁 FOW</button>
 <button class="nav-lab bt" id="bt-lab">↓ BREED 🧬</button>
 <button id="bt-des" class="bt">🎨 DESIGN</button>
-<button class="bt" id="bt-inf" onclick="openInfoTab('tut')">📖 INFO</button>
+<button class="bt" onclick="openInfoTab('tut')">📖 INFO</button>
 <button id="bt-speed" class="bt">Speed 1×</button>
 <button id="bt-pause" class="bt" style="display:none;" title="pause the fight, then step it one 16 ms tick at a time">❚❚ PAUSE</button>
 </div>
@@ -189,9 +189,9 @@ Gen = generation · K = kills · F = fights fought</p>
 </div>
 <hr class="dos-hr">
 <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-<button class="bt" id="bt-dz-rnd-m">🎲 RND M</button>
-<button class="bt" id="bt-dz-rnd-s">🎲 RND S</button>
-<button class="ok" id="bt-dz-spawn" style="padding:6px 18px;"></button>
+<button class="bt" id="bt-des-rnd-m">🎲 RND M</button>
+<button class="bt" id="bt-des-rnd-s">🎲 RND S</button>
+<button class="ok" id="bt-des-spawn" style="padding:6px 18px;"></button>
 <button class="bt" onclick="ov('ov-design',0)">Close</button>
 </div>
 </div>
@@ -250,7 +250,6 @@ Bug palette
 <script src="input.js"></script>
 <script src="loop.js"></script>
 <script src="fight.js"></script>
-<script src="speed.js"></script>
 <script src="dz.js"></script>
 <script src="wiki.js"></script>
 <script src="records.js"></script>

@@ -15,16 +15,30 @@ simFrame = requestAnimationFrame(simLoop);
 const real = simLastT ? min(ts - simLastT, 100) : 16.67;
 simLastT = ts;
 drawBoxBackdrop();
-if (!combatMode) ecsQuery("bug").length !== bugbox.length && spawnBoxBugs();
+if (!combatState) ecsQuery("bug").length !== bugsOwned.length && spawnTerr();
 tickDebt += real * simSpd / COMBAT_STEP_MS;
 let guard = 0;
 while (tickDebt >= 1 && guard++ < MAX_STEPS_PER_FRAME) {
-tickDebt -= 1;
-if (!combatMode) { tickPeaceful(COMBAT_STEP_MS); continue }
-tickFight(COMBAT_STEP_MS), checkFightEnd();
-if (fightDone) { tickDebt = 0; break }
+tickDebt -= 1, tick(COMBAT_STEP_MS, combatState);
+if (combatState && (checkFightEnd(), fightDone)) { tickDebt = 0; break }
 }
 if (guard >= MAX_STEPS_PER_FRAME) tickDebt = 0;
 sysAnimPhase(), syncHud();
-sysRender(combatMode)
+sysRender(combatState)
+}
+function tick(dt, fight) {
+const dtS = dt / 1e3,
+all = ecsQuery("bug", "pos", "vel", "think", "wall"),
+ents = fight ? all.filter(e => "fighting" !== C.bug.get(e).mood && !C.combat.get(e).dead) : all;
+fight && (sysSeek(ents), sysCombatAI(dt));
+sysThinkWander(dt, ents), sysSteer(dtS, ents), sysMove(dtS, fight ? all : ents);
+fight || (sysMate(dt, ents), sysFeed(), sysRegen(dtS));
+sysResolve(fight ? all : ents, dtS)
+}
+let speedBeforePause = 1;
+function syncSpeedLabel() {
+const el = $("bt-speed");
+el && (el.textContent = "Speed " + (simSpd === 0 ? speedBeforePause : simSpd) + "×");
+const st = $("bt-pause");
+st && (st.textContent = simSpd === 0 ? "\u25b6 PLAY" : "\u275a\u275a PAUSE")
 }

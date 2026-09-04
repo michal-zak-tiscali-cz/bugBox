@@ -46,7 +46,7 @@ childRow = $("lab-child-row");
 const mkCard = (bug, dead, isChild, lbl) => {
 if (dead || !bug) {
 const div = document.createElement("div");
-div.className = "bcard", div.style = "position:relative;flex:1;min-width:0;max-width:170px;box-sizing:border-box;";
+div.className = "card", div.style = "position:relative;flex:1;min-width:0;max-width:170px;box-sizing:border-box;";
 div.innerHTML = '<div class="empty-note">— gone —</div>';
 return div
 }
@@ -54,13 +54,13 @@ const card = makeKillableCard(bug, {
 uid: "hatch",
 extraStyle: "flex:1;min-width:0;max-width:170px;",
 onKill: cardDiv => {
-bugbox = bugbox.filter(x => x.id !== bug.id);
+bugsOwned = bugsOwned.filter(x => x.id !== bug.id);
 isChild ? (l.dead = !0) : (pA === bug ? st.pAdead = !0 : st.pBdead = !0);
 freezeCardAsGone(cardDiv)
 }
 });
 if (lbl) {
-const bn = card.querySelector(".uc-name");
+const bn = card.querySelector(".card-name");
 bn && (bn.innerHTML = `<span style="color:${lbl==="A"?"#ffdd44":"#44ff88"}">(${lbl}) </span>${bug.name}`)
 }
 return card
@@ -75,12 +75,12 @@ return
 function labApplyCard(div, b) {
 const isA = labSt.pA?.id === b.id,
 isB = labSt.pB?.id === b.id,
-bn = div.querySelector(".uc-name");
+bn = div.querySelector(".card-name");
 bn && (bn.innerHTML = `${isA?'<span style="color:#ffdd44">(A) </span>':isB?'<span style="color:#44ff88">(B) </span>':""}${b.name}`);
 const old = div.querySelector(".bt-breed");
 old && old.remove();
 if (labSt.pA && labSt.pB && (isA || isB)) {
-const info = div.querySelector(".uc-info"),
+const info = div.querySelector(".card-info"),
 gb = document.createElement("button");
 gb.className = "nav-lab bt-breed", gb.style = "font-size:10px;padding:3px 8px;margin-top:3px;", gb.textContent = "🧬 Breed", gb.onclick = e => { e.stopPropagation(), breedNow() };
 info && info.appendChild(gb)
@@ -94,11 +94,11 @@ labSt.pA && labSt.pB ? (labSt.larva = makeBug({
 ...computeOffspring(labSt.pA, labSt.pB),
 wins: 0,
 losses: 0
-}), labSt.pA.mated = labSt.pB.mated = 1, achKids(labSt.pA, labSt.pB), bugbox.push(labSt.larva), achOwn(1), achChild(labSt.larva), trackDynasty(labSt.larva.gen), SFX.hatch(), labSt.phase = "result", renderLab()) : toast("Select two bugs!")
+}), labSt.pA.mated = labSt.pB.mated = 1, achKids(labSt.pA, labSt.pB), bugsOwned.push(labSt.larva), achOwn(1), achChild(labSt.larva), trackDynasty(labSt.larva.gen), SFX.hatch(), labSt.phase = "result", renderLab()) : toast("Select two bugs!")
 }
 function labApplyAll(grid) {
-grid.querySelectorAll(".bcard").forEach(div => {
-const b = bugbox.find(x => String(x.id) === div.dataset.bid);
+grid.querySelectorAll(".card").forEach(div => {
+const b = bugsOwned.find(x => String(x.id) === div.dataset.bid);
 b && labApplyCard(div, b)
 }), labBar()
 }
@@ -123,13 +123,13 @@ let labSort = null;
 function setLabSort(k) { labSort = labSort === k ? null : k, renderLab() }
 function renderLabGrid(grid) {
 const sorter = BREED_SORT.find(r => r[0] === labSort),
-list = [...bugbox].sort((x, y) => sorter ? sorter[2](y) - sorter[2](x) : x.name.localeCompare(y.name));
+list = [...bugsOwned].sort((x, y) => sorter ? sorter[2](y) - sorter[2](x) : x.name.localeCompare(y.name));
 grid.innerHTML = "", list.forEach(b => {
 const div = makeKillableCard(b, {
 uid: "lab",
 onImgTap: cardDiv => { cardDiv.dataset.gone || labPick(b, cardDiv, grid, !0) },
 onKill: cardDiv => {
-bugbox = bugbox.filter(x => x.id !== b.id), labSt.pA?.id === b.id && (labSt.pA = null), labSt.pB?.id === b.id && (labSt.pB = null), labBar();
+bugsOwned = bugsOwned.filter(x => x.id !== b.id), labSt.pA?.id === b.id && (labSt.pA = null), labSt.pB?.id === b.id && (labSt.pB = null), labBar();
 freezeCardAsGone(cardDiv), labApplyAll(grid)
 }
 });
@@ -160,7 +160,7 @@ const HUE_OFF = [-40, -20, 20, 40];
 const mutQ4 = () => { const r = random(); return r < .25 ? -1 : r < .5 ? 0 : r < .75 ? 1 : 2 };
 function markMeta(card, b) {
 if (!b.meta) return;
-const rows = card.querySelectorAll(".sbar");
+const rows = card.querySelectorAll(".sr");
 SK.forEach((k, i) => {
 const row = rows[i + 1], m = b.meta[k];
 if (!row || !m) return;
@@ -186,7 +186,7 @@ return inheritAbilities(child, a, b), child
 function labBack() {
 const newId = labSt.larva.id;
 labSt.larva = null, openLab(!0), setTimeout(() => {
-const div = document.querySelector(`.pick-grid .bcard[data-bid="${newId}"]`);
+const div = document.querySelector(`.pick-grid .card[data-bid="${newId}"]`);
 div && (div.scrollIntoView({
 block: "center"
 }), flashBlocked(div))

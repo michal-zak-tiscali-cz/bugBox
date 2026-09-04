@@ -1,27 +1,17 @@
-function tickFight(dt) {
-const all = ecsQuery("bug", "pos", "vel", "think", "wall"),
-calm = all.filter(e => "fighting" !== C.bug.get(e).mood && !C.combat.get(e).dead);
-sysSeek(calm);
-sysCombatAI(dt);
-sysThinkWander(dt, calm), sysSteer(dt / 1e3, calm);
-sysMove(dt / 1e3, all);
-sysResolve(all, dt / 1e3)
-}
 const INTERACT_CHANCE = .10, MATE_COOLDOWN_MS = 15000, BOX_CAP = 100;
-const boxFull = () => bugbox.length + boxEggs.length >= BOX_CAP;
+const boxFull = () => bugsOwned.length + boxEggs.length >= BOX_CAP;
 const MATE_HOLD_MIN = 3000, MATE_HOLD_MAX = 7000, MATE_TURN_MAX = 1500;
 let boxEggs = [], mates = [], scraps = [], mateTouch = new Set();
 function eggRadius(a, b) { return max(bodyLenOf(a), bodyLenOf(b)) * .25 }
 const SCRAP_REACH = 2.5, SCRAP_CONE = 1;
-const mateOdds = () => bugbox.length <= 3 ? 1 : bugbox.length <= 10 ? .5 : .25;
+const mateOdds = () => bugsOwned.length <= 3 ? 1 : bugsOwned.length <= 10 ? .5 : .25;
 const nibble = (a, t) => (t.hitT = 1, t.curHp = max(1, (t.curHp == null ? maxHpOf(t) : t.curHp) - a.str * rollVar()));
 function interactEligible(b) {
-return !combatMode && "peace" === b.mood && !(b.mateCd > 0) && !b.mating && !b.scrap
+return "peace" === b.mood && !(b.mateCd > 0) && !b.mating && !b.scrap
 }
 function sysMate(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => { const b = C.bug.get(e); b.mateCd > 0 && (b.mateCd -= dt) });
-if (!combatMode) {
 const seen = new Set();
 for (let i = 0; i < ents.length; i++)
 for (let j = i + 1; j < ents.length; j++) {
@@ -44,10 +34,10 @@ ba.mating = bbg.mating = 1;
 mates.push({ sub, top, phase: "turn", t: 0, hold: 0 })
 }
 mateTouch = seen
-}
+
 for (let k = scraps.length - 1; k >= 0; k--) {
 const s = scraps[k];
-if (!combatMode && ECS.pos.has(s.a) && ECS.pos.has(s.b)) {
+if (!combatState && ECS.pos.has(s.a) && ECS.pos.has(s.b)) {
 const pa = C.pos.get(s.a), pb = C.pos.get(s.b);
 if (hypot(pb.x - pa.x, pb.y - pa.y) <= sepPair(s.a, s.b) * SCRAP_REACH) {
 for (const [x, y, k2] of [[s.a, s.b, "ta"], [s.b, s.a, "tb"]]) {
@@ -63,7 +53,7 @@ scrapEnd(s), scraps.splice(k, 1)
 }
 for (let k = mates.length - 1; k >= 0; k--) {
 const m = mates[k];
-if (combatMode || !ECS.pos.has(m.sub) || !ECS.pos.has(m.top)) { mateEnd(m, !1), mates.splice(k, 1); continue }
+if (combatState || !ECS.pos.has(m.sub) || !ECS.pos.has(m.top)) { mateEnd(m, !1), mates.splice(k, 1); continue }
 const sp = C.pos.get(m.sub), tp = C.pos.get(m.top),
 sb = C.bug.get(m.sub), tb = C.bug.get(m.top);
 if ("turn" === m.phase) {
@@ -131,14 +121,9 @@ boxEggs.forEach(g => {
 if (!g.ready) return void keep.push(g);
 const nb = g.bug;
 nb.curHp = maxHpOf(nb), nb.mood = "peace", nb.mateCd = MATE_COOLDOWN_MS, nb.mating = 0;
-bugbox.push(nb), achOwn(1), achChild(nb), achStep("hatched", [1, 10], "hatch");
+bugsOwned.push(nb), achOwn(1), achChild(nb), achStep("hatched", [1, 10], "hatch");
 trackDynasty(nb.gen);
 SFX.hatch()
 });
 boxEggs = keep
-}
-function tickPeaceful(dt) {
-const dtS = dt / 1e3,
-ents = ecsQuery("bug", "pos", "vel", "think", "wall");
-sysThinkWander(dt, ents), sysSteer(dtS, ents), sysMove(dtS, ents), sysMate(dt, ents), sysFeed(), sysRegen(dtS), sysResolve(ents, dtS)
 }

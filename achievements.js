@@ -3,7 +3,7 @@ let records = { ...RECORDS0 };
 try { const s = localStorage.getItem("bugbox_records"); s && (records = { ...records, ...JSON.parse(s) }) } catch (e) {}
 function saveRecords() { try { localStorage.setItem("bugbox_records", JSON.stringify(records)) } catch (e) {} }
 records.games++, saveRecords();
-let prog = { done: {}, own: 0, ownMax: 0, fed: 0, bought: 0, kills: 0, wins: 0, streak: 0, bred: 0, lost: 0, culled: 0, hatched: 0 };
+let achSt = { done: {}, own: 0, ownMax: 0, fed: 0, bought: 0, kills: 0, wins: 0, streak: 0, bred: 0, lost: 0, culled: 0, hatched: 0 };
 const TUTORIAL = [
 ["own", "own a bug"],
 ["feed", "feed a bug"],
@@ -100,29 +100,29 @@ const ACHIEVEMENTS = [
 const ACH_TEXT = {};
 [...TUTORIAL, ...ACHIEVEMENTS].forEach(([k, t]) => ACH_TEXT[k] = t);
 function achieve(k) {
-if (!ACH_TEXT[k] || prog.done[k]) return;
-prog.done[k] = 1, toast("Achieved: " + ACH_TEXT[k])
+if (!ACH_TEXT[k] || achSt.done[k]) return;
+achSt.done[k] = 1, toast("Achieved: " + ACH_TEXT[k])
 }
 function achStep(field, marks, prefix, add) {
-prog[field] += add == null ? 1 : add; marks.forEach(m => prog[field] >= m && achieve(prefix + m))
+achSt[field] += add == null ? 1 : add; marks.forEach(m => achSt[field] >= m && achieve(prefix + m))
 }
 function achOwn(added) {
-added && (prog.own += added), prog.ownMax = max(prog.ownMax, bugbox.length);
-records.maxBugs = max(records.maxBugs, bugbox.length);
-bugbox.forEach(b => {
+added && (achSt.own += added), achSt.ownMax = max(achSt.ownMax, bugsOwned.length);
+records.maxBugs = max(records.maxBugs, bugsOwned.length);
+bugsOwned.forEach(b => {
 (b.killsTotal || 0) > records.bestKill && (records.bestKill = b.killsTotal, records.bestName = b.name);
 const s = round(statSum(b));
 s > records.bestSum && (records.bestSum = s, records.bestSumName = b.name)
 });
 saveRecords();
-bugbox.length && achieve("own"), prog.ownMax >= 10 && achieve("own10"),
-[50, 75, 100].forEach(m => prog.own >= m && achieve("own" + m));
+bugsOwned.length && achieve("own"), achSt.ownMax >= 10 && achieve("own10"),
+[50, 75, 100].forEach(m => achSt.own >= m && achieve("own" + m));
 const kinds = new Set;
-bugbox.forEach(b => (b.abilities || []).forEach(a => kinds.add(a)));
+bugsOwned.forEach(b => (b.abilities || []).forEach(a => kinds.add(a)));
 kinds.size >= 10 && achieve("breeder10"), kinds.size >= ABIL_IDS.length && achieve("breeder20");
-bugbox.filter(b => (b.abilities || []).length >= 4).length >= 3 && achieve("elite4");
+bugsOwned.filter(b => (b.abilities || []).length >= 4).length >= 3 && achieve("elite4");
 boxFull() && achieve("fullBox");
-bugbox.length > 1 && bugbox.every(b => b.mated) && achieve("matedAll")
+bugsOwned.length > 1 && bugsOwned.every(b => b.mated) && achieve("matedAll")
 }
 function achKids(...parents) {
 parents.forEach(p => {
@@ -151,17 +151,17 @@ achieve("fight");
 lost && achStep("lost", [1, 5, 10, 25, 50], "lost", lost);
 [3, 6, 9, 15, 20].forEach(m => lost >= m && achieve("lostM" + m));
 records.fights++, won && records.wins++, saveRecords();
-if (!won) return void (prog.streak = 0);
+if (!won) return void (achSt.streak = 0);
 achieve(["beatWeak", "beatEven", "beatStrong"][enemyTier]), achieve(mayhem ? "winMayhem" : "win" + fightMode);
-prog.streak++, achStep("wins", [5, 25, 50], "win"),
-prog.streak >= 5 && achieve("streak5"), lost || achieve("flawless"), 1 === alive && achieve("lastStand")
+achSt.streak++, achStep("wins", [5, 25, 50], "win"),
+achSt.streak >= 5 && achieve("streak5"), lost || achieve("flawless"), 1 === alive && achieve("lastStand")
 }
 function achList(list) {
-return list.map(([k, t]) => `<div style="color:${prog.done[k]?"#44ff88":"#445566"};">${prog.done[k]?"\u2714":"\u2610"} ${t}</div>`).join("")
+return list.map(([k, t]) => `<div style="color:${achSt.done[k]?"#44ff88":"#445566"};">${achSt.done[k]?"\u2714":"\u2610"} ${t}</div>`).join("")
 }
 function renderTutorial() { $("itab-tut").innerHTML = achList(TUTORIAL) }
 function renderAchievements() {
-$("itab-ach").innerHTML = `<div style="color:#ffdd44;margin-bottom:6px;">${ACHIEVEMENTS.filter(([k])=>prog.done[k]).length} / ${ACHIEVEMENTS.length}</div>` + achList(ACHIEVEMENTS)
+$("itab-ach").innerHTML = `<div style="color:#ffdd44;margin-bottom:6px;">${ACHIEVEMENTS.filter(([k])=>achSt.done[k]).length} / ${ACHIEVEMENTS.length}</div>` + achList(ACHIEVEMENTS)
 }
 function addKills(n) { n > 0 && (records.kills += n, saveRecords(), achStep("kills", [10, 50, 100], "kill", n)) }
 function trackDynasty(gen) {

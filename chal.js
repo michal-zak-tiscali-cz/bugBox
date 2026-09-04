@@ -1,5 +1,5 @@
 function openChal(keepMode, keepTeam) {
-fightTeam = keepTeam ? keepTeam.filter(f => bugbox.find(b => b.id === f.id)).map(f => bugbox.find(b => b.id === f.id)) : [], keepMode || (fightMode = 1, mayhem = !1, enemyTier = 0), renderChalGrid(), updateChalUI()
+fightTeam = keepTeam ? keepTeam.filter(f => bugsOwned.find(b => b.id === f.id)).map(f => bugsOwned.find(b => b.id === f.id)) : [], keepMode || (fightMode = 1, mayhem = !1, enemyTier = 0), renderChalGrid(), updateChalUI()
 }
 function setMode(n) {
 mayhem = !1, fightMode = n, fightTeam = fightTeam.slice(0, n), updateChalUI(), renderChalGrid()
@@ -8,14 +8,14 @@ function setMayhem() {
 mayhem = !0, fightMode = 999, updateChalUI(), renderChalGrid()
 }
 function setTier(n) {
-const empty = !bugbox.length;
+const empty = !bugsOwned.length;
 enemyTier = n, ["bt-t0", "bt-t1", "bt-t2"].forEach((id, i) => {
 $(id).className = "bt-tier" + (!empty && i === n ? " prim" : "")
 });
 $("chal-info").textContent = empty ? "" : `${fightTeam.length}/${mayhem?"∞":fightMode} selected — ${TIER_LABEL[n]} enemies`
 }
 function updateChalUI() {
-const empty = !bugbox.length;
+const empty = !bugsOwned.length;
 $("bt-chal-shop").style.display = empty ? "" : "none";
 $("bt-chal-terr").style.marginLeft = empty ? "0" : "auto";
 ["bt-1v1", "bt-2v2", "bt-3v3", "bt-6v6"].forEach((id, i) => {
@@ -35,11 +35,11 @@ btn.className = "bt-sel", btn.textContent = sel ? "✓ Selected — remove" : "+
 function renderChalGrid() {
 const g = $("chal-grid");
 g.innerHTML = "";
-if (!bugbox.length) {
+if (!bugsOwned.length) {
 g.innerHTML = '<div class="empty-cell">Buy some bug first</div>';
 return
 }
-bugbox.forEach(b => {
+bugsOwned.forEach(b => {
 const div = makeBugCard({
 name: b.name,
 line3: gkfLine(b),

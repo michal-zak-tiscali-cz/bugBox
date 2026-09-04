@@ -10,7 +10,7 @@ return `<div style="width:3px;height:${h}px;border:1px solid #555566;flex-shrink
 function abilLine(b, dead) {
 const col = dead ? "#555" : "#c8f";
 const txt = (b.abilities && b.abilities.length) ? b.abilities.map(id => "\u2b22" + ABILITIES[id].name).join(" ") : "";
-return `<div class="uc-abils" style="color:${col};">${txt}</div>`
+return `<div class="card-abils" style="color:${col};">${txt}</div>`
 }
 function drawHpBar(p, frac, r, col) {
 const c = boxCx, w = 20, h = 3, x = p.x - w / 2, y = p.y - r - 8;
@@ -24,13 +24,13 @@ c.fillStyle = "#1a1a1a", c.fillRect(x, y, w, 2), c.fillStyle = "#fff", c.fillRec
 }
 function bugCardBody(o) {
 const hp = o.showHp ? vHpBar(o.dead ? 0 : o.hpFrac, 38) : "",
-img = `<div class="uc-img" id="${o.imgId}"></div>`,
-info = `<div class="uc-info"><div class="uc-name">${o.name}</div><div class="uc-line3">${o.line3}</div></div>`;
-return `<div class="uc-head">${hp}${img}${info}</div>${statBars(o.statsObj, { dead: !!o.dead, scaleMax: o.scaleMax })}${abilLine(o.abilB, o.dead)}`
+img = `<div class="card-img" id="${o.imgId}"></div>`,
+info = `<div class="card-info"><div class="card-name">${o.name}</div><div class="card-line">${o.line3}</div></div>`;
+return `<div class="card-head">${hp}${img}${info}</div>${statBars(o.statsObj, { dead: !!o.dead, scaleMax: o.scaleMax })}${abilLine(o.abilB, o.dead)}`
 }
 function makeBugCard(o) {
 const div = document.createElement("div");
-div.className = "bcard";
+div.className = "card";
 o.style && (div.style = o.style);
 div.innerHTML = bugCardBody(o);
 const ph = div.querySelector("#" + o.imgId);
@@ -53,7 +53,7 @@ img: bug,
 style: "position:relative;" + (opts.extraStyle || "")
 });
 const phEl = div.querySelector("#" + imgId);
-const infoEl = div.querySelector(".uc-info");
+const infoEl = div.querySelector(".card-info");
 infoEl.style.position = "relative";
 infoEl.style.minHeight = "30px";
 const skullWrap = document.createElement("div");
@@ -81,7 +81,7 @@ opts.onKill && opts.onKill(div)
 return div
 }
 function freezeCardAsGone(div) {
-div.classList.remove("card-sel", "card-sel-blue", "blocked-fill", "blocked-fade");
+div.classList.remove("card-sel", "card-sel2", "blocked-fill", "blocked-fade");
 delete div.dataset.bid;
 div.dataset.gone = "1", div.style.cursor = "default";
 const fixedW = div.offsetWidth, fixedH = div.offsetHeight;
@@ -116,4 +116,11 @@ function toast(m) {
 const el = $("toast"), r = $("terr-canvas").getBoundingClientRect();
 r.height && (toastBot = innerHeight - r.bottom + 10), el.style.bottom = toastBot + "px";
 el.textContent = m, el.classList.add("show"), toastTimer && clearTimeout(toastTimer), toastTimer = setTimeout(() => el.classList.remove("show"), 2800)
+}
+function flashBlocked(div) {
+div.classList.remove("blocked-fade"), div.classList.add("card-sel2", "blocked-fill"), requestAnimationFrame(() => requestAnimationFrame(() => {
+div.classList.add("blocked-fade"), div.classList.remove("blocked-fill")
+})), setTimeout(() => {
+div.classList.remove("card-sel2", "blocked-fill", "blocked-fade")
+}, 350)
 }

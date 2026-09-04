@@ -17,7 +17,7 @@ boxCx.fillStyle = col, boxCx.fill()
 }
 boxCx.beginPath(), boxCx.arc(p.x, p.y, engageDistOf(b), 0, 7), boxCx.strokeStyle = "rgba(120,200,255,.25)", boxCx.lineWidth = 1, boxCx.stroke()
 }
-if (sci(combatMode ? ((C.team.get(e) || {}).team === 1 ? "vis2" : "vis1") : "vis")) {
+if (sci(combatState ? ((C.team.get(e) || {}).team === 1 ? "vis2" : "vis1") : "vis")) {
 const visR = visRangeOf(b);
 const fovH = fovHalfOf(b);
 boxCx.beginPath(), boxCx.moveTo(p.x, p.y), boxCx.arc(p.x, p.y, visR, p.dir - fovH, p.dir + fovH), boxCx.closePath();
@@ -152,7 +152,7 @@ drawCooldowns();
 const infoEl = $("terr-info");
 syncFowBtn();
 if (inspected) { infoEl.innerHTML = inspectLine(inspected); return }
-if (!inCombat) return void(infoEl.textContent = `${bugbox.length} bug${1!==bugbox.length?"s":""} \u2014 select a bug to inspect`);
+if (!inCombat) return void(infoEl.textContent = `${bugsOwned.length} bug${1!==bugsOwned.length?"s":""} \u2014 select a bug to inspect`);
 const [a0, a1] = teamAlive(ents);
 infoEl.textContent = `Fight #${fightNum} \u2014 YOURS: ${a0} alive \u00b7 ${a1} alive :ENEMY`
 }
@@ -160,20 +160,4 @@ function teamAlive(ents) {
 const live = ents.filter(e => { const c = C.combat.get(e); return !c.dead || c.phoenixT > 0 || c.fakeT > 0 });
 return [live.filter(e => 0 === C.team.get(e).team).length, live.filter(e => 1 === C.team.get(e).team).length]
 }
-let stallHp = -1, stallT = 0;
 const FIGHT_STALL_MS = 3e4;
-function checkFightEnd() {
-const ents = ecsQuery("team", "combat");
-if (!ents.length) return;
-const [a0, a1] = teamAlive(ents);
-const hp = ents.reduce((s, e) => s + max(0, C.combat.get(e).curHp), 0), now = performance.now();
-hp === stallHp || (stallHp = hp, stallT = now);
-if (!fightDone && (0 === a0 || 0 === a1 || now - stallT > FIGHT_STALL_MS)) {
-ents.forEach(e => {
-const c = C.combat.get(e);
-if (c.curHp <= 0) { c.dead = !0, c.curHp = 0, c.phoenixT = 0, c.fakeT = 0, clearActionState(c) }
-else if (c.dead) { c.phoenixT = 0, c.fakeT = 0 }
-});
-fightDone = !0, syncSciHud(), resultTimer = setTimeout(showFightResult, 700)
-}
-}

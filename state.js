@@ -8,7 +8,7 @@ return (11 - clamp(iv, 1, 10)) / 10 * .5
 const SN = ["CON", "STR", "AGI", "INT", "PER"];
 let dzAnim = 0,
 money = 500,
-bugbox = [],
+bugsOwned = [],
 bid = 1,
 fightTeam = [],
 fightMode = 1,

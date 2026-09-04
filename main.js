@@ -46,7 +46,7 @@ const p = C.pos.get(en), d = hypot(p.x - cx, p.y - cy);
 d < bugLen(C.bug.get(en)) && d < best && (best = d, hit = C.bug.get(en))
 });
 if (hit) { inspected = hit === inspected ? null : hit, inspected && achieve("inspect"); return }
-if (combatMode) {
+if (combatState) {
 const now = performance.now();
 tapT = tapT.filter(o => now - o.t < TAP_MS && hypot(o.x - cx, o.y - cy) < TAP_R), tapT.push({ x: cx, y: cy, t: now });
 if (tapT.length >= 3) return tapT = [], void panicAll()
@@ -61,12 +61,12 @@ if (fHit != null) return;
 if (obstacleAt(cx, cy) != null) return;
 ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed()
 }, window.addEventListener("resize", () => {
-resizeBoxCV(), $("s-terr").classList.contains("active") && !combatMode && spawnBoxBugs()
+resizeBoxCV(), $("s-terr").classList.contains("active") && !combatState && spawnTerr()
 }), $("bt-lab").onclick = () => openLab(), $("bt-chal").onclick = () => {
 openChal(), showScreen("s-chal")
 }, document.addEventListener("click", e => {
-if (e.target.closest(".bt-shop")) return combatMode && goTerr(), goShop();
-e.target.closest(".bt-terr") && goTerr()
+if (e.target.closest(".bt-shop")) return combatState && leaveFight(), openShop();
+e.target.closest(".bt-terr") && leaveFight()
 }), document.addEventListener("click", closeKill), $("bt-combat").onclick = startFight;
 $("bt-speed").onclick = () => {
 const seq = [.5, 1, 2, 4, 16],
@@ -78,8 +78,8 @@ simSpd === 0 ? simSpd = speedBeforePause : (speedBeforePause = simSpd, simSpd = 
 tickDebt = 0, syncSpeedLabel()
 }, $("bt-leave").onclick = () => {
 achieve("abandon");
-const survivors = boxBugs.filter(f => 0 === f.team && !f.dead).map(f => f.b);
-endCombatMode(), spawnBoxBugs(), openChal(!0, survivors), showScreen("s-chal"), toast("Fight abandoned. Your bugs are safe.")
+const survivors = bugsInTerr.filter(f => 0 === f.team && !f.dead).map(f => f.b);
+endFight(), spawnTerr(), openChal(!0, survivors), showScreen("s-chal"), toast("Fight abandoned. Your bugs are safe.")
 }, updateMoney();
 $("bt-des").onclick = openDz;
 $("bt-set").onclick = () => {

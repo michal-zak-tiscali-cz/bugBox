@@ -3,7 +3,7 @@ boxCx = boxCv.getContext("2d");
 let simFrame = null,
 inspected = null,
 simSpd = 1,
-combatMode = !1,
+combatState = !1,
 groundMarks = [],
 fightNum = 0,
 fightDone = !1,
@@ -25,12 +25,12 @@ const SCI_KEYS = [
 ["rnd", "RND", "combat randomness (off = repeatable fight)", 0],
 ["col", "COL", "team colours instead of bug hue", 0]
 ];
-const sciShown = () => SCI_KEYS.filter(([, , , a, c]) => combatMode ? c !== 0 : a);
+const sciShown = () => SCI_KEYS.filter(([, , , a, c]) => combatState ? c !== 0 : a);
 const VIZ_OFF = { zone: 0, vis: 0, vis1: 0, vis2: 0, visr: 1, bite: 1, dmg: 1, abi: 0, rnd: 1, nam: 1, hp: 1, col: 0 };
 let scienceOn = !1;
 const sciNew = () => SCI_KEYS.reduce((o, [k]) => (o[k] = 0, o), {}),
 sciSt = [sciNew(), sciNew()],
-sciCur = () => sciSt[combatMode ? 1 : 0];
+sciCur = () => sciSt[combatState ? 1 : 0];
 const FOW_HIDE = "zone visr bite dmg abi nam hp col vis vis1 vis2".split(" ");
 const sci = k => fow && FOW_HIDE.includes(k) ? 0 : scienceOn ? sciCur()[k] : VIZ_OFF[k];
 function setScience(on) {
@@ -47,7 +47,7 @@ const sciBtn = (k, lbl, tip, on) =>
 function syncSciHud() {
 const el = $("hud-sci");
 if (!el) return;
-const show = scienceOn && !(combatMode && fightDone);
+const show = scienceOn && !(combatState && fightDone);
 el.style.display = show ? "flex" : "none";
 if (!show) return;
 el.innerHTML = sciBtn(null, "ALL", "turn every toggle below on or off", allSci()) +
@@ -56,7 +56,7 @@ sciShown().map(([k, lbl, tip]) => sciBtn(k, lbl, tip, sciCur()[k])).join("")
 let hudWas = null;
 const HUD_FIGHT_ONLY = ["bt-leave", "bt-pause"],
 HUD_BOX_ONLY = ["bt-lab", "bt-chal", "bt-terr-shop"];
-function hudCombat() { return combatMode }
+function hudCombat() { return combatState }
 function syncHud(force) {
 const c = hudCombat();
 if (c === hudWas && !force) return;
@@ -71,8 +71,8 @@ function canDrag(kind) { return !hudCombat() }
 const MAX_FOOD = 30;
 function canPlaceFood() { return !hudCombat() && ecsQuery("food").length < MAX_FOOD }
 function spawnDmgPop(x, y, amount, isMiss, team) { dmgPops.push({ x, y, amount, isMiss, team: team || 0, t: 1 }) }
-function initBugBox() {
-simLastT = 0, updateMoney(), achOwn(0), resizeBoxCV(), syncSimLoop()
+function openTerr() {
+simLastT = 0, updateMoney(), achOwn(0), resizeBoxCV(), showScreen("s-terr")
 }
 function startSimLoop() {
 simFrame && cancelAnimationFrame(simFrame), simLastT = 0, tickDebt = 0, simFrame = requestAnimationFrame(simLoop)
@@ -90,7 +90,7 @@ const dpr = window.devicePixelRatio || 1,
 rect = boxCv.getBoundingClientRect();
 boxLW = rect.width > 0 ? rect.width : boxCv.offsetWidth || 360, boxLH = rect.height > 0 ? rect.height : boxCv.offsetHeight || 300, boxCv.width = floor(boxLW * dpr), boxCv.height = floor(boxLH * dpr), boxCx.setTransform(dpr, 0, 0, dpr, 0, 0)
 }
-function boxBugsView() {
+function bugsInTerrView() {
 return ecsQuery("bug", "pos").map(e => {
 const b = C.bug.get(e),
 p = C.pos.get(e),
@@ -127,7 +127,7 @@ break
 }
 }
 function bugEntity(b, x, y, dir, tm) {
-combatMode && (b.mood = "seeking");
+combatState && (b.mood = "seeking");
 return {
 bug: b,
 pos: { x: x, y: y, dir: dir },
@@ -152,8 +152,8 @@ savedWorld.obs.forEach(o => ecsSpawn({ obstacle: { r: o.r, kind: o.kind, rot: o.
 savedWorld.food.forEach(f => ecsSpawn({ food: {}, pos: { x: f.x, y: f.y, dir: 0 } }));
 savedWorld = null
 }
-function spawnBoxBugs() {
-if (combatMode) {
+function spawnTerr() {
+if (combatState) {
 savedWorld = savedWorld || { obs: snapObstacles(), food: snapFood() };
 ecsClear(), inspected = null, mates = [], scraps = [], mateTouch = new Set();
 genObstacles(!0)
@@ -163,13 +163,13 @@ ecsQuery("obstacle").length || genObstacles(!1)
 }
 const lw = boxLW,
 lh = boxLH;
-if (!combatMode) {
+if (!combatState) {
 const have = new Map();
 ecsQuery("bug").forEach(e => {
 const b = C.bug.get(e);
-bugbox.includes(b) ? have.set(b, e) : ecsKill(e)
+bugsOwned.includes(b) ? have.set(b, e) : ecsKill(e)
 });
-bugbox.forEach(b => {
+bugsOwned.forEach(b => {
 if (have.has(b)) return;
 const dir = random() * TAU;
 ecsSpawn(bugEntity(b, 30 + random() * (lw - 60), 30 + random() * (lh - 60), dir, -1))
@@ -199,7 +199,7 @@ return floor(deg / 45) + 1
 function randAngleInOctant(n) {
 return rf(45 * (n - 1), 45 * n) * PI / 180
 }
-Object.defineProperty(window, "boxBugs", {
-get: boxBugsView,
+Object.defineProperty(window, "bugsInTerr", {
+get: bugsInTerrView,
 configurable: !0
 });

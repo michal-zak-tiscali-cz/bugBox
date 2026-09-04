@@ -1,15 +1,5 @@
-function goShop() {
-openShop(), showScreen("s-shop")
-}
 let shopPool = [],
 shopCart = [];
-function flashBlocked(div) {
-div.classList.remove("blocked-fade"), div.classList.add("card-sel-blue", "blocked-fill"), requestAnimationFrame(() => requestAnimationFrame(() => {
-div.classList.add("blocked-fade"), div.classList.remove("blocked-fill")
-})), setTimeout(() => {
-div.classList.remove("card-sel-blue", "blocked-fill", "blocked-fade")
-}, 350)
-}
 function openShop() {
 shopCart = [];
 shopPool = Array.from({ length: 6 }, () => {
@@ -18,11 +8,11 @@ let sum;
 do { sum = 0, SK.forEach(k => sum += st[k] = 1 + ri(3)) } while (sum < 7 || sum > 9);
 const b = makeBug(st);
 return b.cost = 60 + ri(66), b
-}), renderShop()
+}), renderShop(), showScreen("s-shop")
 }
 function shopApplyCard(div, btn, item, i) {
 const inCart = shopCart.includes(i);
-btn.className = "ba bt-sel", btn.textContent = inCart ? "✓ In cart — remove" : "Buy $" + item.cost, div.classList.toggle("card-sel", inCart)
+btn.className = "card-bt bt-sel", btn.textContent = inCart ? "✓ In cart — remove" : "Buy $" + item.cost, div.classList.toggle("card-sel", inCart)
 }
 function updateShopFooter() {
 const n = shopCart.length;
@@ -63,7 +53,7 @@ shopApplyCard(div, btn, item, i), updateShopFooter(), updateMoney()
 const OVER_DELAY = 3000;
 let overTimer = null;
 function cheapestOnShelf() { return shopPool.reduce((m, it) => min(m, it.cost), 1 / 0) }
-function runIsOver() { return !bugbox.length && !shopCart.length && money < cheapestOnShelf() }
+function runIsOver() { return !bugsOwned.length && !shopCart.length && money < cheapestOnShelf() }
 function cancelOverWatch() { overTimer && (clearTimeout(overTimer), overTimer = null) }
 function armOverWatch() {
 cancelOverWatch();
@@ -71,12 +61,12 @@ if (!runIsOver()) return;
 overTimer = setTimeout(() => {
 overTimer = null;
 if (!runIsOver()) return;
-if (boxEggs.length) return void(initBugBox(), showScreen("s-terr"));
+if (boxEggs.length) return void(openTerr());
 ov("ov-over", 1)
 }, OVER_DELAY)
 }
 function shopDone() {
-if (!shopCart.length && !bugbox.length) return void toast("Buy at least 1 bug to start!");
-shopCart.forEach(i => bugbox.push(shopPool[i]));
-achStep("bought", [10, 25], "buy", shopCart.length), achOwn(shopCart.length), shopCart = [], updateMoney(), initBugBox(), showScreen("s-terr")
+if (!shopCart.length && !bugsOwned.length) return void toast("Buy at least 1 bug to start!");
+shopCart.forEach(i => bugsOwned.push(shopPool[i]));
+achStep("bought", [10, 25], "buy", shopCart.length), achOwn(shopCart.length), shopCart = [], updateMoney(), openTerr()
 }
