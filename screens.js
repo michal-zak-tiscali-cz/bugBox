@@ -24,7 +24,7 @@ combatState || hatchReadyEggs();
 const wantCombat = combatState;
 requestAnimationFrame(() => {
 requestAnimationFrame(() => {
-combatState === wantCombat && (resizeBoxCV(), combatState && ecsQuery("bug").length || spawnTerr())
+combatState === wantCombat && (combatState && ecsQuery("bug").length ? resizeBoxCV() : spawnTerr())
 })
 })
 }

@@ -10,6 +10,7 @@ const TUTORIAL = [
 ["drag", "drag a bug"],
 ["inspect", "inspect a bug"],
 ["breed", "breed a bug"],
+["mate", "mate a bug"],
 ["fight", "fight a bug"],
 ["kill", "kill a bug"]
 ];
@@ -55,7 +56,6 @@ const ACHIEVEMENTS = [
 ["fed50", "feed bugs 50 times"],
 ["hatch1", "hatch an egg in the terrarium"],
 ["hatch10", "hatch 10 eggs"],
-["mate", "witness a mating"],
 ["buy10", "buy 10 bugs on the market"],
 ["buy25", "buy 25 bugs on the market"],
 ["rich1k", "hold $1000 at once"],
@@ -97,11 +97,12 @@ const ACHIEVEMENTS = [
 ["rabbit", "Rabbit (a bug with 15 offspring)"],
 ["genghisKhan", "Genghis Khan (a bug with 20 offspring)"]
 ];
+const TUT_K = new Set(TUTORIAL.map(a => a[0]));
 const ACH_TEXT = {};
 [...TUTORIAL, ...ACHIEVEMENTS].forEach(([k, t]) => ACH_TEXT[k] = t);
 function achieve(k) {
 if (!ACH_TEXT[k] || achSt.done[k]) return;
-achSt.done[k] = 1, toast("Achieved: " + ACH_TEXT[k])
+achSt.done[k] = 1, TUT_K.has(k) || toast("Achieved: " + ACH_TEXT[k])
 }
 function achStep(field, marks, prefix, add) {
 achSt[field] += add == null ? 1 : add; marks.forEach(m => achSt[field] >= m && achieve(prefix + m))

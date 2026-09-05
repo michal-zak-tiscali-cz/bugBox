@@ -72,7 +72,7 @@ const MAX_FOOD = 30;
 function canPlaceFood() { return !hudCombat() && ecsQuery("food").length < MAX_FOOD }
 function spawnDmgPop(x, y, amount, isMiss, team) { dmgPops.push({ x, y, amount, isMiss, team: team || 0, t: 1 }) }
 function openTerr() {
-simLastT = 0, updateMoney(), achOwn(0), resizeBoxCV(), showScreen("s-terr")
+simLastT = 0, updateMoney(), achOwn(0), showScreen("s-terr")
 }
 function startSimLoop() {
 simFrame && cancelAnimationFrame(simFrame), simLastT = 0, tickDebt = 0, simFrame = requestAnimationFrame(simLoop)
@@ -89,6 +89,14 @@ function resizeBoxCV() {
 const dpr = window.devicePixelRatio || 1,
 rect = boxCv.getBoundingClientRect();
 boxLW = rect.width > 0 ? rect.width : boxCv.offsetWidth || 360, boxLH = rect.height > 0 ? rect.height : boxCv.offsetHeight || 300, boxCv.width = floor(boxLW * dpr), boxCv.height = floor(boxLH * dpr), boxCx.setTransform(dpr, 0, 0, dpr, 0, 0)
+}
+let boxW0 = 0, boxH0 = 0;
+function rescaleBox() {
+if (boxW0 && (boxW0 !== boxLW || boxH0 !== boxLH)) {
+const sx = boxLW / boxW0, sy = boxLH / boxH0;
+ecsQuery("pos").forEach(e => { const p = C.pos.get(e); p.x *= sx, p.y *= sy })
+}
+boxW0 = boxLW, boxH0 = boxLH
 }
 function bugsInTerrView() {
 return ecsQuery("bug", "pos").map(e => {
@@ -113,15 +121,15 @@ killsThis: cb.killsThis || 0
 })
 }
 function genObstacles(inCombat) {
-const lw = boxLW, lh = boxLH, kinds = ["rock", "rock", "leaf"], n = 3 + ri(3), placed = [];
+const lw = boxLW, lh = boxLH, n = 8 + ri(5), placed = [];
 for (let i = 0; i < n; i++) {
-const r = 12 + ri(10);
+const k = ri(OBST.length), t = OBST[k], v = t[0][ri(t[0].length)], r = (12 + ri(10)) * (t[2] || 1);
 for (let a = 0; a < 30; a++) {
 const x = 40 + random() * (lw - 80), y = 40 + random() * (lh - 80);
-if (placed.some(o => hypot(o.x - x, o.y - y) < o.r + r + 26)) continue;
+if (placed.some(o => hypot(o.x - x, o.y - y) < o.r + r + 18)) continue;
 if (inCombat && (abs(x - .18 * lw) < r + 26 || abs(x - .82 * lw) < r + 26)) continue;
 placed.push({ x, y, r });
-ecsSpawn({ obstacle: { r, kind: kinds[ri(kinds.length)], rot: random() * 6.28 }, pos: { x, y, dir: 0 } });
+ecsSpawn({ obstacle: { r, kind: k, v, rot: ri(8) * PI / 4 }, pos: { x, y, dir: 0 } });
 break
 }
 }
@@ -139,7 +147,7 @@ team: { team: tm }
 }
 const eachObstacle = fn => ecsQuery("obstacle", "pos").map(e => fn(C.obstacle.get(e), C.pos.get(e), e));
 function snapObstacles() {
-return eachObstacle((o, p) => ({ r: o.r, kind: o.kind, rot: o.rot, x: p.x, y: p.y }))
+return eachObstacle((o, p) => ({ r: o.r, kind: o.kind, v: o.v, rot: o.rot, x: p.x, y: p.y }))
 }
 function snapFood() {
 return ecsQuery("food", "pos").map(e => { const p = C.pos.get(e); return { x: p.x, y: p.y } })
@@ -148,11 +156,12 @@ function restoreTerrWorld() {
 if (!savedWorld) return;
 ecsQuery("obstacle").forEach(e => ecsKill(e));
 ecsQuery("food").forEach(e => ecsKill(e));
-savedWorld.obs.forEach(o => ecsSpawn({ obstacle: { r: o.r, kind: o.kind, rot: o.rot }, pos: { x: o.x, y: o.y, dir: 0 } }));
+savedWorld.obs.forEach(o => ecsSpawn({ obstacle: { r: o.r, kind: o.kind, v: o.v, rot: o.rot }, pos: { x: o.x, y: o.y, dir: 0 } }));
 savedWorld.food.forEach(f => ecsSpawn({ food: {}, pos: { x: f.x, y: f.y, dir: 0 } }));
 savedWorld = null
 }
 function spawnTerr() {
+resizeBoxCV(), rescaleBox();
 if (combatState) {
 savedWorld = savedWorld || { obs: snapObstacles(), food: snapFood() };
 ecsClear(), inspected = null, mates = [], scraps = [], mateTouch = new Set();

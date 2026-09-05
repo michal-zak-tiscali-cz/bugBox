@@ -18,7 +18,7 @@ p = C.pos.get(e),
 v = C.vel.get(e),
 t = C.think.get(e),
 w = C.wall.get(e);
-combatState || ("fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = hpFrac(b) < 1 ? "seeking" : "peace"));
+combatState || ("fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = hpFrac(b) < 1 ? "seeking" : b.idlT > 0 ? b.mood : "peace"));
 if ("prePause" === w.phase) return t.pauseTimer -= dt, void(t.pauseTimer <= 0 && (w.phase = "rotating"));
 if ("rotating" === w.phase) {
 if (!turnToward(p, w.targetAngle, turningOf(b) * dtS)) return;
@@ -242,18 +242,20 @@ resolveBodies(ents, step);
 resolveObstacles(ents, dtS);
 ents.forEach(e => clampToBox(C.pos.get(e)))
 }
+const SHADE_FLAT = "rgba(0,0,0,.35)";
+let flatCx = null;
 function sysRenderObstacles() {
+const pass = 3 === bugTheme ? [0] : [1, 0];
 eachObstacle((o, p) => {
-boxCx.save(), boxCx.translate(p.x, p.y), boxCx.rotate(o.rot);
-if ("leaf" === o.kind) {
-boxCx.fillStyle = "#2f4a1e", boxCx.strokeStyle = "#3a5a26", boxCx.lineWidth = 1;
-boxCx.beginPath(), boxCx.ellipse(0, 0, o.r, o.r * .6, 0, 0, 7), boxCx.fill();
-boxCx.beginPath(), boxCx.moveTo(-o.r, 0), boxCx.lineTo(o.r, 0), boxCx.stroke()
-} else {
-boxCx.fillStyle = "#4a4640", boxCx.beginPath(), boxCx.ellipse(0, 0, o.r, o.r * .8, 0, 0, 7), boxCx.fill();
-boxCx.fillStyle = "#5a564e", boxCx.beginPath(), boxCx.ellipse(-o.r * .25, -o.r * .25, o.r * .4, o.r * .3, 0, 0, 7), boxCx.fill()
-}
+const d = OBST[o.kind][1];
+for (const f of pass) {
+boxCx.save(), boxCx.translate(p.x + 2 * f, p.y + 2.5 * f), boxCx.rotate(o.rot);
+f ? (flatCx || (flatCx = new Proxy(boxCx, {
+get: (t, k) => { const val = t[k]; return "function" == typeof val ? val.bind(t) : val },
+set: (t, k, val) => (t[k] = "fillStyle" === k || "strokeStyle" === k ? SHADE_FLAT : val, !0)
+})), boxCx.fillStyle = boxCx.strokeStyle = SHADE_FLAT, d(flatCx, o.r, o.v)) : d(boxCx, o.r, o.v);
 boxCx.restore()
+}
 })
 }
 function sysRegen(dtS) {
@@ -262,6 +264,44 @@ const mx = maxHpOf(b);
 b.curHp == null && (b.curHp = mx);
 b.hitT > 0 && (b.hitT = max(0, b.hitT - 5 * dtS));
 b.curHp < mx && (b.curHp = min(mx, b.curHp + mx / 330 * dtS))
+})
+}
+const IDL_CH = .0008, IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2;
+function idlStop(b, e, p) { b.idlT = 0, b.mood = "peace", C.think.get(e).paused = !1, C.vel.get(e).wanderAngle = p.dir }
+function sysIdle(dt, ents) {
+const dtS = dt / 1e3;
+ents.forEach(e => {
+const b = C.bug.get(e), p = C.pos.get(e), t = C.think.get(e);
+if (b.idlT > 0) {
+if (!ECS.pos.has(b.idlE) || hpFrac(b) < 1) return idlStop(b, e, p);
+const op = C.pos.get(b.idlE), d = hypot(op.x - p.x, op.y - p.y);
+b.idlT -= dt, t.paused = !0, t.pauseTimer = 100;
+if ("circling" === b.mood) {
+if (ECS.bug.has(b.idlE) && hypot(op.x - b.idlX, op.y - b.idlY) > 2 || (b.idlA -= abs(b.idlD)) <= 0) return idlStop(b, e, p);
+const th = atan2(p.y - op.y, p.x - op.x) + b.idlD;
+p.x = op.x + cos(th) * b.idlR, p.y = op.y + sin(th) * b.idlR, p.dir = norm(th + b.idlS * HALF_PI), clampToBox(p)
+} else {
+turnToward(p, atan2(op.y - p.y, op.x - p.x), turningOf(b) * dtS);
+if ("stalking" === b.mood && d > bodyLenOf(b) * IDL_GAP) {
+const s = min(spdOf(C.bug.get(b.idlE)), spdOf(b)) * dtS;
+p.x += cos(p.dir) * s, p.y += sin(p.dir) * s, clampToBox(p)
+}
+}
+return void(b.idlT <= 0 && idlStop(b, e, p))
+}
+if ("peace" !== b.mood || b.mating || b.scrap || random() >= IDL_CH) return;
+const flank = hasAbil(b, "flanking") && hpFrac(b) >= 1, smart = intOf(b) >= 5;
+if (!flank && !smart) return;
+const pool = flank ? ecsQuery("pos").filter(o => o !== e && (ECS.bug.has(o) || ECS.obstacle.has(o) || ECS.food.has(o))) : ents.filter(o => o !== e),
+tg = pool.find(o => seesPoint(b, p, C.pos.get(o).x, C.pos.get(o).y));
+if (tg == null) return;
+const op = C.pos.get(tg);
+b.idlE = tg, b.idlT = IDL_MIN + random() * IDL_SPAN;
+if (flank && (!smart || random() < .5)) {
+b.idlR = max(hypot(op.x - p.x, op.y - p.y), bugRadius(b) + 10), b.idlS = random() < .5 ? -1 : 1,
+b.idlD = b.idlS * spdOf(b) * dtS / b.idlR, b.idlA = random() * TAU, b.idlX = op.x, b.idlY = op.y, b.mood = "circling"
+} else if (ECS.bug.has(tg)) b.mood = spdOf(C.bug.get(tg)) < spdOf(b) ? "stalking" : "observing";
+else b.idlT = 0
 })
 }
 const SEEK_REACH = 40, SEEK_CROSS = .45;

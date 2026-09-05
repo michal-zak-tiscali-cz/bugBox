@@ -170,7 +170,7 @@ sp.textContent = m.src + (m.d ? (m.d > 0 ? " +" : " ") + m.d : ""), row.appendCh
 })
 }
 function computeOffspring(a, b) {
-const child = { gen: max(a.gen, b.gen) + 1, name: genName(), meta: {} };
+const child = { gen: max(a.gen, b.gen) + 1, name: childName(a, b), meta: {} };
 const hr = random();
 child.hue = hr < 1 / 3 ? a.hue : hr < 2 / 3 ? b.hue : ((random() < .5 ? a.hue : b.hue) + HUE_OFF[ri(4)] + 360) % 360, child.morph = mixMorph(a, b);
 SK.forEach(k => {

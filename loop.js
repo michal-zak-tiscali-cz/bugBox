@@ -1,6 +1,7 @@
 let simLastT = 0,
 tickDebt = 0;
 function drawBoxBackdrop() {
+if (bgOn && combatState && 3 !== bugTheme) return drawBg();
 const lw = boxLW,
 lh = boxLH;
 boxCx.fillStyle = "#0a0809", boxCx.fillRect(0, 0, lw, lh), boxCx.fillStyle = "#120f0a";
@@ -19,8 +20,7 @@ if (!combatState) ecsQuery("bug").length !== bugsOwned.length && spawnTerr();
 tickDebt += real * simSpd / COMBAT_STEP_MS;
 let guard = 0;
 while (tickDebt >= 1 && guard++ < MAX_STEPS_PER_FRAME) {
-tickDebt -= 1, tick(COMBAT_STEP_MS, combatState);
-if (combatState && (checkFightEnd(), fightDone)) { tickDebt = 0; break }
+tickDebt -= 1, tick(COMBAT_STEP_MS, combatState), combatState && checkFightEnd();
 }
 if (guard >= MAX_STEPS_PER_FRAME) tickDebt = 0;
 sysAnimPhase(), syncHud();
@@ -32,7 +32,7 @@ all = ecsQuery("bug", "pos", "vel", "think", "wall"),
 ents = fight ? all.filter(e => "fighting" !== C.bug.get(e).mood && !C.combat.get(e).dead) : all;
 fight && (sysSeek(ents), sysCombatAI(dt));
 sysThinkWander(dt, ents), sysSteer(dtS, ents), sysMove(dtS, fight ? all : ents);
-fight || (sysMate(dt, ents), sysFeed(), sysRegen(dtS));
+fight || (sysIdle(dt, ents), sysMate(dt, ents), sysFeed(), sysRegen(dtS));
 sysResolve(fight ? all : ents, dtS)
 }
 let speedBeforePause = 1;

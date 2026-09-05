@@ -2,7 +2,7 @@
 const ctx = hidpi($("intro-art"), 200, 60);
 ctx.fillStyle = "#0a0a12", ctx.fillRect(0, 0, 200, 60), [40, 100, 160].forEach((cx, i) => {
 const m = randomMorph();
-drawMorphBug(ctx, m, morphColor([120, 30, 275][i]), cx, 32, 0, { scale: morphFitScale(m, 52, 48), shadow: !1 })
+drawMorphBug(ctx, m, morphColor([120, 30, 275][i]), cx, 32, 0, { scale: morphFitScale(m, 52, 48), shadow: !1, hue: [120, 30, 275][i] })
 }), ctx.fillStyle = "#ffdd44", [
 [10, 6],
 [190, 6],
@@ -61,7 +61,7 @@ if (fHit != null) return;
 if (obstacleAt(cx, cy) != null) return;
 ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed()
 }, window.addEventListener("resize", () => {
-resizeBoxCV(), $("s-terr").classList.contains("active") && !combatState && spawnTerr()
+$("s-terr").classList.contains("active") && !combatState ? spawnTerr() : resizeBoxCV()
 }), $("bt-lab").onclick = () => openLab(), $("bt-chal").onclick = () => {
 openChal(), showScreen("s-chal")
 }, document.addEventListener("click", e => {
@@ -85,6 +85,8 @@ $("bt-des").onclick = openDz;
 $("bt-set").onclick = () => {
 $("gset-snd").checked = sound.on;
 $("gset-sci").checked = scienceOn;
+$("gset-bg").checked = !!bgOn;
+$("gset-thm").value = bugTheme;
 ov("ov-set", 1)
 };
 $("gset-snd").onchange = e => { sound.on = e.target.checked };

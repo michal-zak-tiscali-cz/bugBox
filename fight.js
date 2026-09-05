@@ -25,25 +25,26 @@ return eb
 })
 }
 function startFight() {
-fightNum++, enemies = buildEnemies(mayhem ? fightTeam.length : fightMode), groundMarks = [], dmgPops = [], fightDone = !1, combatState = !0, simSpd = 0, tickDebt = 0, syncSpeedLabel();
+bgPick(), fightNum++, enemies = buildEnemies(mayhem ? fightTeam.length : fightMode), groundMarks = [], dmgPops = [], fightDone = !1, combatState = !0, simSpd = 0, tickDebt = 0, syncSpeedLabel();
 markEggsReady();
 showScreen("s-terr"), resizeBoxCV(), spawnTerr(), toast("Morituri te salutant");
 setTimeout(() => { combatState && (simSpd = 1, syncSpeedLabel()) }, 1000)
 }
 function endFight() {
 resultTimer && (clearTimeout(resultTimer), resultTimer = null);
-combatState = !1, tickDebt = 0, ecsQuery("team").forEach(e => C.team.get(e).team === 1 && ecsKill(e)), restoreTerrWorld(), ov("ov-res", 0), syncHud(!0)
+combatState = !1, tickDebt = 0, simSpd = speedBeforePause, ecsQuery("team").forEach(e => C.team.get(e).team === 1 && ecsKill(e)), restoreTerrWorld(), ov("ov-res", 0), syncHud(!0)
 }
 function showFightResult() {
 resultTimer = null;
 if (!combatState) return;
+simSpd = 0;
 const alive0 = bugsInTerr.filter(f => 0 === f.team && !f.dead),
 dead0 = bugsInTerr.filter(f => 0 === f.team && f.dead),
 alive1 = bugsInTerr.filter(f => 1 === f.team && !f.dead),
 won = alive0.length > 0 && 0 === alive1.length,
 allPlayer = bugsInTerr.filter(f => 0 === f.team),
 allEnemy = bugsInTerr.filter(f => 1 === f.team);
-lastSurvivors = won ? alive0.map(f => f.b) : null;
+lastSurvivors = alive0.length ? alive0.map(f => f.b) : null;
 alive0.forEach(f => { const lb = bugsOwned.find(b => b.id === f.b.id); lb && (lb.curHp = max(1, round(f.curHp))) });
 dead0.length && achStep("lost", [1, 10], "lost", dead0.length);
 addKills(bugsInTerr.filter(f => 0 === f.team).reduce((s, f) => s + (f.killsThis || 0), 0));
@@ -112,19 +113,16 @@ function leaveFight() {
 if (labSt.larva) { const l = labSt.larva; bugsOwned.some(x => x.id === l.id) || bugsOwned.push(l), labSt.larva = null }
 endFight(), fightTeam = fightTeam.filter(b => bugsOwned.find(s => s.id === b.id)), openTerr()
 }
-let stallHp = -1, stallT = 0;
 function checkFightEnd() {
 const ents = ecsQuery("team", "combat");
 if (!ents.length) return;
 const [a0, a1] = teamAlive(ents);
-const hp = ents.reduce((s, e) => s + max(0, C.combat.get(e).curHp), 0), now = performance.now();
-hp === stallHp || (stallHp = hp, stallT = now);
-if (!fightDone && (0 === a0 || 0 === a1 || now - stallT > FIGHT_STALL_MS)) {
+if (!fightDone && (0 === a0 || 0 === a1)) {
 ents.forEach(e => {
 const c = C.combat.get(e);
 if (c.curHp <= 0) { c.dead = !0, c.curHp = 0, c.phoenixT = 0, c.fakeT = 0, clearActionState(c) }
 else if (c.dead) { c.phoenixT = 0, c.fakeT = 0 }
 });
-fightDone = !0, syncSciHud(), resultTimer = setTimeout(showFightResult, 700)
+fightDone = !0, syncSciHud(), resultTimer = setTimeout(showFightResult, 1000)
 }
 }

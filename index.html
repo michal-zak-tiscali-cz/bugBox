@@ -209,6 +209,19 @@ Sound effects
 Science!
 </label>
 <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#aabbaa;padding:6px 2px;">
+Bug graphics
+<select id="gset-thm" onchange="setBugTheme(this.value)" style="flex:1;background:#0a0a12;color:#aabbaa;border:1px solid #2a2a4a;font-size:11px;padding:2px;">
+<option value="0">Standard</option>
+<option value="1">Grad 1</option>
+<option value="2">Grad 2</option>
+<option value="3">Neon Lab</option>
+</select>
+</label>
+<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#aabbaa;padding:6px 2px;cursor:pointer;">
+<input type="checkbox" id="gset-bg" checked style="accent-color:#4f8;width:14px;height:14px;" onchange="bgOn = this.checked ? 1 : 0">
+Background graphics
+</label>
+<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#aabbaa;padding:6px 2px;">
 Walk
 <select onchange="setGait(this.value)" style="flex:1;background:#0a0a12;color:#aabbaa;border:1px solid #2a2a4a;font-size:11px;padding:2px;">
 <option value="0">Funny (sin)</option>
@@ -241,6 +254,8 @@ Bug palette
 <script src="shop.js"></script>
 <script src="ecs.js"></script>
 <script src="terr.js"></script>
+<script src="bg.js"></script>
+<script src="obst.js"></script>
 <script src="move.js"></script>
 <script src="mate.js"></script>
 <script src="lab.js"></script>

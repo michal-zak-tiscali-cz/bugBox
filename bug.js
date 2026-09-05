@@ -20,6 +20,14 @@ SYL2 = ["ax", "eth", "oru", "rix", "ael", "rax", "ion", "elm", "yx", "ath", "oz"
 function genName() {
 return SYL1[ri(SYL1.length)] + SYL2[ri(SYL2.length)]
 }
+const sylSplit = n => { const p = SYL1.find(s => n.startsWith(s)) || SYL1[0]; return [p, n.slice(p.length) || SYL2[0]] };
+function childName(a, b) {
+const [a1, a2] = sylSplit(a.name), [b1, b2] = sylSplit(b.name),
+used = n => bugsOwned.some(x => x.name === n) || boxEggs.some(g => g.bug.name === n);
+for (const n of [a1 + b2, b1 + a2]) if (!used(n)) return n;
+for (let i = 0; i < 40; i++) { const n = a1 + SYL2[ri(SYL2.length)]; if (!used(n)) return n }
+return genName()
+}
 function makeBug(o = {}) {
 const b = {
 id: bid++,

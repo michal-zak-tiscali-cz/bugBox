@@ -71,6 +71,7 @@ const isGrey = e => { const c = C.combat.get(e); return c.dead || c.phoenixT > 0
 const tops = new Set(mates.map(m => m.top));
 const drawOrder = inCombat ? [...ents].sort((a, bb) => (isGrey(a) ? 0 : 1) - (isGrey(bb) ? 0 : 1)) :
 [...ents].sort((a, bb) => (tops.has(a) ? 1 : 0) - (tops.has(bb) ? 1 : 0));
+const post = [];
 drawOrder.forEach(e => {
 const b = C.bug.get(e),
 p = C.pos.get(e);
@@ -78,9 +79,11 @@ if (!inCombat) {
 drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, b === inspected, posPhase(p));
 b.hitT > 0 && drawMorphBug(boxCx, ensureMorph(b), "#ff2828", p.x, p.y, p.dir + HALF_PI, { alpha: b.hitT, shadow: !1 });
 const r = morphR(b);
+post.push(() => {
 (!fow && (b === inspected || scienceOn && sci("hp"))) && drawHpBar(p, hpFrac(b), r);
 b.prepT > 0 && sci("bite") && drawPrepBar(p, 1 - b.prepT / BITE_PREP_MS, r);
-scienceOn && sci("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 11));
+scienceOn && sci("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 11))
+});
 return;
 }
 const tm = C.team.get(e),
@@ -101,15 +104,8 @@ if (cb.loudT > 0) { const amp = (cfg.legLen * 0.5 / 3) * sin(cb.loudT / 20), sa 
 boxCx.globalAlpha = 1;
 drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), sci("col") ? TEAM_HUE[tm.team] : null);
 if (cb.hitT > 0) { boxCx.save(); boxCx.globalAlpha = cb.hitT; drawMorphBug(boxCx, cfg, "#ff2828", p.x + offX, p.y + offY, p.dir + HALF_PI, { alpha: cb.hitT, shadow: !1 }); boxCx.restore() }
+post.push(() => {
 if (cb.stunT > 0) { boxCx.save(), boxCx.fillStyle = "#fd4", boxCx.font = "9px Courier New", boxCx.textAlign = "center", boxCx.fillText("\u2726", p.x, p.y - r - 13), boxCx.restore() }
-if (cb.callT > 0 && sci("visr")) { boxCx.save(), boxCx.strokeStyle = cb.callCry ? "#f88" : "#8f8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, cb.callR, 0, 7), boxCx.stroke(), boxCx.restore() }
-if (cb.loudT > 0 && sci("visr")) { boxCx.save(), boxCx.strokeStyle = "#ff8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, loudRadius(b), 0, 7), boxCx.stroke(), boxCx.restore() }
-if (cb.callT > 0 && !cb.callCry && sci("visr")) {
-boxCx.save(), boxCx.strokeStyle = "#8f8", boxCx.globalAlpha = .8, boxCx.lineWidth = 1.5, boxCx.beginPath();
-boxCx.moveTo(cb.callX - 4, cb.callY - 4), boxCx.lineTo(cb.callX + 4, cb.callY + 4);
-boxCx.moveTo(cb.callX + 4, cb.callY - 4), boxCx.lineTo(cb.callX - 4, cb.callY + 4);
-boxCx.stroke(), boxCx.restore();
-}
 if (sci("hp")) {
 const f = max(0, cb.curHp / cb.maxHp);
 drawHpBar(p, f, r, sci("col") ? `hsl(${TEAM_HUE[tm.team]},85%,55%)` : f >= 1 ? "#00ff66" : null)
@@ -119,8 +115,18 @@ if (sci("bite") && cb.prepVisT > 0) {
 const prepR = max(0, min(1, 1 - cb.bitePrep / (cb.bitePrepMax || BITE_PREP_MS)));
 prepR > 0 && drawPrepBar(p, prepR, r)
 }
+});
+if (cb.callT > 0 && sci("visr")) { boxCx.save(), boxCx.strokeStyle = cb.callCry ? "#f88" : "#8f8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, cb.callR, 0, 7), boxCx.stroke(), boxCx.restore() }
+if (cb.loudT > 0 && sci("visr")) { boxCx.save(), boxCx.strokeStyle = "#ff8", boxCx.globalAlpha = .4, boxCx.lineWidth = 1, boxCx.beginPath(), boxCx.arc(p.x, p.y, loudRadius(b), 0, 7), boxCx.stroke(), boxCx.restore() }
+if (cb.callT > 0 && !cb.callCry && sci("visr")) {
+boxCx.save(), boxCx.strokeStyle = "#8f8", boxCx.globalAlpha = .8, boxCx.lineWidth = 1.5, boxCx.beginPath();
+boxCx.moveTo(cb.callX - 4, cb.callY - 4), boxCx.lineTo(cb.callX + 4, cb.callY + 4);
+boxCx.moveTo(cb.callX + 4, cb.callY - 4), boxCx.lineTo(cb.callX - 4, cb.callY + 4);
+boxCx.stroke(), boxCx.restore();
+}
 boxCx.globalAlpha = 1;
 });
+post.forEach(fn => fn());
 if (fow && inspected != null) {
 const fe = ecsQuery("bug", "pos").find(en => C.bug.get(en) === inspected || C.bug.get(en).id === inspected.id);
 if (fe != null) {
@@ -160,4 +166,3 @@ function teamAlive(ents) {
 const live = ents.filter(e => { const c = C.combat.get(e); return !c.dead || c.phoenixT > 0 || c.fakeT > 0 });
 return [live.filter(e => 0 === C.team.get(e).team).length, live.filter(e => 1 === C.team.get(e).team).length]
 }
-const FIGHT_STALL_MS = 3e4;
