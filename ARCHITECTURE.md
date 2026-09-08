@@ -4,37 +4,46 @@ Simple bug life simulator. Plain `<script src>` files, no modules. Everything sh
 Load order = the order in `index.html`. `main.js` is last and holds every
 DOM event binding, so definition files never run DOM code at load time.
 
-## Routing table — "I want to change X" → open these files
+## Terms
+- One room, one box, one canvas. The global `combatState` decides everything:
+  **0** = peaceful box (feeding, mating, dragging), **1** = fight.
+  Never say "terrarium" or "arena" for these two states.
+- **box** = the canvas and its bugs, in both combat states.
+- **barracks** = the screen where the player picks bugs, mode and tier. File `chal.js`, id `s-chal`.
 
-| Area of the game | File(s) |
-|---|---|
-| Layout, screens, buttons, overlays (markup) | `index.html` |
-| Colours, fonts, sizes, spacing | `style.css` |
-| Version number, math helpers, sound effects | `core.js` |
-| Tutorial list, achievement list, unlock rules, toasts on unlock | `achievements.js` |
-| Starting money, tunables (think timers, tier prizes), global variables | `state.js` |
-| Bug object, names, stat bars, max HP | `bug.js` |
-| Ability list, ability rules, bite damage, inheritance | `abilities.js` |
-| Bug cards (shop/lab/arena/result), HP bars, kill button, focus line | `cards.js` |
-| Screen switching, info overlay tabs, money display | `screens.js` |
-| Bug body shapes, drawing a bug | `morph.js`, `drawbug.js` |
-| Market screen | `shop.js` |
-| Entity system (rarely touched) | `ecs.js` |
-| Terrarium canvas, Science HUD, obstacles, spawning | `terrarium.js` |
-| Walking, wandering, feeding, collisions, wall bounce | `move.js` |
-| Mating, eggs, hatching, terrarium capacity | `mate.js` |
-| Breeding lab (sorting, selection, offspring) | `breed.js` |
-| Arena screen (modes, tiers, team picking) | `arena.js` |
-| Fight AI, targeting, ability firing | `combat.js` |
-| What is drawn each frame, bottom info line | `render.js` |
-| Tapping and dragging in the terrarium | `input.js`, `main.js` |
-| Simulation loop, speed | `loop.js`, `speed.js` |
-| Enemy generation, fight start, result screen | `fight.js` |
-| Bug designer overlay | `designer.js` |
-| Info / Morphology / Abilities texts | `wiki.js` |
-| Records screen | `records.js` |
-| Toast text and its position | `cards.js` -> `toast()`; style `style.css` `#toast` |
-| Morph-from-stats sandbox (standalone page, not loaded by the game) | `designer-lab.html` |
+## Routing table — "I want to change X" → open this file, look for this symbol
+
+| Area of the game | File | Symbol |
+|---|---|---|
+| Layout, screens, buttons, overlays (markup), crash reporter | `index.html` | `#s-terr` `#s-chal` `#s-lab` `#s-shop`, `#terr-bar-row`, `#ov-set` |
+| Colours, fonts, sizes, spacing, screen shake | `style.css` | `#toast`, `.shake` |
+| Version number, math helpers, sound effects | `core.js` | `GAME_VERSION` (line 1) |
+| Tutorial list, achievement list, unlock rules, toasts on unlock | `achievements.js` | `achSt` |
+| Starting money, tunables (think timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState` |
+| Bug object, names, stat bars, max HP | `bug.js` | |
+| Ability list, ability rules, bite damage, bite shove, bite prep by agi, inheritance | `abilities.js` | |
+| Bug cards (shop/lab/barracks/result), HP bars, kill button, focus line, blocked-flash, toast text | `cards.js` | `makeBugCard`, `drawHpBar`, `inspectLine`, `toast`, `flashBlocked` |
+| Screen switching, info overlay tabs, money display | `screens.js` | |
+| Bug body shapes, colour palette, walk style (gait) | `morph.js` | `randomMorph`, `setPalette`, `setGait` |
+| Drawing one bug, card thumbnails | `drawbug.js` | `drawBugStyled` |
+| Box background art | `bg.js` | `drawBg` |
+| Obstacle types and their shapes | `obst.js` | `OBST` |
+| Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr` |
+| Market screen | `shop.js` | `openShop`, `renderShop` |
+| Entity system (rarely touched) | `ecs.js` | `ecsQuery`, `C` |
+| Walking, wandering, feeding, collisions, wall bounce, wall slide, stuck manoeuvre, corpse slow-down | `move.js` | |
+| Mating, eggs, hatching, box capacity | `mate.js` | |
+| Breeding lab (sorting, selection, offspring) | `lab.js` | |
+| Barracks screen (modes, tiers, team picking) | `chal.js` | |
+| Fight AI, targeting, ability firing, target switch to weakest attacker, panic burst | `combatai.js` | `panicAll` |
+| What is drawn each frame, bottom info line | `render.js` | |
+| Hit-testing under the finger (bugs, obstacles, draggables) | `input.js` | `nearest`, `obstacleAt`, `draggableAt` |
+| All DOM `onclick` bindings, dragging, triple-tap panic, focus on corpses | `main.js` | `endDrag`, `tapT` |
+| Simulation loop, speed | `loop.js` | `tick(dt, fight)` = one simulation step |
+| Enemy generation, fight start (salute toast + freeze), result screen, fight-end and stalemate check | `fight.js` | `checkFightEnd` |
+| Bug designer overlay | `dz.js` | |
+| Info / Morphology / Abilities texts | `wiki.js` | |
+| Records screen | `records.js` | `bugbox_records` |
 
 ## Naming rules
 - `SCREAMING_SNAKE_CASE` — constants that never change.
@@ -78,10 +87,7 @@ You are in mode A when you have no write access to the repo.
 **Mode A session state**
 - The working copy lives in the container and can be wiped without warning.
 - **Before starting any task**, check the working copy exists (`ls` the clone).
-- If it is gone, say so at once and stop. Ask him to commit his phone files
-  (Chrome, github.com -> Add file -> Upload files -> Commit changes; the GitHub
-  Android app cannot upload). He replies when done, then clone again.
-- Fallback if he cannot commit: he uploads files into the chat, ~35k tokens.
+- If it is gone, clone it again. Only if cloning fails, say so at once and stop.
 
 ### Mode B — Claude Code
 You are in mode B when the repo is checked out and you can commit.
@@ -122,13 +128,5 @@ Context is expensive and sessions run all day. Therefore:
   files. Delete dead code when spotted.
 - Never print code, diffs, reasoning, or intermediate steps into the chat.
 - Chat output per code task = 2 short summary sentences + 1 improvement idea.
-- Files here are minified — one long line each. Never `grep -n` them, it dumps
-  the whole line. Use `grep -o`, `sed -n` with a line range, or a python script.
-
-## Quick lookups
-| Thing | Where |
-|---|---|
-| Version number | `core.js` line 1, `GAME_VERSION` |
-| Bottom bar buttons (terrarium) | `index.html`, `<div id="terr-bar-row">` |
-| Bottom info line text (focus) | `cards.js` → `inspectLine()` |
-| All DOM `onclick` bindings | `main.js` |
+- `style.css` is one long minified line — never `grep -n` it. The `.js` files are
+  normal multi-line files; `grep -n` is safe there.

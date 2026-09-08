@@ -87,7 +87,7 @@ if (hasAbil(tb, "chitin")) dmg *= .5;
 tcb.curHp -= dmg, tcb.hitT = 1;
 const ha = atan2(tp.y - p.y, tp.x - p.x);
 tcb.hitDx = cos(ha), tcb.hitDy = sin(ha);
-const sh = bodyLenOf(tb) * .3 * (random() < .5 ? -1 : 1);
+const sh = bodyLenOf(tb) * .15 * (random() < .5 ? -1 : 1);
 tcb.imX -= tcb.hitDy * sh, tcb.imY += tcb.hitDx * sh;
 spawnDmgPop(tp.x, tp.y, dmg, !1, atkTeam);
 hasAbil(tb, "cry") && (tcb.callT = ABILITIES.cry.dur, tcb.callR = callRadius(tb), tcb.callTeam = atkTeam ? 0 : 1, tcb.callCry = 1, tcb.callX = tp.x, tcb.callY = tp.y);
