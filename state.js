@@ -1,4 +1,4 @@
-const THINK_MIN = 500, THINK_SPAN = 9500, FEED_PAUSE = 600;
+const WALK_MIN = 500, WALK_MAX = 1e4, FEED_PAUSE = 600;
 function intPause(iv) {
 return 5500 - 500 * clamp(iv, 1, 10)
 }

@@ -19,7 +19,7 @@ DOM event binding, so definition files never run DOM code at load time.
 | Colours, fonts, sizes, spacing, screen shake | `style.css` | `#toast`, `.shake` |
 | Version number, math helpers, sound effects | `core.js` | `GAME_VERSION` (line 1) |
 | Tutorial list, achievement list, unlock rules, toasts on unlock | `achievements.js` | `achSt` |
-| Starting money, tunables (think timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState` |
+| Starting money, tunables (walk timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState`, `WALK_MIN`, `WALK_MAX` |
 | Bug object, names, stat bars, max HP | `bug.js` | |
 | Ability list, ability rules, bite damage, bite shove, bite prep by agi, inheritance | `abilities.js` | |
 | Bug cards (shop/lab/barracks/result), HP bars, kill button, focus line, blocked-flash, toast text | `cards.js` | `makeBugCard`, `drawHpBar`, `inspectLine`, `toast`, `flashBlocked` |
@@ -27,18 +27,18 @@ DOM event binding, so definition files never run DOM code at load time.
 | Bug body shapes, colour palette, walk style (gait) | `morph.js` | `randomMorph`, `setPalette`, `setGait` |
 | Drawing one bug, card thumbnails | `drawbug.js` | `drawBugStyled` |
 | Box background art | `bg.js` | `drawBg` |
-| Obstacle types and their shapes | `obst.js` | `OBST` |
+| Obstacle types, shapes and variants (index = kind, `v` = variant) | `obst.js` | `OBST` |
 | Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr` |
 | Market screen | `shop.js` | `openShop`, `renderShop` |
 | Entity system (rarely touched) | `ecs.js` | `ecsQuery`, `C` |
-| Walking, wandering, feeding, collisions, wall bounce, wall slide, stuck manoeuvre, corpse slow-down | `move.js` | |
+| Walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), stuck manoeuvre, corpse slow-down | `move.js` | `SLIDE_K`, `walkTimer` |
 | Mating, eggs, hatching, box capacity | `mate.js` | |
 | Breeding lab (sorting, selection, offspring) | `lab.js` | |
 | Barracks screen (modes, tiers, team picking) | `chal.js` | |
 | Fight AI, targeting, ability firing, target switch to weakest attacker, panic burst | `combatai.js` | `panicAll` |
 | What is drawn each frame, bottom info line | `render.js` | |
-| Hit-testing under the finger (bugs, obstacles, draggables) | `input.js` | `nearest`, `obstacleAt`, `draggableAt` |
-| All DOM `onclick` bindings, dragging, triple-tap panic, focus on corpses | `main.js` | `endDrag`, `tapT` |
+| Hit-testing under the finger, dragging, obstacle rotation by circling | `input.js` | `nearest`, `obstacleAt`, `draggableAt`, `dragStart`, `dragMove`, `endDrag` |
+| All DOM `onclick` bindings, triple-tap panic, focus on corpses | `main.js` | `tapT` |
 | Simulation loop, speed | `loop.js` | `tick(dt, fight)` = one simulation step |
 | Enemy generation, fight start (salute toast + freeze), result screen, fight-end and stalemate check | `fight.js` | `checkFightEnd` |
 | Bug designer overlay | `dz.js` | |
@@ -50,7 +50,7 @@ DOM event binding, so definition files never run DOM code at load time.
 - `camelCase` — variables and functions.
 - **stats** = a single bug's `con str agi int per` and HP. Nothing else.
   Cross-game totals are **records**. One game's unlocks are **achievements**.
-- ECS components: `bug pos vel think wall team combat food obstacle`,
+- ECS components: `bug pos vel walk wall team combat food obstacle`,
   read with `C.pos.get(entity)`, listed with `ecsQuery("bug","pos")`.
 
 ## Running it

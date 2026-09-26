@@ -83,7 +83,7 @@ const b = C.bug.get(e),
 p = C.pos.get(e),
 tm = C.team.get(e),
 cb = C.combat.get(e),
-t = C.think.get(e);
+t = C.walk.get(e);
 const bodyL = bodyLenOf(b), engageDist = engageDistOf(b), spd = spdOf(b), turn = turningOf(b), tier = huntTierOf(b);
 if (cb.dead && !(cb.phoenixT > 0)) { clearActionState(cb); return }
 tickTimers(cb, p, b, dt);

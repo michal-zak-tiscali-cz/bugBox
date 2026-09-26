@@ -66,7 +66,7 @@ boxCx.fillStyle = "#a5a298", boxCx.beginPath(), boxCx.ellipse(-g.r * .22, -g.r *
 boxCx.restore()
 });
 }
-const ents = inCombat ? ecsQuery("bug", "pos", "team", "combat") : ecsQuery("bug", "pos", "vel", "think", "wall");
+const ents = inCombat ? ecsQuery("bug", "pos", "team", "combat") : ecsQuery("bug", "pos", "vel", "walk", "wall");
 const isGrey = e => { const c = C.combat.get(e); return c.dead || c.phoenixT > 0 || c.fakeT > 0 };
 const tops = new Set(mates.map(m => m.top));
 const drawOrder = inCombat ? [...ents].sort((a, bb) => (isGrey(a) ? 0 : 1) - (isGrey(bb) ? 0 : 1)) :

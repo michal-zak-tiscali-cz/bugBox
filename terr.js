@@ -140,7 +140,7 @@ return {
 bug: b,
 pos: { x: x, y: y, dir: dir },
 vel: { wanderAngle: dir, angVel: 0 },
-think: { paused: !1, pauseTimer: 0, thinkTimer: THINK_MIN + THINK_SPAN * random(), scanRemain: 0, seekX: null, seekY: null },
+walk: { paused: !1, pauseTimer: 0, walkTimer: rf(WALK_MIN, WALK_MAX), scanRemain: 0, seekX: null, seekY: null },
 wall: { phase: null, targetAngle: 0 },
 team: { team: tm }
 }
@@ -189,7 +189,7 @@ const side = (arr, tm) => {
 const gap = lh / (arr.length + 1);
 arr.forEach((b, i) => {
 const c = bugEntity(b, 0 === tm ? .18 * lw : .82 * lw, gap * (i + 1), 0 === tm ? 0 : PI, tm);
-c.think.paused = !0, c.think.pauseTimer = intPause(b.int);
+c.walk.paused = !0, c.walk.pauseTimer = intPause(b.int);
 const mhp = maxHpOf(b);
 c.combat = {
 ...COMBAT_DEFAULTS,
@@ -200,13 +200,6 @@ ecsSpawn(c)
 })
 };
 side(fightTeam, 0), side(enemies, 1), syncHud(!0)
-}
-function octantOf(dir) {
-let deg = (180 * dir / PI % 360 + 360) % 360;
-return floor(deg / 45) + 1
-}
-function randAngleInOctant(n) {
-return rf(45 * (n - 1), 45 * n) * PI / 180
 }
 Object.defineProperty(window, "bugsInTerr", {
 get: bugsInTerrView,

@@ -28,7 +28,7 @@ sysRender(combatState)
 }
 function tick(dt, fight) {
 const dtS = dt / 1e3,
-all = ecsQuery("bug", "pos", "vel", "think", "wall"),
+all = ecsQuery("bug", "pos", "vel", "walk", "wall"),
 ents = fight ? all.filter(e => "fighting" !== C.bug.get(e).mood && !C.combat.get(e).dead) : all;
 fight && (sysSeek(ents), sysCombatAI(dt));
 sysThinkWander(dt, ents), sysSteer(dtS, ents), sysMove(dtS, fight ? all : ents);

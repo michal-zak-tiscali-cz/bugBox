@@ -89,7 +89,7 @@ sp.dir = away, tp.dir = away, tp.x = sp.x - cos(away) * g, tp.y = sp.y - sin(awa
 function scrapEnd(s) {
 [s.a, s.b].forEach(en => {
 if (!ECS.bug.has(en)) return;
-const b = C.bug.get(en), t = C.think.get(en), v = C.vel.get(en);
+const b = C.bug.get(en), t = C.walk.get(en), v = C.vel.get(en);
 b.scrap = b.prepT = 0;
 v && (v.wanderAngle = random() * TAU);
 t && random() < .5 && (t.paused = !0, t.pauseTimer = intPause(b.int))
@@ -107,7 +107,7 @@ if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
 b.mating = 0, b.mateCd = MATE_COOLDOWN_MS, ok && (b.mated = 1)
 });
-if (ok && ECS.think.has(m.sub)) { const t = C.think.get(m.sub); t.paused = !0, t.pauseTimer = 2 * intPause(C.bug.get(m.sub).int) }
+if (ok && ECS.walk.has(m.sub)) { const t = C.walk.get(m.sub); t.paused = !0, t.pauseTimer = 2 * intPause(C.bug.get(m.sub).int) }
 if (ok && ECS.pos.has(m.sub) && ECS.pos.has(m.top)) {
 const sp = C.pos.get(m.sub), tp = C.pos.get(m.top);
 ECS.vel.has(m.sub) && (C.vel.get(m.sub).wanderAngle = sp.dir);

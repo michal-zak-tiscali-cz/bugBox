@@ -11,26 +11,8 @@ drawMorphBug(ctx, m, morphColor([120, 30, 275][i]), cx, 32, 0, { scale: morphFit
 ].forEach(([x, y]) => ctx.fillRect(x, y, 2, 2))
 }();
 $("bt-buy").onclick = shopDone;
-boxCv.addEventListener("pointerdown", e => {
-const [cx, cy] = boxPt(e), t = draggableAt(cx, cy);
-if (!t || !canDrag(t.kind)) return;
-const op = C.pos.get(t.e);
-"bug" === t.kind && mateCancel(t.e);
-drag = { ...t, ox: op.x - cx, oy: op.y - cy, sx: cx, sy: cy, moved: !1 };
-boxCv.setPointerCapture && boxCv.setPointerCapture(e.pointerId)
-});
-boxCv.addEventListener("pointermove", e => {
-if (!drag) return;
-const [cx, cy] = boxPt(e), p = C.pos.get(drag.e);
-if (!p) return void(drag = null);
-if (!drag.moved && hypot(cx - drag.sx, cy - drag.sy) < DRAG_SLOP) return;
-drag.moved || achieve("drag"), drag.moved = !0;
-p.x = clamp(cx + drag.ox, drag.pad, boxLW - drag.pad);
-p.y = clamp(cy + drag.oy, drag.pad, boxLH - drag.pad);
-if ("bug" === drag.kind) { const t = C.think.get(drag.e); t && (t.paused = !0, t.pauseTimer = DROP_PAUSE), p.dropStuck = 1 }
-e.preventDefault()
-});
-function endDrag() { drag && (suppressClick = drag.moved, drag = null) }
+boxCv.addEventListener("pointerdown", dragStart);
+boxCv.addEventListener("pointermove", dragMove);
 boxCv.addEventListener("pointerup", endDrag);
 boxCv.addEventListener("pointercancel", endDrag);
 let tapT = [];

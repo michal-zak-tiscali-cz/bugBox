@@ -61,7 +61,7 @@ if (tcb) { const a = tp.dir + HALF_PI * (random() < .5 ? -1 : 1); tcb.dodT = 1, 
 return spawnDmgPop(tp.x, tp.y, 0, !0, atkTeam), !0
 }
 function wakeToFight(e) {
-const t = C.think.get(e), b = C.bug.get(e);
+const t = C.walk.get(e), b = C.bug.get(e);
 if (!t || "fighting" === b.mood) return;
 b.mood = "fighting", t.paused = !1, t.pauseTimer = 0, t.scanRemain = 0, t.seekX = null;
 const w = C.wall.get(e);
@@ -71,7 +71,7 @@ function biteNoticed(te) {
 wakeToFight(te);
 const tp = C.pos.get(te), ttm = C.team.get(te);
 if (!tp || !ttm) return;
-ecsQuery("bug", "pos", "team", "think").forEach(oe => {
+ecsQuery("bug", "pos", "team", "walk").forEach(oe => {
 if (oe === te || C.team.get(oe).team !== ttm.team) return;
 const ocb = C.combat.get(oe);
 if (ocb && ocb.dead) return;
