@@ -76,8 +76,7 @@ You are in mode A when you have no write access to the repo.
 - Never deliver a `.zip`.
 - Deliver **individual files**, one download link each.
 - Deliver **only the files that changed** — not the whole project.
-- Committing to the repo is optional and the user's choice. Never assume the
-  repo is current. He commits straight to `main`, no branches.
+- Committing is the user's choice. He commits straight to `main`, no branches.
 - Every delivered file must be **cumulative**: original + all edits made earlier
   in this session. He overwrites files, so a lost earlier edit is destroyed.
 - On request, build a single-file test build `bugbox-vXX.X.html` (all `.js` and
@@ -85,9 +84,10 @@ You are in mode A when you have no write access to the repo.
   a script, never print it. ~600 tokens. Test copy, not for the repo.
 
 **Mode A session state**
-- The working copy lives in the container and can be wiped without warning.
-- **Before starting any task**, check the working copy exists (`ls` the clone).
-- If it is gone, clone it again. Only if cloning fails, say so at once and stop.
+- Every new chat starts with an empty container. Clone `main` at once, without asking, and treat it as current.
+- If `GAME_VERSION` in the clone differs from the version the user names, say so in one line, then work on the clone.
+- If the clone vanishes mid-session, say so, clone again and redo this session's edits.
+- If cloning fails, ask him to upload only the files the task needs.
 
 ### Mode B — Claude Code
 You are in mode B when the repo is checked out and you can commit.
