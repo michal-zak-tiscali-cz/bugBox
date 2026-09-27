@@ -135,12 +135,12 @@ break
 }
 }
 function bugEntity(b, x, y, dir, tm) {
-combatState && (b.mood = "seeking");
+b.mood = combatState || hpFrac(b) < 1 ? "seeking" : "peace";
 return {
 bug: b,
 pos: { x: x, y: y, dir: dir },
 vel: { wanderAngle: dir, angVel: 0 },
-walk: { pauseTimer: 0, walkTimer: rf(WALK_MIN, WALK_MAX), scanRemain: 0, seekX: null, seekY: null },
+walk: { act: "intPause", actT: 0, scanRemain: 0, seekX: null, seekY: null },
 wall: { phase: null, targetAngle: 0 },
 team: { team: tm }
 }

@@ -47,6 +47,7 @@ boxCx.fillText(`${ABILITIES[id].name}${has?" "+(cd<=0?"\u2713":(cd/1000).toFixed
 })
 })
 }
+const drawHit = (b, x, y, dir) => b.hitT > 0 && drawMorphBug(boxCx, ensureMorph(b), "#ff2828", x, y, dir + HALF_PI, { alpha: b.hitT, shadow: !1 });
 function sysRender(inCombat) {
 sysRenderObstacles(), drawZoneVisOverlay();
 if (inCombat) {
@@ -77,7 +78,7 @@ const b = C.bug.get(e),
 p = C.pos.get(e);
 if (!inCombat) {
 drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, b === inspected, posPhase(p));
-b.hitT > 0 && drawMorphBug(boxCx, ensureMorph(b), "#ff2828", p.x, p.y, p.dir + HALF_PI, { alpha: b.hitT, shadow: !1 });
+drawHit(b, p.x, p.y, p.dir);
 const r = morphR(b);
 post.push(() => {
 (!fow && (b === inspected || scienceOn && sci("hp"))) && drawHpBar(p, hpFrac(b), r);
@@ -97,13 +98,13 @@ k > 0 && drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha:
 return;
 }
 cb.greyAt = 0;
-const hitFrac = cb.hitT || 0;
+const hitFrac = b.hitT || 0;
 let offX = 7 * hitFrac * (cb.hitDx || 0) + 7 * (cb.dodT || 0) * (cb.dodDx || 0),
 offY = 7 * hitFrac * (cb.hitDy || 0) + 7 * (cb.dodT || 0) * (cb.dodDy || 0);
 if (cb.loudT > 0) { const amp = (cfg.legLen * 0.5 / 3) * sin(cb.loudT / 20), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
 boxCx.globalAlpha = 1;
 drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), sci("col") ? TEAM_HUE[tm.team] : null);
-if (cb.hitT > 0) { boxCx.save(); boxCx.globalAlpha = cb.hitT; drawMorphBug(boxCx, cfg, "#ff2828", p.x + offX, p.y + offY, p.dir + HALF_PI, { alpha: cb.hitT, shadow: !1 }); boxCx.restore() }
+drawHit(b, p.x + offX, p.y + offY, p.dir);
 post.push(() => {
 if (cb.stunT > 0) { boxCx.save(), boxCx.fillStyle = "#fd4", boxCx.font = "9px Courier New", boxCx.textAlign = "center", boxCx.fillText("\u2726", p.x, p.y - r - 13), boxCx.restore() }
 if (sci("hp")) {

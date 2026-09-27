@@ -8,7 +8,15 @@ const SLIDE_K = .25;
 const CORPSE_SLOW = .25;
 const COMBAT_STEP_MS = 16, MAX_STEPS_PER_FRAME = 64;
 const wallPause = e => random() < (11 - intOf(C.bug.get(e))) / 20 && intPause(e);
-const busy = (b, p) => b.mating || b.scrap || b.idlT > 0 || p.dropStuck;
+const slideEnd = e => (C.wall.get(e).phase = "wall", wallPause(e) || (C.walk.get(e).act = "walk"));
+const busy = (b, p) => b.scrap || p.dropStuck;
+function decide(e) {
+const b = C.bug.get(e), t = C.walk.get(e), r = random();
+if ("fighting" === b.mood) return void(t.act = "fighting", t.actT = 1 / 0);
+if (C.wall.get(e).phase || combatState || "seeking" === b.mood || r < .7) return void(t.act = "walk", t.actT = rf(WALK_MIN, WALK_MAX), newDir(e));
+const s = intOf(b) > 4 && r < .85;
+t.act = s ? SMART[ri(hasAbil(b, "flanking") ? 3 : 2)] : "idle", b.mood = s ? "smartIdle" : "idle", t.actT = IDL_MIN + random() * IDL_SPAN, t.idlS = random() < .5 ? -1 : 1, t.idlA = TAU, t.idlE = null
+}
 function sysThinkWander(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => {
@@ -17,12 +25,14 @@ p = C.pos.get(e),
 v = C.vel.get(e),
 t = C.walk.get(e),
 w = C.wall.get(e);
-combatState || ("fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = hpFrac(b) < 1 ? "seeking" : b.idlT > 0 ? b.mood : "peace"));
-if (t.pauseTimer > 0) return;
+combatState || (b.mood = hpFrac(b) < 1 ? "seeking" : "walk" === t.act || "intPause" === t.act || "slide" === t.act ? "peace" : b.mood);
+if ("walk" !== t.act) return;
 const px = p.x, py = p.y;
 if (busy(b, p)) return void(p.frzMs = 0, p.lastX = px, p.lastY = py);
-if (w.phase) return void(turnToward(p, w.targetAngle, turningOf(b) * dtS) && (v.wanderAngle = p.dir, w.phase = null, wallPause(e)));
-t.walkTimer -= dt, t.walkTimer <= 0 && (t.walkTimer = rf(WALK_MIN, WALK_MAX), newDir(e), intPause(e));
+if (w.phase) {
+if (turnToward(p, w.targetAngle, turningOf(b) * dtS)) { const wl = "wall" === w.phase; v.wanderAngle = p.dir, w.phase = null, wl && (wallPause(e) || decide(e)) }
+return
+}
 if ((p.frzMs = (p.frzMs || 0) + dt) >= STUCK_CHECK_MS) {
 p.frzMs = 0;
 if (hypot(px - (p.lastX == null ? px : p.lastX), py - (p.lastY == null ? py : p.lastY)) < bugLen(b)) {
@@ -41,7 +51,7 @@ w = C.wall.get(e),
 b = C.bug.get(e),
 p = C.pos.get(e),
 v = C.vel.get(e);
-if (t.pauseTimer > 0 || w.phase || w.slideT > 0 || busy(b, p)) return;
+if ("walk" !== t.act || w.phase || busy(b, p)) return;
 p.hold = 0;
 v.angVel += .9 * (random() - .5) * dtS, v.angVel *= .95, v.wanderAngle += v.angVel;
 let vx = cos(v.wanderAngle),
@@ -73,8 +83,7 @@ const bp = C.pos.get(be), b = C.bug.get(be);
 if (hpFrac(b) < 1 && hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
 const mx = maxHpOf(b);
 b.curHp = min(mx, b.curHp + mx / 5);
-"fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = b.curHp >= mx ? "peace" : "seeking");
-intPause(be), newDir(be);
+intPause(be);
 achieve("feed"), achStep("fed", [10, 50], "fed"), ecsKill(fe);
 break
 }
@@ -93,7 +102,6 @@ return [vx, vy]
 function sysMove(dtS, ents) {
 const lw = boxLW,
 lh = boxLH,
-dt = dtS * 1e3,
 corpses = ents.filter(en => { const c = C.combat.get(en); return c && c.dead });
 const slowOf = (e, p) => corpses.some(oe => oe !== e && hypot(C.pos.get(oe).x - p.x, C.pos.get(oe).y - p.y) < bugRadius(C.bug.get(oe))) ? CORPSE_SLOW : 1;
 ents.forEach(e => {
@@ -104,7 +112,7 @@ p = C.pos.get(e),
 cb = C.combat.get(e);
 if (cb && cb.dead) return;
 const slow = corpses.length ? slowOf(e, p) : 1, m = bugRadius(b);
-if (cb && "fighting" === b.mood) {
+if (cb && "fighting" === t.act) {
 let moved = 0;
 if (cb.mvSpd) {
 const step = cb.mvSpd * dtS * slow;
@@ -119,16 +127,15 @@ cb.mvOn = 0;
 if (moved) clampToBox(e);
 return
 }
-if (t.pauseTimer > 0 || w.phase || p.hold || busy(b, p)) return;
+if (w.phase || p.hold || busy(b, p) || "walk" !== t.act && "slide" !== t.act) return;
 const spd = spdOf(b) * slow;
-if (w.slideT > 0 && (abs(sin(w.slideA)) > .5 ? (p.x < lw / 2 ? -1 : 1) * cos(p.dir) : (p.y < lh / 2 ? -1 : 1) * sin(p.dir)) > 0) {
-w.slideT -= dt;
+if ("slide" === t.act) {
+if ((abs(sin(w.slideA)) > .5 ? (p.x < lw / 2 ? -1 : 1) * cos(p.dir) : (p.y < lh / 2 ? -1 : 1) * sin(p.dir)) > 0) {
 const st = spd * dtS * cos(p.dir - w.slideA);
-p.x += cos(w.slideA) * st, p.y += sin(w.slideA) * st, clampToBox(e);
-w.slideT <= 0 && (w.phase = "rotating", wallPause(e));
+p.x += cos(w.slideA) * st, p.y += sin(w.slideA) * st, clampToBox(e)
+} else slideEnd(e);
 return
 }
-w.slideT = 0;
 const nx = p.x + cos(p.dir) * spd * dtS,
 ny = p.y + sin(p.dir) * spd * dtS,
 hitX = nx < m || nx > lw - m,
@@ -136,7 +143,7 @@ hitY = ny < m || ny > lh - m;
 if (hitX || hitY) {
 const sx = hitX && (!hitY || random() < .5), n = sx ? nx < m ? 0 : PI : ny < m ? HALF_PI : -HALF_PI;
 w.slideA = sx ? sin(p.dir) >= 0 ? HALF_PI : -HALF_PI : cos(p.dir) >= 0 ? 0 : PI;
-w.slideT = t.walkTimer * SLIDE_K, w.targetAngle = w.slideA + sign(norm(n - w.slideA)) * random() * HALF_PI;
+t.act = "slide", t.actT *= SLIDE_K, w.targetAngle = w.slideA + sign(norm(n - w.slideA)) * random() * HALF_PI;
 return
 }
 p.x = nx, p.y = ny, clampToBox(e)
@@ -158,7 +165,7 @@ for (let j = i + 1; j < ents.length; j++) {
 const ca = C.combat.get(ents[i]),
 cbb = C.combat.get(ents[j]);
 if (ca && ca.dead || cbb && cbb.dead) continue;
-if (C.bug.get(ents[i]).mating && C.bug.get(ents[j]).mating) continue;
+if ("breeding" === C.walk.get(ents[i]).act && "breeding" === C.walk.get(ents[j]).act) continue;
 const minD = sepPair(ents[i], ents[j]);
 if (minD <= 0) continue;
 const a = C.pos.get(ents[i]),
@@ -230,50 +237,36 @@ boxCx.restore()
 }
 })
 }
-function sysRegen(dtS) {
-bugsOwned.forEach(b => {
-const mx = maxHpOf(b);
-b.curHp == null && (b.curHp = mx);
-b.hitT > 0 && (b.hitT = max(0, b.hitT - 5 * dtS));
-b.curHp < mx && (b.curHp = min(mx, b.curHp + mx / 330 * dtS))
-})
-}
-const IDL_CH = .0008, IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2;
-function idlStop(b, e, p) { b.idlT = 0, b.mood = "peace", C.vel.get(e).wanderAngle = p.dir }
-function sysIdle(dt, ents) {
+const IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2, SMART = ["observing", "stalking", "flankTraining"];
+function sysSmartIdle(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => {
-const b = C.bug.get(e), p = C.pos.get(e);
-if (b.idlT > 0) {
-if (!ECS.pos.has(b.idlE) || hpFrac(b) < 1) return idlStop(b, e, p);
-const op = C.pos.get(b.idlE), d = hypot(op.x - p.x, op.y - p.y);
-b.idlT -= dt;
-if ("circling" === b.mood) {
-if (ECS.bug.has(b.idlE) && hypot(op.x - b.idlX, op.y - b.idlY) > 2 || (b.idlA -= abs(b.idlD)) <= 0) return idlStop(b, e, p);
-const th = atan2(p.y - op.y, p.x - op.x) + b.idlD;
-p.x = op.x + cos(th) * b.idlR, p.y = op.y + sin(th) * b.idlR, p.dir = norm(th + b.idlS * HALF_PI), clampToBox(e)
+const b = C.bug.get(e), p = C.pos.get(e), t = C.walk.get(e);
+if (!SMART.includes(t.act) || b.scrap) return;
+if (hpFrac(b) < 1) return void intPause(e);
+const fl = "flankTraining" === t.act;
+if (t.idlE == null) {
+const tg = (fl ? [...ecsQuery("obstacle", "pos"), ...ecsQuery("food", "pos")] : ents.filter(o => o !== e)).find(o => seesPoint(b, p, C.pos.get(o).x, C.pos.get(o).y));
+if (tg == null) {
+const s = min(t.idlA, turningOf(b) * dtS);
+return void(p.dir = norm(p.dir + t.idlS * s), (t.idlA -= s) <= 0 && (t.act = b.mood = "idle"))
+}
+const op = C.pos.get(tg);
+t.idlE = tg, t.idlX = op.x, t.idlY = op.y, t.idlA = rf(PI / 4, 2.5 * PI), t.idlR = max(hypot(op.x - p.x, op.y - p.y), bugRadius(b) + 10), t.idlD = t.idlS * spdOf(b) * dtS / t.idlR
+}
+if (!ECS.pos.has(t.idlE)) return void intPause(e);
+const op = C.pos.get(t.idlE);
+if (fl) {
+if (hypot(op.x - t.idlX, op.y - t.idlY) > 2 || (t.idlA -= abs(t.idlD)) <= 0) return void intPause(e);
+const th = atan2(p.y - op.y, p.x - op.x) + t.idlD;
+p.x = op.x + cos(th) * t.idlR, p.y = op.y + sin(th) * t.idlR, p.dir = norm(th + t.idlS * HALF_PI)
 } else {
 turnToward(p, atan2(op.y - p.y, op.x - p.x), turningOf(b) * dtS);
-if ("stalking" === b.mood && d > bodyLenOf(b) * IDL_GAP) {
-const s = min(spdOf(C.bug.get(b.idlE)), spdOf(b)) * dtS;
-p.x += cos(p.dir) * s, p.y += sin(p.dir) * s, clampToBox(e)
+if ("stalking" !== t.act || hypot(op.x - p.x, op.y - p.y) <= bodyLenOf(b) * IDL_GAP) return;
+const s = min(spdOf(C.bug.get(t.idlE)), spdOf(b)) * dtS;
+p.x += cos(p.dir) * s, p.y += sin(p.dir) * s
 }
-}
-return void(b.idlT <= 0 && idlStop(b, e, p))
-}
-if ("peace" !== b.mood || b.mating || b.scrap || random() >= IDL_CH) return;
-const flank = hasAbil(b, "flanking") && hpFrac(b) >= 1, smart = intOf(b) >= 5;
-if (!flank && !smart) return;
-const pool = flank ? ecsQuery("pos").filter(o => o !== e && (ECS.bug.has(o) || ECS.obstacle.has(o) || ECS.food.has(o))) : ents.filter(o => o !== e),
-tg = pool.find(o => seesPoint(b, p, C.pos.get(o).x, C.pos.get(o).y));
-if (tg == null) return;
-const op = C.pos.get(tg);
-b.idlE = tg, b.idlT = IDL_MIN + random() * IDL_SPAN;
-if (flank && (!smart || random() < .5)) {
-b.idlR = max(hypot(op.x - p.x, op.y - p.y), bugRadius(b) + 10), b.idlS = random() < .5 ? -1 : 1,
-b.idlD = b.idlS * spdOf(b) * dtS / b.idlR, b.idlA = random() * TAU, b.idlX = op.x, b.idlY = op.y, b.mood = "circling"
-} else if (ECS.bug.has(tg)) b.mood = spdOf(C.bug.get(tg)) < spdOf(b) ? "stalking" : "observing";
-else b.idlT = 0
+clampToBox(e)
 })
 }
 const SEEK_REACH = 40, SEEK_CROSS = .45;

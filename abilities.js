@@ -62,8 +62,8 @@ return spawnDmgPop(tp.x, tp.y, 0, !0, atkTeam), !0
 }
 function wakeToFight(e) {
 const t = C.walk.get(e), b = C.bug.get(e);
-if (!t || "fighting" === b.mood) return;
-b.mood = "fighting", t.pauseTimer = 0, t.scanRemain = 0, t.seekX = null;
+if (!t || "fighting" === t.act) return;
+b.mood = "fighting", t.scanRemain = 0, t.seekX = null, decide(e);
 const w = C.wall.get(e);
 w && (w.phase = null)
 }
@@ -84,7 +84,7 @@ flankMult = fd < PI / 3 ? 1 : fd < TAU / 3 ? 1.5 : 2;
 if (fd >= PI / 3 && atkE != null && intOf(tb) < 5) { tcb.avengeE = atkE, tcb.avengeA = atan2(p.y - tp.y, p.x - tp.x) }
 let dmg = ab.str * rollVar() * flankMult * mult;
 if (hasAbil(tb, "chitin")) dmg *= .5;
-tcb.curHp -= dmg, tcb.hitT = 1;
+tcb.curHp -= dmg, tb.hitT = 1;
 const ha = atan2(tp.y - p.y, tp.x - p.x);
 tcb.hitDx = cos(ha), tcb.hitDy = sin(ha);
 const sh = bodyLenOf(tb) * .15 * (random() < .5 ? -1 : 1);
@@ -101,7 +101,7 @@ const CD_KEYS = ["cdDash", "cdJump", "cdKnockout", "cdKickback", "cdStrong", "cd
 const COMBAT_DEFAULTS = {
 dead: !1, killsThis: 0,
 bitePrep: BITE_PREP_MS, bitePrepMax: BITE_PREP_MS, preppingBite: 0, prepVisT: 0,
-kbX: 0, kbY: 0, hitT: 0, hitDx: 0, hitDy: 0, dodT: 0, dodDx: 0, dodDy: 0,
+kbX: 0, kbY: 0, hitDx: 0, hitDy: 0, dodT: 0, dodDx: 0, dodDy: 0,
 spinRemain: 0, spinDir: 1, spinRate: 0,
 stunT: 0,
 jumpT: 0, jumpDur: 1, jumpElapsed: 0, jumpFromX: 0, jumpFromY: 0, jumpToX: 0, jumpToY: 0,

@@ -32,7 +32,7 @@ setTimeout(() => { combatState && (simSpd = 1, syncSpeedLabel()) }, 1000)
 }
 function endFight() {
 resultTimer && (clearTimeout(resultTimer), resultTimer = null);
-combatState = !1, tickDebt = 0, simSpd = speedBeforePause, ecsQuery("team").forEach(e => C.team.get(e).team === 1 && ecsKill(e)), restoreTerrWorld(), ov("ov-res", 0), syncHud(!0)
+combatState = !1, tickDebt = 0, simSpd = speedBeforePause, ecsQuery("team").forEach(ecsKill), restoreTerrWorld(), ov("ov-res", 0), syncHud(!0)
 }
 function showFightResult() {
 resultTimer = null;

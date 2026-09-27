@@ -1,6 +1,7 @@
 const WALK_MIN = 500, WALK_MAX = 1e4;
 function intPause(e, k = 1) {
-C.walk.get(e).pauseTimer = k * (5500 - 500 * intOf(C.bug.get(e)))
+const t = C.walk.get(e);
+return t.act = "intPause", t.actT = k * (5500 - 500 * intOf(C.bug.get(e)))
 }
 const newDir = e => C.vel.get(e).wanderAngle = random() * TAU;
 const SN = ["CON", "STR", "AGI", "INT", "PER"];

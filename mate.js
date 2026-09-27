@@ -6,8 +6,9 @@ function eggRadius(a, b) { return max(bodyLenOf(a), bodyLenOf(b)) * .25 }
 const SCRAP_REACH = 2.5, SCRAP_CONE = 1;
 const mateOdds = () => bugsOwned.length <= 3 ? 1 : bugsOwned.length <= 10 ? .5 : .25;
 const nibble = (a, t) => (t.hitT = 1, t.curHp = max(1, (t.curHp == null ? maxHpOf(t) : t.curHp) - a.str * rollVar()));
-function interactEligible(b) {
-return "peace" === b.mood && !(b.mateCd > 0) && !b.mating && !b.scrap
+function interactEligible(e) {
+const b = C.bug.get(e);
+return hpFrac(b) >= 1 && !(b.mateCd > 0) && "breeding" !== C.walk.get(e).act && !b.scrap
 }
 function sysMate(dt, ents) {
 const dtS = dt / 1e3;
@@ -21,16 +22,16 @@ ba = C.bug.get(ea), bbg = C.bug.get(eb);
 if (hypot(pb.x - pa.x, pb.y - pa.y) > sepPair(ea, eb) * 1.15) continue;
 seen.add(key);
 if (mateTouch.has(key)) continue;
-if (!interactEligible(ba) || !interactEligible(bbg)) continue;
+if (!interactEligible(ea) || !interactEligible(eb)) continue;
 if (random() >= INTERACT_CHANCE) continue;
-if (random() >= mateOdds() || boxFull() || hpFrac(ba) < 1 || hpFrac(bbg) < 1) {
+if (random() >= mateOdds() || boxFull()) {
 ba.scrap = bbg.scrap = 1;
 scraps.push({ a: ea, b: eb, ta: 1, tb: 1 });
 continue
 }
 const subFirst = ba.str < bbg.str || (ba.str === bbg.str && random() < .5),
 sub = subFirst ? ea : eb, top = subFirst ? eb : ea;
-ba.mating = bbg.mating = 1;
+[ea, eb].forEach(x => { const t = C.walk.get(x); t.act = "breeding", t.actT = 1 / 0 });
 mates.push({ sub, top, phase: "turn", t: 0, hold: 0 })
 }
 mateTouch = seen
@@ -90,7 +91,7 @@ function scrapEnd(s) {
 [s.a, s.b].forEach(en => {
 if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
-b.scrap = b.prepT = 0, newDir(en), random() < .5 && intPause(en)
+b.scrap = b.prepT = 0, intPause(en)
 })
 }
 function mateCancel(e) {
@@ -103,7 +104,7 @@ function mateEnd(m, ok) {
 [m.sub, m.top].forEach(en => {
 if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
-b.mating = 0, b.mateCd = MATE_COOLDOWN_MS, ok && (b.mated = 1, intPause(en, en === m.sub ? 2 : 1), newDir(en))
+b.mateCd = MATE_COOLDOWN_MS, ok && (b.mated = 1), intPause(en, ok && en === m.sub ? 2 : 1)
 })
 }
 function markEggsReady() { boxEggs.forEach(g => g.ready = 1) }
@@ -112,7 +113,7 @@ const keep = [];
 boxEggs.forEach(g => {
 if (!g.ready) return void keep.push(g);
 const nb = g.bug;
-nb.curHp = maxHpOf(nb), nb.mood = "peace", nb.mateCd = MATE_COOLDOWN_MS, nb.mating = 0;
+nb.curHp = maxHpOf(nb), nb.mood = "peace", nb.mateCd = MATE_COOLDOWN_MS;
 bugsOwned.push(nb), achOwn(1), achChild(nb), achStep("hatched", [1, 10], "hatch");
 trackDynasty(nb.gen);
 SFX.hatch()

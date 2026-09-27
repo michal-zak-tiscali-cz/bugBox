@@ -29,11 +29,15 @@ sysRender(combatState)
 function tick(dt, fight) {
 const dtS = dt / 1e3,
 all = ecsQuery("bug", "pos", "vel", "walk", "wall"),
-ents = fight ? all.filter(e => "fighting" !== C.bug.get(e).mood && !C.combat.get(e).dead) : all;
-all.forEach(e => { const t = C.walk.get(e); t.pauseTimer = max(0, t.pauseTimer - dt) });
+ents = fight ? all.filter(e => "fighting" !== C.walk.get(e).act && !C.combat.get(e).dead) : all;
+all.forEach(e => {
+const t = C.walk.get(e), b = C.bug.get(e);
+b.hitT > 0 && (b.hitT = max(0, b.hitT - dt / 200));
+"walk" === t.act && (C.wall.get(e).phase || C.pos.get(e).hold) || (t.actT -= dt) > 0 || ("intPause" === t.act ? decide(e) : "slide" === t.act ? slideEnd(e) : intPause(e))
+});
 fight && (sysSeek(ents), sysCombatAI(dt));
 sysThinkWander(dt, ents), sysSteer(dtS, ents), sysMove(dtS, fight ? all : ents);
-fight || (sysIdle(dt, ents), sysMate(dt, ents), sysFeed(), sysRegen(dtS));
+fight || (sysSmartIdle(dt, ents), sysMate(dt, ents), sysFeed());
 sysResolve(fight ? all : ents, dtS)
 }
 let speedBeforePause = 1;

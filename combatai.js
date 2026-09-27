@@ -31,7 +31,6 @@ const ACTION_KEYS = ["jumpT", "jumpElapsed", "turn180", "turn180Delay", "dashT",
 const clearActionState = cb => ACTION_KEYS.forEach(k => cb[k] = COMBAT_DEFAULTS[k]);
 function tickTimers(cb, p, b, dt) {
 const ticks = dt / COMBAT_STEP_MS, dtS = dt / 1e3;
-cb.hitT > 0 && (cb.hitT = max(0, cb.hitT - dt / 200));
 cb.dodT > 0 && (cb.dodT = max(0, cb.dodT - dt / 200));
 CD_KEYS.forEach(k => cb[k] > 0 && (cb[k] -= dt));
 cb.stunT > 0 && (cb.stunT -= dt);
@@ -125,7 +124,7 @@ gcb.stunT = max(gcb.stunT, 60);
 if (cb.grabDragLeft <= 0) { gcb.grabbedBy = -1; gcb.stunT = 0; cb.grabTarget = -1 }
 }
 }
-if ("fighting" !== b.mood) {
+if ("fighting" !== t.act) {
 const spotted = ents.some(oe => {
 const ocb = C.combat.get(oe);
 if (C.team.get(oe).team === tm.team || ocb.dead || ocb.curHp <= 0 || ocb.fakeT > 0) return !1;
@@ -142,7 +141,7 @@ else cb.panicT2 -= dt;
 turnToward(p, cb.panicA, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1;
 return
 }
-if (t.pauseTimer > 0) return;
+if ("intPause" === t.act) return;
 let target = null,
 minD2 = 1 / 0;
 const focusOn = hasAbil(b, "focus");
@@ -212,7 +211,7 @@ turnToward(p, cb.fleeA, turn * dtS);
 cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1;
 return
 }
-"fleeing" === b.mood && (b.mood = "seeking")
+"fleeing" === b.mood && (b.mood = "seeking", decide(e))
 abilBlocked = false;
 ents.forEach(oe => { const ocb = C.combat.get(oe), otm = C.team.get(oe); if (ocb.loudT > 0 && otm.team !== tm.team && !ocb.dead) { const op = C.pos.get(oe); if (hypot(op.x - p.x, op.y - p.y) < loudRadius(C.bug.get(oe))) abilBlocked = true } });
 if (target) {
@@ -377,7 +376,7 @@ turnToward(p, atan2(dym, dxm), stp) && (cb.mvA = p.dir, cb.mvSpd = spd * .5);
 cb.mvOn = 1;
 return
 }
-if (tier === 1) { cb.memT = 0, b.mood = "seeking", t.pauseTimer = 0, cb.mvOn = 1; return }
+if (tier === 1) { cb.memT = 0, b.mood = "seeking", decide(e), cb.mvOn = 1; return }
 cb.searchPhase = tier === 3 ? 1 : 2;
 t.scanRemain = TAU;
 cb.lostSide = random() < .5 ? -1 : 1
@@ -389,7 +388,7 @@ cb.searchPhase = 2, t.scanRemain = TAU
 t.scanRemain > 0 || (t.scanRemain = TAU);
 const step = min(t.scanRemain, stp);
 p.dir = norm(p.dir + step * (cb.lostSide || 1)), t.scanRemain -= step;
-if (t.scanRemain <= 0) b.mood = "seeking", t.pauseTimer = 0, t.scanRemain = 0, cb.memT = 0, cb.searchPhase = 0
+if (t.scanRemain <= 0) b.mood = "seeking", decide(e), t.scanRemain = 0, cb.memT = 0, cb.searchPhase = 0
 }
 cb.mvOn = 1
 });

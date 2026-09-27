@@ -23,6 +23,7 @@ ECS.entities.add(e);
 for (const k in comps) ECS[k].set(e, comps[k]);
 return e
 }
+function ecsFront(e) { ECS.entities.delete(e), ECS.entities.add(e) }
 function ecsKill(e) {
 ECS.entities.delete(e);
 for (const k in ECS) ECS[k] instanceof Map && ECS[k].delete(e)

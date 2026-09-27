@@ -19,7 +19,7 @@ DOM event binding, so definition files never run DOM code at load time.
 | Colours, fonts, sizes, spacing, screen shake | `style.css` | `#toast`, `.shake` |
 | Version number, math helpers, sound effects | `core.js` | `GAME_VERSION` (line 1) |
 | Tutorial list, achievement list, unlock rules, toasts on unlock | `achievements.js` | `achSt` |
-| Starting money, pauses, tunables (walk timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState`, `WALK_MIN`, `WALK_MAX`, `intPause` (only pause setter, length by INT), `newDir` (only random walk direction) |
+| Starting money, pauses, tunables (walk timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState`, `WALK_MIN`, `WALK_MAX`, `intPause` (only pause setter and only way to end an act, length by INT), `newDir` (random walk direction, called only by `decide`) |
 | Bug object, names, stat bars, max HP | `bug.js` | |
 | Ability list, ability rules, bite damage, bite shove, bite prep by agi, inheritance | `abilities.js` | |
 | Bug cards (shop/lab/barracks/result), HP bars, kill button, focus line, blocked-flash, toast text | `cards.js` | `makeBugCard`, `drawHpBar`, `inspectLine`, `toast`, `flashBlocked` |
@@ -28,19 +28,19 @@ DOM event binding, so definition files never run DOM code at load time.
 | Drawing one bug, card thumbnails | `drawbug.js` | `drawBugStyled` |
 | Box background art | `bg.js` | `drawBg` |
 | Obstacle types, shapes and variants (index = kind, `v` = variant) | `obst.js` | `OBST` |
-| Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr` |
+| Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning (mood by HP) | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr` |
 | Market screen | `shop.js` | `openShop`, `renderShop` |
-| Entity system (rarely touched) | `ecs.js` | `ecsQuery`, `C` |
-| Walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down, busy bug skips walking | `move.js` | `SLIDE_K`, `walkTimer`, `clampToBox`, `busy`, `wallPause` |
-| Mating, eggs, hatching, box capacity | `mate.js` | |
+| Entity system (rarely touched), draw order (dragged item on top) | `ecs.js` | `ecsQuery`, `C`, `ecsFront` |
+| Act choice, walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down, busy bug skips walking, idle and smartIdle, mood in box | `move.js` | `decide` (only act chooser), `SLIDE_K`, `slideEnd`, `clampToBox`, `busy`, `wallPause`, `sysSmartIdle`, `SMART` |
+| Mating (act `breeding`), scraps, eggs, hatching, box capacity | `mate.js` | `interactEligible` |
 | Breeding lab (sorting, selection, offspring) | `lab.js` | |
 | Barracks screen (modes, tiers, team picking) | `chal.js` | |
 | Fight AI, targeting, ability firing, target switch to weakest attacker, panic burst | `combatai.js` | `panicAll` |
-| What is drawn each frame, bottom info line | `render.js` | |
+| What is drawn each frame, bottom info line, red hit overlay | `render.js` | `drawHit` |
 | Hit-testing under the finger, dragging, obstacle rotation by circling | `input.js` | `nearest`, `obstacleAt`, `draggableAt`, `dragStart`, `dragMove`, `endDrag` |
 | All DOM `onclick` bindings, triple-tap panic, focus on corpses | `main.js` | `tapT` |
-| Simulation loop, speed | `loop.js` | `tick(dt, fight)` = one simulation step, sole pause countdown (`pauseTimer`) |
-| Enemy generation, fight start (salute toast + freeze), result screen, fight-end and stalemate check | `fight.js` | `checkFightEnd` |
+| Simulation loop, speed | `loop.js` | `tick(dt, fight)` = one simulation step, sole countdown of `actT` and `hitT` |
+| Enemy generation, fight start (salute toast + freeze), result screen, fight-end and stalemate check, fight end removes all fight entities | `fight.js` | `checkFightEnd`, `endFight` |
 | Bug designer overlay | `dz.js` | |
 | Info / Morphology / Abilities texts | `wiki.js` | |
 | Records screen | `records.js` | `bugbox_records` |
@@ -52,6 +52,11 @@ DOM event binding, so definition files never run DOM code at load time.
   Cross-game totals are **records**. One game's unlocks are **achievements**.
 - ECS components: `bug pos vel walk wall team combat food obstacle`,
   read with `C.pos.get(entity)`, listed with `ecsQuery("bug","pos")`.
+- **act** = what a bug does now, one timer: `walk.act` + `walk.actT`.
+  Values: `intPause walk slide idle observing stalking flankTraining breeding fighting`.
+  `fighting` = movement driven by `combatai.js`.
+- **mood** = why, on `bug.mood`: `peace seeking fighting fleeing idle smartIdle`.
+  Mating checks HP, not mood.
 
 ## Running it
 Open `index.html`. All paths are relative, so it works from a local folder or from GitHub Pages with no build step. The `index.html` contains an on-screen crash reporter (red bar at the bottom). It prints missing files and JS errors (Android has no console).

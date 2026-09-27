@@ -23,7 +23,7 @@ const [cx, cy] = boxPt(e), t = draggableAt(cx, cy);
 if (!t || !canDrag(t.kind)) return;
 const op = C.pos.get(t.e);
 "bug" === t.kind && mateCancel(t.e);
-drag = { ...t, ox: op.x - cx, oy: op.y - cy, sx: cx, sy: cy, moved: !1 };
+drag = { ...t, ox: op.x - cx, oy: op.y - cy, sx: cx, sy: cy, moved: !1 }, ecsFront(t.e);
 boxCv.setPointerCapture && boxCv.setPointerCapture(e.pointerId)
 }
 function dragMove(e) {
@@ -34,7 +34,7 @@ if (!drag.moved && hypot(cx - drag.sx, cy - drag.sy) < DRAG_SLOP) return;
 drag.moved || achieve("drag"), drag.moved = !0;
 p.x = clamp(cx + drag.ox, drag.pad, boxLW - drag.pad);
 p.y = clamp(cy + drag.oy, drag.pad, boxLH - drag.pad);
-"bug" === drag.kind && (intPause(drag.e), newDir(drag.e), p.dropStuck = 1);
+"bug" === drag.kind && (intPause(drag.e), p.dropStuck = 1);
 if ("obstacle" === drag.kind && hypot(cx - drag.sx, cy - drag.sy) > 6) {
 const a = atan2(cy - drag.sy, cx - drag.sx), d = drag.ha == null ? 0 : norm(a - drag.ha);
 drag.ha = a, drag.sx = cx, drag.sy = cy, abs(d) < 2 && (drag.turn = (drag.turn || 0) + d);
