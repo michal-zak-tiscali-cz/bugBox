@@ -31,7 +31,7 @@ DOM event binding, so definition files never run DOM code at load time.
 | Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr` |
 | Market screen | `shop.js` | `openShop`, `renderShop` |
 | Entity system (rarely touched) | `ecs.js` | `ecsQuery`, `C` |
-| Walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), stuck manoeuvre, corpse slow-down | `move.js` | `SLIDE_K`, `walkTimer` |
+| Walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down | `move.js` | `SLIDE_K`, `walkTimer`, `clampToBox` |
 | Mating, eggs, hatching, box capacity | `mate.js` | |
 | Breeding lab (sorting, selection, offspring) | `lab.js` | |
 | Barracks screen (modes, tiers, team picking) | `chal.js` | |

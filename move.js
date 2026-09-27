@@ -52,7 +52,7 @@ let vx = cos(v.wanderAngle),
 vy = sin(v.wanderAngle);
 const b = C.bug.get(e);
 let fT = null, fD2 = 1 / 0;
-foods.forEach(fe => {
+hpFrac(b) < 1 && foods.forEach(fe => {
 const fp = C.pos.get(fe), dx = fp.x - p.x, dy = fp.y - p.y, d2 = dx * dx + dy * dy;
 d2 < fD2 && seesPoint(b, p, fp.x, fp.y) && (fD2 = d2, fT = fp)
 });
@@ -74,14 +74,11 @@ const foods = ecsQuery("food", "pos"), bugs = ecsQuery("bug", "pos", "walk");
 foods.forEach(fe => {
 const fp = C.pos.get(fe);
 for (const be of bugs) {
-const bp = C.pos.get(be);
-if (hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
-const t = C.walk.get(be), b = C.bug.get(be);
-if (b) {
-const mx = maxHpOf(b);
-b.curHp == null && (b.curHp = mx), b.curHp = min(mx, b.curHp + mx / 5);
-"fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = b.curHp >= mx ? "peace" : "seeking")
-}
+const bp = C.pos.get(be), b = C.bug.get(be);
+if (hpFrac(b) < 1 && hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
+const mx = maxHpOf(b), t = C.walk.get(be);
+b.curHp = min(mx, b.curHp + mx / 5);
+"fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = b.curHp >= mx ? "peace" : "seeking");
 t.paused = !0, t.pauseTimer = FEED_PAUSE;
 achieve("feed"), achStep("fed", [10, 50], "fed"), ecsKill(fe);
 break
@@ -111,20 +108,20 @@ b = C.bug.get(e),
 p = C.pos.get(e),
 cb = C.combat.get(e);
 if (cb && cb.dead) return;
-const slow = corpses.length ? slowOf(e, p) : 1;
+const slow = corpses.length ? slowOf(e, p) : 1, m = bugRadius(b);
 if (cb && "fighting" === b.mood) {
 let moved = 0;
 if (cb.mvSpd) {
 const step = cb.mvSpd * dtS * slow;
 let ax = cos(cb.mvA), ay = sin(cb.mvA);
-(p.x <= BOX_MARGIN && ax < 0 || p.x >= lw - BOX_MARGIN && ax > 0) && (ax = -ax);
-(p.y <= BOX_MARGIN && ay < 0 || p.y >= lh - BOX_MARGIN && ay > 0) && (ay = -ay);
+(p.x <= m && ax < 0 || p.x >= lw - m && ax > 0) && (ax = -ax);
+(p.y <= m && ay < 0 || p.y >= lh - m && ay > 0) && (ay = -ay);
 p.x += ax * step, p.y += ay * step, moved = 1
 }
 if (cb.imX || cb.imY) { const lim = bugLen(b) * 2; p.x += clamp(cb.imX || 0, -lim, lim), p.y += clamp(cb.imY || 0, -lim, lim), cb.imX = 0, cb.imY = 0, moved = 1 }
 cb.mvSpd = 0;
 cb.mvOn = 0;
-if (moved) clampToBox(p);
+if (moved) clampToBox(e);
 return
 }
 if (t.paused || w.phase || p.hold || b.mating || b.scrap) return;
@@ -132,23 +129,23 @@ const spd = spdOf(b) * slow;
 if (w.slideT > 0 && (abs(sin(w.slideA)) > .5 ? (p.x < lw / 2 ? -1 : 1) * cos(p.dir) : (p.y < lh / 2 ? -1 : 1) * sin(p.dir)) > 0) {
 w.slideT -= dt;
 const st = spd * dtS * cos(p.dir - w.slideA);
-p.x += cos(w.slideA) * st, p.y += sin(w.slideA) * st, clampToBox(p);
+p.x += cos(w.slideA) * st, p.y += sin(w.slideA) * st, clampToBox(e);
 w.slideT <= 0 && (w.phase = random() < intChance(b.int) ? (t.pauseTimer = intPause(b.int), "prePause") : "rotating", w.noPause = 0);
 return
 }
 w.slideT = 0;
 const nx = p.x + cos(p.dir) * spd * dtS,
 ny = p.y + sin(p.dir) * spd * dtS,
-hitX = nx < BOX_MARGIN || nx > lw - BOX_MARGIN,
-hitY = ny < BOX_MARGIN || ny > lh - BOX_MARGIN;
+hitX = nx < m || nx > lw - m,
+hitY = ny < m || ny > lh - m;
 if (hitX || hitY) {
-const sx = hitX && (!hitY || random() < .5), n = sx ? nx < BOX_MARGIN ? 0 : PI : ny < BOX_MARGIN ? HALF_PI : -HALF_PI;
+const sx = hitX && (!hitY || random() < .5), n = sx ? nx < m ? 0 : PI : ny < m ? HALF_PI : -HALF_PI;
 w.slideA = sx ? sin(p.dir) >= 0 ? HALF_PI : -HALF_PI : cos(p.dir) >= 0 ? 0 : PI;
 w.slideT = t.walkTimer * SLIDE_K, w.targetAngle = w.slideA + sign(norm(n - w.slideA)) * random() * HALF_PI;
 return
 }
 w.noPause = 0;
-p.x = nx, p.y = ny, clampToBox(p)
+p.x = nx, p.y = ny, clampToBox(e)
 });
 }
 const sepBase = (a, b) => bugRadius(C.bug.get(a)) + bugRadius(C.bug.get(b));
@@ -157,7 +154,6 @@ const ca = C.combat.get(a), cb = C.combat.get(b);
 if (ca && cb && (ca.grabTarget === b || cb.grabTarget === a)) return 0;
 return sepBase(a, b)
 }
-const BOX_MARGIN = 21;
 const RESOLVE_MAX = 60;
 const SEP_FIGHT_MULT = 4;
 const UNSTICK_ACC = 90;
@@ -215,18 +211,19 @@ p.pushV = min(RESOLVE_MAX, (p.pushV || 0) + UNSTICK_ACC * dtS);
 const st = min(deep, p.pushV * dtS);
 p.x += ox / len * st, p.y += oy / len * st;
 const wx = p.x, wy = p.y;
-clampToBox(p);
-(p.x !== wx || p.y !== wy) && (p.x -= oy / len * st, p.y += ox / len * st, clampToBox(p))
+clampToBox(e);
+(p.x !== wx || p.y !== wy) && (p.x -= oy / len * st, p.y += ox / len * st, clampToBox(e))
 })
 }
-function clampToBox(p) {
-p.x = clamp(p.x, BOX_MARGIN, boxLW - BOX_MARGIN), p.y = clamp(p.y, BOX_MARGIN, boxLH - BOX_MARGIN)
+function clampToBox(e) {
+const p = C.pos.get(e), m = bugRadius(C.bug.get(e));
+p.x = clamp(p.x, m, boxLW - m), p.y = clamp(p.y, m, boxLH - m)
 }
 function sysResolve(ents, dtS) {
 const step = RESOLVE_MAX * (dtS || COMBAT_STEP_MS / 1e3);
 resolveBodies(ents, step);
 resolveObstacles(ents, dtS);
-ents.forEach(e => clampToBox(C.pos.get(e)))
+ents.forEach(clampToBox)
 }
 const SHADE_FLAT = "rgba(0,0,0,.35)";
 let flatCx = null;
@@ -265,12 +262,12 @@ b.idlT -= dt, t.paused = !0, t.pauseTimer = 100;
 if ("circling" === b.mood) {
 if (ECS.bug.has(b.idlE) && hypot(op.x - b.idlX, op.y - b.idlY) > 2 || (b.idlA -= abs(b.idlD)) <= 0) return idlStop(b, e, p);
 const th = atan2(p.y - op.y, p.x - op.x) + b.idlD;
-p.x = op.x + cos(th) * b.idlR, p.y = op.y + sin(th) * b.idlR, p.dir = norm(th + b.idlS * HALF_PI), clampToBox(p)
+p.x = op.x + cos(th) * b.idlR, p.y = op.y + sin(th) * b.idlR, p.dir = norm(th + b.idlS * HALF_PI), clampToBox(e)
 } else {
 turnToward(p, atan2(op.y - p.y, op.x - p.x), turningOf(b) * dtS);
 if ("stalking" === b.mood && d > bodyLenOf(b) * IDL_GAP) {
 const s = min(spdOf(C.bug.get(b.idlE)), spdOf(b)) * dtS;
-p.x += cos(p.dir) * s, p.y += sin(p.dir) * s, clampToBox(p)
+p.x += cos(p.dir) * s, p.y += sin(p.dir) * s, clampToBox(e)
 }
 }
 return void(b.idlT <= 0 && idlStop(b, e, p))
