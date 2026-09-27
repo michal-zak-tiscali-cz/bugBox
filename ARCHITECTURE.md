@@ -19,7 +19,7 @@ DOM event binding, so definition files never run DOM code at load time.
 | Colours, fonts, sizes, spacing, screen shake | `style.css` | `#toast`, `.shake` |
 | Version number, math helpers, sound effects | `core.js` | `GAME_VERSION` (line 1) |
 | Tutorial list, achievement list, unlock rules, toasts on unlock | `achievements.js` | `achSt` |
-| Starting money, tunables (walk timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState`, `WALK_MIN`, `WALK_MAX` |
+| Starting money, pauses, tunables (walk timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState`, `WALK_MIN`, `WALK_MAX`, `intPause` (only pause setter, length by INT), `newDir` (only random walk direction) |
 | Bug object, names, stat bars, max HP | `bug.js` | |
 | Ability list, ability rules, bite damage, bite shove, bite prep by agi, inheritance | `abilities.js` | |
 | Bug cards (shop/lab/barracks/result), HP bars, kill button, focus line, blocked-flash, toast text | `cards.js` | `makeBugCard`, `drawHpBar`, `inspectLine`, `toast`, `flashBlocked` |
@@ -31,7 +31,7 @@ DOM event binding, so definition files never run DOM code at load time.
 | Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr` |
 | Market screen | `shop.js` | `openShop`, `renderShop` |
 | Entity system (rarely touched) | `ecs.js` | `ecsQuery`, `C` |
-| Walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down | `move.js` | `SLIDE_K`, `walkTimer`, `clampToBox` |
+| Walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down, busy bug skips walking | `move.js` | `SLIDE_K`, `walkTimer`, `clampToBox`, `busy`, `wallPause` |
 | Mating, eggs, hatching, box capacity | `mate.js` | |
 | Breeding lab (sorting, selection, offspring) | `lab.js` | |
 | Barracks screen (modes, tiers, team picking) | `chal.js` | |
@@ -39,7 +39,7 @@ DOM event binding, so definition files never run DOM code at load time.
 | What is drawn each frame, bottom info line | `render.js` | |
 | Hit-testing under the finger, dragging, obstacle rotation by circling | `input.js` | `nearest`, `obstacleAt`, `draggableAt`, `dragStart`, `dragMove`, `endDrag` |
 | All DOM `onclick` bindings, triple-tap panic, focus on corpses | `main.js` | `tapT` |
-| Simulation loop, speed | `loop.js` | `tick(dt, fight)` = one simulation step |
+| Simulation loop, speed | `loop.js` | `tick(dt, fight)` = one simulation step, sole pause countdown (`pauseTimer`) |
 | Enemy generation, fight start (salute toast + freeze), result screen, fight-end and stalemate check | `fight.js` | `checkFightEnd` |
 | Bug designer overlay | `dz.js` | |
 | Info / Morphology / Abilities texts | `wiki.js` | |

@@ -34,7 +34,7 @@ if (!drag.moved && hypot(cx - drag.sx, cy - drag.sy) < DRAG_SLOP) return;
 drag.moved || achieve("drag"), drag.moved = !0;
 p.x = clamp(cx + drag.ox, drag.pad, boxLW - drag.pad);
 p.y = clamp(cy + drag.oy, drag.pad, boxLH - drag.pad);
-if ("bug" === drag.kind) { const t = C.walk.get(drag.e); t && (t.paused = !0, t.pauseTimer = DROP_PAUSE), p.dropStuck = 1 }
+"bug" === drag.kind && (intPause(drag.e), newDir(drag.e), p.dropStuck = 1);
 if ("obstacle" === drag.kind && hypot(cx - drag.sx, cy - drag.sy) > 6) {
 const a = atan2(cy - drag.sy, cx - drag.sx), d = drag.ha == null ? 0 : norm(a - drag.ha);
 drag.ha = a, drag.sx = cx, drag.sy = cy, abs(d) < 2 && (drag.turn = (drag.turn || 0) + d);

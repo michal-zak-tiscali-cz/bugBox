@@ -142,7 +142,7 @@ else cb.panicT2 -= dt;
 turnToward(p, cb.panicA, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1;
 return
 }
-if (t.paused) { t.pauseTimer -= dt; if (t.pauseTimer > 0) return; t.paused = !1 }
+if (t.pauseTimer > 0) return;
 let target = null,
 minD2 = 1 / 0;
 const focusOn = hasAbil(b, "focus");
@@ -377,7 +377,7 @@ turnToward(p, atan2(dym, dxm), stp) && (cb.mvA = p.dir, cb.mvSpd = spd * .5);
 cb.mvOn = 1;
 return
 }
-if (tier === 1) { cb.memT = 0, b.mood = "seeking", t.paused = !1, t.pauseTimer = 0, cb.mvOn = 1; return }
+if (tier === 1) { cb.memT = 0, b.mood = "seeking", t.pauseTimer = 0, cb.mvOn = 1; return }
 cb.searchPhase = tier === 3 ? 1 : 2;
 t.scanRemain = TAU;
 cb.lostSide = random() < .5 ? -1 : 1
@@ -389,7 +389,7 @@ cb.searchPhase = 2, t.scanRemain = TAU
 t.scanRemain > 0 || (t.scanRemain = TAU);
 const step = min(t.scanRemain, stp);
 p.dir = norm(p.dir + step * (cb.lostSide || 1)), t.scanRemain -= step;
-if (t.scanRemain <= 0) b.mood = "seeking", t.paused = !1, t.pauseTimer = 0, t.scanRemain = 0, cb.memT = 0, cb.searchPhase = 0
+if (t.scanRemain <= 0) b.mood = "seeking", t.pauseTimer = 0, t.scanRemain = 0, cb.memT = 0, cb.searchPhase = 0
 }
 cb.mvOn = 1
 });

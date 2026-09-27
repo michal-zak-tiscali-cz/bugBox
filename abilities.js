@@ -63,7 +63,7 @@ return spawnDmgPop(tp.x, tp.y, 0, !0, atkTeam), !0
 function wakeToFight(e) {
 const t = C.walk.get(e), b = C.bug.get(e);
 if (!t || "fighting" === b.mood) return;
-b.mood = "fighting", t.paused = !1, t.pauseTimer = 0, t.scanRemain = 0, t.seekX = null;
+b.mood = "fighting", t.pauseTimer = 0, t.scanRemain = 0, t.seekX = null;
 const w = C.wall.get(e);
 w && (w.phase = null)
 }

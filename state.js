@@ -1,10 +1,8 @@
-const WALK_MIN = 500, WALK_MAX = 1e4, FEED_PAUSE = 600;
-function intPause(iv) {
-return 5500 - 500 * clamp(iv, 1, 10)
+const WALK_MIN = 500, WALK_MAX = 1e4;
+function intPause(e, k = 1) {
+C.walk.get(e).pauseTimer = k * (5500 - 500 * intOf(C.bug.get(e)))
 }
-function intChance(iv) {
-return (11 - clamp(iv, 1, 10)) / 10 * .5
-}
+const newDir = e => C.vel.get(e).wanderAngle = random() * TAU;
 const SN = ["CON", "STR", "AGI", "INT", "PER"];
 let dzAnim = 0,
 money = 500,

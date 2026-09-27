@@ -7,6 +7,8 @@ const STUCK_CHECK_MS = 2000;
 const SLIDE_K = .25;
 const CORPSE_SLOW = .25;
 const COMBAT_STEP_MS = 16, MAX_STEPS_PER_FRAME = 64;
+const wallPause = e => random() < (11 - intOf(C.bug.get(e))) / 20 && intPause(e);
+const busy = (b, p) => b.mating || b.scrap || b.idlT > 0 || p.dropStuck;
 function sysThinkWander(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => {
@@ -16,22 +18,16 @@ v = C.vel.get(e),
 t = C.walk.get(e),
 w = C.wall.get(e);
 combatState || ("fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = hpFrac(b) < 1 ? "seeking" : b.idlT > 0 ? b.mood : "peace"));
-if ("prePause" === w.phase) return t.pauseTimer -= dt, void(t.pauseTimer <= 0 && (w.phase = "rotating"));
-if ("rotating" === w.phase) {
-if (!turnToward(p, w.targetAngle, turningOf(b) * dtS)) return;
-v.wanderAngle = p.dir;
-return void(!w.noPause && random() < intChance(b.int) ? (w.phase = "postPause", t.pauseTimer = intPause(b.int)) : w.phase = null)
-}
-if ("postPause" === w.phase) return t.pauseTimer -= dt, void(t.pauseTimer <= 0 && (w.phase = null));
-if (t.paused) return t.pauseTimer -= dt, void(t.pauseTimer <= 0 && (t.paused = !1, v.wanderAngle = random() * TAU));
-t.walkTimer -= dt, t.walkTimer <= 0 && (t.walkTimer = rf(WALK_MIN, WALK_MAX), t.paused = !0, t.pauseTimer = intPause(b.int));
+if (t.pauseTimer > 0) return;
 const px = p.x, py = p.y;
-if (b.mating || b.scrap) return void(p.frzMs = 0, p.lastX = px, p.lastY = py);
+if (busy(b, p)) return void(p.frzMs = 0, p.lastX = px, p.lastY = py);
+if (w.phase) return void(turnToward(p, w.targetAngle, turningOf(b) * dtS) && (v.wanderAngle = p.dir, w.phase = null, wallPause(e)));
+t.walkTimer -= dt, t.walkTimer <= 0 && (t.walkTimer = rf(WALK_MIN, WALK_MAX), newDir(e), intPause(e));
 if ((p.frzMs = (p.frzMs || 0) + dt) >= STUCK_CHECK_MS) {
 p.frzMs = 0;
 if (hypot(px - (p.lastX == null ? px : p.lastX), py - (p.lastY == null ? py : p.lastY)) < bugLen(b)) {
 p.frzSide = p.frzSide || (random() < .5 ? -1 : 1);
-v.wanderAngle = norm(p.dir + p.frzSide * (HALF_PI + random() * HALF_PI)), w.targetAngle = v.wanderAngle, w.phase = "rotating", w.noPause = 1, t.paused = !1, p.hold = 0
+v.wanderAngle = norm(p.dir + p.frzSide * (HALF_PI + random() * HALF_PI)), w.targetAngle = v.wanderAngle, w.phase = "rotating", p.hold = 0
 } else p.frzSide = 0;
 p.lastX = px, p.lastY = py
 }
@@ -42,15 +38,14 @@ const foods = ecsQuery("food", "pos"), obs = ecsQuery("obstacle", "pos");
 ents.forEach(e => {
 const t = C.walk.get(e),
 w = C.wall.get(e),
-bm = C.bug.get(e);
-if (t.paused || w.phase || w.slideT > 0 || bm.mating || bm.scrap) return;
-const p = C.pos.get(e),
+b = C.bug.get(e),
+p = C.pos.get(e),
 v = C.vel.get(e);
+if (t.pauseTimer > 0 || w.phase || w.slideT > 0 || busy(b, p)) return;
 p.hold = 0;
 v.angVel += .9 * (random() - .5) * dtS, v.angVel *= .95, v.wanderAngle += v.angVel;
 let vx = cos(v.wanderAngle),
 vy = sin(v.wanderAngle);
-const b = C.bug.get(e);
 let fT = null, fD2 = 1 / 0;
 hpFrac(b) < 1 && foods.forEach(fe => {
 const fp = C.pos.get(fe), dx = fp.x - p.x, dy = fp.y - p.y, d2 = dx * dx + dy * dy;
@@ -65,7 +60,7 @@ return
 if (fT) { const dx = fT.x - p.x, dy = fT.y - p.y, d = hypot(dx, dy) || .001; vx += dx / d * 2.2, vy += dy / d * 2.2 }
 [vx, vy] = rockAvoid(p, vx, vy, obs);
 const diff = norm(atan2(vy, vx) - p.dir);
-const maxStep = turningOf(C.bug.get(e)) * dtS;
+const maxStep = turningOf(b) * dtS;
 p.dir += max(-maxStep, min(maxStep, diff))
 })
 }
@@ -76,10 +71,10 @@ const fp = C.pos.get(fe);
 for (const be of bugs) {
 const bp = C.pos.get(be), b = C.bug.get(be);
 if (hpFrac(b) < 1 && hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
-const mx = maxHpOf(b), t = C.walk.get(be);
+const mx = maxHpOf(b);
 b.curHp = min(mx, b.curHp + mx / 5);
 "fighting" !== b.mood && "fleeing" !== b.mood && (b.mood = b.curHp >= mx ? "peace" : "seeking");
-t.paused = !0, t.pauseTimer = FEED_PAUSE;
+intPause(be), newDir(be);
 achieve("feed"), achStep("fed", [10, 50], "fed"), ecsKill(fe);
 break
 }
@@ -124,13 +119,13 @@ cb.mvOn = 0;
 if (moved) clampToBox(e);
 return
 }
-if (t.paused || w.phase || p.hold || b.mating || b.scrap) return;
+if (t.pauseTimer > 0 || w.phase || p.hold || busy(b, p)) return;
 const spd = spdOf(b) * slow;
 if (w.slideT > 0 && (abs(sin(w.slideA)) > .5 ? (p.x < lw / 2 ? -1 : 1) * cos(p.dir) : (p.y < lh / 2 ? -1 : 1) * sin(p.dir)) > 0) {
 w.slideT -= dt;
 const st = spd * dtS * cos(p.dir - w.slideA);
 p.x += cos(w.slideA) * st, p.y += sin(w.slideA) * st, clampToBox(e);
-w.slideT <= 0 && (w.phase = random() < intChance(b.int) ? (t.pauseTimer = intPause(b.int), "prePause") : "rotating", w.noPause = 0);
+w.slideT <= 0 && (w.phase = "rotating", wallPause(e));
 return
 }
 w.slideT = 0;
@@ -144,7 +139,6 @@ w.slideA = sx ? sin(p.dir) >= 0 ? HALF_PI : -HALF_PI : cos(p.dir) >= 0 ? 0 : PI;
 w.slideT = t.walkTimer * SLIDE_K, w.targetAngle = w.slideA + sign(norm(n - w.slideA)) * random() * HALF_PI;
 return
 }
-w.noPause = 0;
 p.x = nx, p.y = ny, clampToBox(e)
 });
 }
@@ -157,7 +151,6 @@ return sepBase(a, b)
 const RESOLVE_MAX = 60;
 const SEP_FIGHT_MULT = 4;
 const UNSTICK_ACC = 90;
-const DROP_PAUSE = 400;
 const STUCK_GIVE_UP = 2000;
 function resolveBodies(ents, step) {
 for (let i = 0; i < ents.length; i++)
@@ -200,11 +193,7 @@ if (d >= minD) return;
 ox += dx / d, oy += dy / d, deep = max(deep, minD - d)
 });
 if (deep <= 0) return void(p.pushV = 0, p.dropStuck = 0, p.stuckMs = 0);
-if (p.dropStuck) {
-p.stuckMs = (p.stuckMs || 0) + 1e3 * dtS;
-if (p.stuckMs > STUCK_GIVE_UP) p.dropStuck = 0;
-else { const t = C.walk.get(e); t && (t.paused = !0, t.pauseTimer = DROP_PAUSE) }
-}
+p.dropStuck && (p.stuckMs = (p.stuckMs || 0) + 1e3 * dtS) > STUCK_GIVE_UP && (p.dropStuck = 0);
 let len = hypot(ox, oy);
 if (len < .001) ox = cos(p.dir), oy = sin(p.dir), len = 1;
 p.pushV = min(RESOLVE_MAX, (p.pushV || 0) + UNSTICK_ACC * dtS);
@@ -250,15 +239,15 @@ b.curHp < mx && (b.curHp = min(mx, b.curHp + mx / 330 * dtS))
 })
 }
 const IDL_CH = .0008, IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2;
-function idlStop(b, e, p) { b.idlT = 0, b.mood = "peace", C.walk.get(e).paused = !1, C.vel.get(e).wanderAngle = p.dir }
+function idlStop(b, e, p) { b.idlT = 0, b.mood = "peace", C.vel.get(e).wanderAngle = p.dir }
 function sysIdle(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => {
-const b = C.bug.get(e), p = C.pos.get(e), t = C.walk.get(e);
+const b = C.bug.get(e), p = C.pos.get(e);
 if (b.idlT > 0) {
 if (!ECS.pos.has(b.idlE) || hpFrac(b) < 1) return idlStop(b, e, p);
 const op = C.pos.get(b.idlE), d = hypot(op.x - p.x, op.y - p.y);
-b.idlT -= dt, t.paused = !0, t.pauseTimer = 100;
+b.idlT -= dt;
 if ("circling" === b.mood) {
 if (ECS.bug.has(b.idlE) && hypot(op.x - b.idlX, op.y - b.idlY) > 2 || (b.idlA -= abs(b.idlD)) <= 0) return idlStop(b, e, p);
 const th = atan2(p.y - op.y, p.x - op.x) + b.idlD;
