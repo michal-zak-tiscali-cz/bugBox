@@ -10,7 +10,7 @@ drawMorphBug(ctx, m, morphColor([120, 30, 275][i]), cx, 32, 0, { scale: morphFit
 [190, 52]
 ].forEach(([x, y]) => ctx.fillRect(x, y, 2, 2))
 }();
-$("bt-buy").onclick = shopDone;
+$("bt-buy").onclick = mktDone;
 boxCv.addEventListener("pointerdown", dragStart);
 boxCv.addEventListener("pointermove", dragMove);
 boxCv.addEventListener("pointerup", endDrag);
@@ -44,10 +44,10 @@ if (obstacleAt(cx, cy) != null) return;
 ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed()
 }, window.addEventListener("resize", () => {
 $("s-terr").classList.contains("active") && !combatState ? spawnTerr() : resizeBoxCV()
-}), $("bt-lab").onclick = () => openLab(), $("bt-chal").onclick = () => {
-openChal(), showScreen("s-chal")
+}), $("bt-lab").onclick = () => openLab(), $("bt-boo").onclick = () => {
+openBoo(), showScreen("s-boo")
 }, document.addEventListener("click", e => {
-if (e.target.closest(".bt-shop")) return combatState && leaveFight(), openShop();
+if (e.target.closest(".bt-mkt")) return combatState && leaveFight(), openMkt();
 e.target.closest(".bt-terr") && leaveFight()
 }), document.addEventListener("click", closeKill), $("bt-combat").onclick = () => ("mc" === fightMode && (enemyTier = 1), startFight()), $("bt-next").onclick = () => (enemyTier++, startFight());
 $("bt-speed").onclick = () => {
@@ -61,7 +61,7 @@ tickDebt = 0, syncSpeedLabel()
 }, $("bt-leave").onclick = () => {
 achieve("abandon");
 const survivors = bugsInTerr.filter(f => 0 === f.team && !f.dead).map(f => f.b);
-endFight(), spawnTerr(), openChal(!0, survivors), showScreen("s-chal"), toast("Fight abandoned. Your bugs are safe.")
+endFight(), spawnTerr(), openBoo(!0, survivors), showScreen("s-boo"), toast("Fight abandoned. Your bugs are safe.")
 }, updateMoney();
 $("bt-des").onclick = openDz, $("bt-bg").onclick = bgPick;
 $("bt-set").onclick = () => {

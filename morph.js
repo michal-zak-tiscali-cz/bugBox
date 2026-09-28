@@ -69,7 +69,7 @@ const seg = (x1, y1, x2, y2, x3, y3) => { t.beginPath(), t.moveTo(x1, y1), t.lin
 "antb" === gk ? (seg(-rx * .5, cy - ry * .5, rx * .5, cy + ry * .5), seg(rx * .5, cy - ry * .5, -rx * .5, cy + ry * .5)) :
 (hexPath(t, cy, rx * .45, ry * .45), t.stroke())
 }
-function renderMorphParts(t, cfg, wLp, wRp, sh, nl) {
+function renderMorphParts(t, cfg, wLp, wRp, sh, nl, so) {
 const bl = cfg.bodyLength, legSp = bl / 4, still = wLp === null, L = cfg.legLen, hx = cfg.bodyWidth / 2;
 t.lineWidth = nl ? .9 : .8, t.lineCap = t.lineJoin = nl ? "miter" : "round";
 sh && (t.strokeStyle = hsl3(sh.hue, 62, 38));
@@ -80,12 +80,12 @@ wL = still ? 0 : sin(wLp + ph) * L * .28,
 wR = still ? 0 : -sin(wRp + ph) * L * .28;
 for (const [s, w] of [[-1, wL], [1, wR]]) {
 const a = s * hx;
-t.beginPath(), t.moveTo(a, ly);
-t.lineTo(a + s * .4 * L, ly + w);
-t.lineTo(a + s * .648 * L, ly + w + .248 * L);
+t.beginPath();
+so ? t.moveTo(a + so[0], ly + so[1]) : (t.moveTo(a, ly), t.lineTo(a + s * .4 * L, ly + w), t.lineTo(a + s * .648 * L, ly + w + .248 * L));
 t.lineTo(a + s * .733 * L, ly + w + .483 * L), t.stroke()
 }
 }
+so && t.translate(so[0], so[1]);
 const grad = cfg.segmentGradient ?? 3, segLen = bl / (1 + .45 * (cfg.bodySegments - 1)),
 f0 = getSegmentScale(grad, 0, cfg.bodySegments),
 hy = -bl / 2, hs = cfg.headSize, gk = GEAR[cfg.headGear] ? cfg.headGear : "eyes",
@@ -130,14 +130,13 @@ else sh && (t.fillStyle = bulgeGrad(t, ex, ey, er, sh.hue, sh.gear)), t.beginPat
 }
 function drawMorphBug(ctx, cfg, color, x, y, rot, { alpha = 1, scale = 1, walkL = null, walkR = null, shadow = !0, glow = null, hue = null, flat = !1 } = {}) {
 const nl = !flat && 3 === bugTheme, sh = hue != null && SHADE[bugTheme] ? { hue, ...SHADE[bugTheme] } : null;
-ctx.save(), ctx.globalAlpha = alpha;
+ctx.save(), ctx.globalAlpha = alpha, ctx.translate(x, y), ctx.rotate(rot), ctx.scale(scale, scale);
 if (shadow && !nl) {
-ctx.save(), ctx.translate(x + 2, y + 2.5), ctx.rotate(rot), ctx.scale(scale, scale);
-ctx.fillStyle = ctx.strokeStyle = "rgba(0,0,0,.35)", renderMorphParts(ctx, cfg, walkL, walkR, null, !1), ctx.restore()
+const c = cos(rot) / scale, s = sin(rot) / scale;
+ctx.save(), ctx.fillStyle = ctx.strokeStyle = "rgba(0,0,0,.35)", renderMorphParts(ctx, cfg, walkL, walkR, null, !1, [2 * c + 2.5 * s, 2.5 * c - 2 * s]), ctx.restore()
 }
-ctx.save(), ctx.translate(x, y), ctx.rotate(rot), ctx.scale(scale, scale);
 glow ? (ctx.shadowColor = glow, ctx.shadowBlur = 14) : nl && (ctx.shadowColor = color, ctx.shadowBlur = 15);
-ctx.fillStyle = ctx.strokeStyle = color, renderMorphParts(ctx, cfg, walkL, walkR, sh, nl), ctx.restore(), ctx.restore()
+ctx.fillStyle = ctx.strokeStyle = color, renderMorphParts(ctx, cfg, walkL, walkR, sh, nl), ctx.restore()
 }
 let palette = 0, gait = 0, bugTheme = 0;
 function setBugTheme(v) { bugTheme = +v, 3 === bugTheme ? ecsQuery("obstacle").forEach(ecsKill) : ecsQuery("obstacle").length || genObstacles(combatState) }

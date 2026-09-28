@@ -56,7 +56,7 @@ sciShown().map(([k, lbl, tip]) => sciBtn(k, lbl, tip, sciCur()[k])).join("")
 }
 let hudWas = null;
 const HUD_FIGHT_ONLY = ["bt-leave", "bt-pause", "bt-bg"],
-HUD_BOX_ONLY = ["bt-lab", "bt-chal", "bt-terr-shop"];
+HUD_BOX_ONLY = ["bt-lab", "bt-boo", "bt-terr-mkt"];
 function hudCombat() { return combatState }
 function syncHud(force) {
 const c = hudCombat();
@@ -166,7 +166,7 @@ function spawnTerr() {
 resizeBoxCV(), rescaleBox();
 if (combatState) {
 savedWorld = savedWorld || { obs: snapObstacles(), food: snapFood() };
-ecsClear(), inspected = null, mates = [], scraps = [], mateTouch = new Set();
+ecsClear(), inspected = null, mates = [], loveBites = [], mateTouch = new Set();
 genObstacles(!0)
 } else {
 restoreTerrWorld();

@@ -18,11 +18,11 @@ bar().textContent+=(ev.filename||"?").split("/").pop()+":"+ev.lineno+"  "+(ev.me
 },true);
 window.addEventListener("unhandledrejection",function(ev){bar().textContent+="PROMISE: "+(ev.reason&&(ev.reason.stack||ev.reason.message)||ev.reason)+"\n"});
 window.addEventListener("load",function(){
-["shopDone","toggleFow","syncFowBtn","inspectLine"].forEach(function(n){
+["mktDone","toggleFow","syncFowBtn","inspectLine"].forEach(function(n){
 if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 })})();
 </script>
-<div class="screen active" id="s-intro1" onclick="openShop()">
+<div class="screen active" id="s-intro1" onclick="openMkt()">
 <div class="intro-frame">
 <canvas id="intro-art" width="200" height="60" style="display:block;margin:0 auto 10px;image-rendering:pixelated;"></canvas>
 <div class="dos-title" style="font-size:clamp(14px,5vw,24px);">★ BUGBOX ★</div>
@@ -36,19 +36,19 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <div id="game-version-tag" style="position:absolute;right:6px;bottom:4px;font-size:8px;color:#44ccff;">v61.5</div>
 </div>
 </div>
-<div class="screen" id="s-shop">
+<div class="screen" id="s-mkt">
 <div class="topbar">
 <span class="title">BUG MARKET</span>
 <div class="sep"></div>
-<span>Budget:</span><span class="money" id="shop-money">$500</span>
-<span class="dim" id="shop-cart-info">0 bugs selected</span>
+<span>Budget:</span><span class="money" id="mkt-money">$500</span>
+<span class="dim" id="mkt-cart-info">0 bugs selected</span>
 <button class="nav-terr bt" id="bt-buy" style="margin-left:auto;">BugBox →</button>
 </div>
 <div class="scroll">
 <p style="font-size:9px;color:#555566;margin-bottom:10px;">
 ▸ Click bugs to select / deselect the ones you want to buy.
 </p>
-<div class="shop-grid" id="shop-grid"></div>
+<div class="mkt-grid" id="mkt-grid"></div>
 </div>
 </div>
 <div class="screen" id="s-terr">
@@ -57,8 +57,8 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <div class="sep"></div>
 <span class="money" id="terr-money">$0</span>
 <button class="bt" id="bt-set" style="margin-left:auto;">⚙ Settings</button>
-<button class="nav-shop bt bt-shop" id="bt-terr-shop">Market 🛒</button>
-<button class="warn bt" id="bt-chal">⚔ CHALLENGE →</button>
+<button class="nav-mkt bt bt-mkt" id="bt-terr-mkt">Market 🛒</button>
+<button class="warn bt" id="bt-boo">⚔ BOOKER →</button>
 <button class="warn bt" id="bt-leave" style="display:none;margin-left:auto;">← Leave</button>
 </div>
 <canvas id="terr-canvas"></canvas>
@@ -86,22 +86,22 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <span class="title" style="color:#a4f;">BREEDING LAB</span>
 <div class="sep"></div>
 <span class="money" id="lab-money"></span>
-<button class="nav-shop bt bt-shop" style="margin-left:auto;">Market 🛒</button>
+<button class="nav-mkt bt bt-mkt" style="margin-left:auto;">Market 🛒</button>
 <button class="nav-terr bt bt-terr">↑ BugBox</button>
 </div>
 <div class="lab-layout" id="lab-layout">
 </div>
 </div>
-<div class="screen" id="s-chal">
+<div class="screen" id="s-boo">
 <div class="topbar">
-<span class="title" style="color:#fa4;">CHALLENGE</span>
+<span class="title" style="color:#fa4;">BOOKER</span>
 <div class="sep"></div>
-<span id="chal-info" style="color:#888;font-size:10px;"></span>
-<button id="bt-chal-shop" class="nav-shop bt bt-shop" style="margin-left:auto;display:none;">← Market</button>
-<button id="bt-chal-terr" class="nav-terr bt bt-terr" style="margin-left:auto;">← BugBox</button>
+<span id="boo-info" style="color:#888;font-size:10px;"></span>
+<button id="bt-boo-mkt" class="nav-mkt bt bt-mkt" style="margin-left:auto;display:none;">← Market</button>
+<button id="bt-boo-terr" class="nav-terr bt bt-terr" style="margin-left:auto;">← BugBox</button>
 <button class="warn bt" id="bt-combat" disabled>⚔ FIGHT →</button>
 </div>
-<div class="chal-layout">
+<div class="boo-layout">
 <div>
 <span style="font-size:10px;color:#888;">Mode: </span>
 <div class="mode-row">
@@ -121,7 +121,7 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <span style="color:#ff4444;">⚠</span> Bugs that LOSE a fight DIE permanently.
 </p>
 </div>
-<div class="chal-grid" id="chal-grid"></div>
+<div class="boo-grid" id="boo-grid"></div>
 </div>
 </div>
 <div id="ov-over" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:300;align-items:center;justify-content:center;padding:20px;">
@@ -257,7 +257,7 @@ Bug palette
 <script src="screens.js"></script>
 <script src="morph.js"></script>
 <script src="drawbug.js"></script>
-<script src="shop.js"></script>
+<script src="mkt.js"></script>
 <script src="ecs.js"></script>
 <script src="terr.js"></script>
 <script src="bg.js"></script>
@@ -265,7 +265,7 @@ Bug palette
 <script src="move.js"></script>
 <script src="mate.js"></script>
 <script src="lab.js"></script>
-<script src="chal.js"></script>
+<script src="boo.js"></script>
 <script src="combatai.js"></script>
 <script src="render.js"></script>
 <script src="input.js"></script>

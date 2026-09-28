@@ -44,7 +44,7 @@ const rt = $("res-title"),
 rb = $("res-body");
 rt.textContent = won ? "VICTORY!" : "DEFEAT", rt.style.color = won ? "#44ff88" : "#ff4444", won && SFX.win(), dead0.forEach(f => {
 const lb = bugsOwned.find(b => b.id === f.b.id);
-lb && (lb.losses++, lb.fights = (lb.fights || 0) + 1, lb.killsTotal = (lb.killsTotal || 0) + (f.killsThis || 0), bugsOwned = bugsOwned.filter(b => b.id !== f.b.id))
+lb && (lb.losses++, lb.fights = (lb.fights || 0) + 1, lb.killsTotal = (lb.killsTotal || 0) + (f.killsThis || 0), bugsOwned = bugsOwned.filter(b => b.id !== f.b.id), run.end = `${lb.name} died in fight T${enemyTier}`)
 });
 let html = "";
 if (won) {
@@ -97,8 +97,8 @@ ctx.putImageData(id, 0, 0)
 }
 return div
 };
-const btnRow = `<div style="display:flex;gap:8px;">\n    <button class="nav-shop bt bt-shop f1">Market 🛒</button>\n    <button class="nav-terr bt bt-terr f1">BugBox</button>\n    ${bugsOwned.length?'<button class="warn bt f1" id="bt-again" onclick="openChal(true,lastSurvivors);showScreen(\'s-chal\');">↺ Fight Again</button>':""}\n  </div>`;
-bugsOwned.length || (html += '<p style="color:#ffdd44;font-size:10px;margin-bottom:8px;">⚠ No bugs left! Visit the shop.</p>'), html += btnRow + `<div style="height:10px;"></div>`;
+const btnRow = `<div style="display:flex;gap:8px;">\n    <button class="nav-mkt bt bt-mkt f1">Market 🛒</button>\n    <button class="nav-terr bt bt-terr f1">BugBox</button>\n    ${bugsOwned.length?'<button class="warn bt f1" id="bt-again" onclick="openBoo(true,lastSurvivors);showScreen(\'s-boo\');">↺ Fight Again</button>':""}\n  </div>`;
+bugsOwned.length || (html += '<p style="color:#ffdd44;font-size:10px;margin-bottom:8px;">⚠ No bugs left! Visit the Market.</p>'), html += btnRow + `<div style="height:10px;"></div>`;
 html += `<div class="grid2">\n    <div>\n      <div class="lbl-yours">YOUR BUGS</div>\n      <div id="rc-player-col" class="col4"></div>\n    </div>\n    <div>\n      <div class="lbl-enemy">ENEMY BUGS</div>\n      <div id="rc-enemy-col" class="col4"></div>\n    </div>\n  </div>` + btnRow
 rb.innerHTML = html;
 const playerCol = $("rc-player-col"),

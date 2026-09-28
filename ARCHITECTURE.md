@@ -9,7 +9,8 @@ DOM event binding, so definition files never run DOM code at load time.
   **0** = peaceful box (feeding, mating, dragging), **1** = fight.
   Never say "terrarium" or "arena" for these two states.
 - **box** = the canvas and its bugs, in both combat states.
-- **barracks** = the screen where the player picks bugs, mode and tier. File `chal.js`, id `s-chal`.
+- **Booker** = the screen where the player picks bugs, mode and tier. File `boo.js`, id `s-boo`.
+- **Market** = buying bugs. File `mkt.js`, id `s-mkt`. **Shop** is reserved for a future screen that sells box items.
 - **modes** (`fightMode`): `1 2 3 6` (NvN), `mayhem` (any count), `mc` (mortal combat: 1 bug, T1→T10 in a row), `boss` (1 bug, stat sum 5T−5..5T), `rb` raid boss and `wb` world boss (1–10 bugs).
 - **tier** (`enemyTier` 1–10): enemy stat sum 5T−2..5T, boss 5T; boss abilities 0 (T1–4), 2 (T5–6), 3 (T7–8), 4 (T9–10).
 
@@ -17,26 +18,26 @@ DOM event binding, so definition files never run DOM code at load time.
 
 | Area of the game | File | Symbol |
 |---|---|---|
-| Layout, screens, buttons, overlays (markup), crash reporter | `index.html` | `#s-terr` `#s-chal` `#s-lab` `#s-shop`, `#terr-bar-row`, `#ov-set` |
+| Layout, screens, buttons, overlays (markup), crash reporter | `index.html` | `#s-terr` `#s-boo` `#s-lab` `#s-mkt`, `#terr-bar-row`, `#ov-set` |
 | Colours, fonts, sizes, spacing, screen shake | `style.css` | `#toast`, `.shake` |
 | Version number, math helpers, sound effects | `core.js` | `GAME_VERSION` (line 1) |
-| Tutorial list, achievement list, unlock rules, toasts on unlock | `achievements.js` | `achSt` |
+| Tutorial list, achievement list, unlock rules, toasts on unlock, record updates (saved `records` + this game's `run`, both via `RECS`) | `achievements.js` | `achSt`, `records`, `run`, `RECS` |
 | Starting money, pauses, tunables (walk timers), global variables, fight modes | `state.js` | `bugsOwned`, `combatState`, `fightMode`, `MODES`, `enemyTier` (1–10), `WALK_MIN`, `WALK_MAX`, `intPause` (only pause setter and only way to end an act, length by INT), `newDir` (random walk direction, called only by `decide`) |
 | Bug object, names, stat bars, max HP (boss HP multiplier) | `bug.js` | `maxHpOf`, `hpMul` |
 | Ability list, ability rules, bite damage, bite shove, bite prep by agi, inheritance | `abilities.js` | |
-| Bug cards (shop/lab/barracks/result), HP bars, kill button, focus line, blocked-flash, toast text | `cards.js` | `makeBugCard`, `drawHpBar`, `inspectLine`, `toast`, `flashBlocked` |
+| Bug cards (Market/lab/Booker/result), HP bars, kill button (sets `run.end`), focus line, blocked-flash, toast text | `cards.js` | `makeBugCard`, `drawHpBar`, `inspectLine`, `toast`, `flashBlocked` |
 | Screen switching, info overlay tabs, money display | `screens.js` | |
-| Bug body shapes, colour palette, walk style (gait), graphics theme (Neon Lab removes obstacles), one-colour corpse | `morph.js` | `randomMorph`, `setPalette`, `setGait`, `setBugTheme`, `drawMorphBug` option `flat` |
+| Bug body shapes, colour palette, walk style (gait), graphics theme (Neon Lab removes obstacles), shadow (leg shadow = straight line from shifted leg root to foot), one-colour corpse | `morph.js` | `randomMorph`, `setPalette`, `setGait`, `setBugTheme`, `drawMorphBug` option `flat` |
 | Drawing one bug, card thumbnails | `drawbug.js` | `drawBugStyled` |
 | Box background art (random per fight, `#bt-bg` rerolls) | `bg.js` | `drawBg`, `bgPick` |
 | Obstacle types, shapes and variants (index = kind, `v` = variant) | `obst.js` | `OBST` |
 | Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning (mood by HP, none in Neon Lab), fight-only buttons, top-left title per mode | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr`, `HUD_FIGHT_ONLY`, `syncHud` |
-| Market screen | `shop.js` | `openShop`, `renderShop` |
-| Entity system (rarely touched), draw order (dragged item on top) | `ecs.js` | `ecsQuery`, `C`, `ecsFront` |
-| Act choice, walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down, busy bug skips walking, idle (INT 5+ picks equally from `IDLE`), mood in box, feeding also in fight | `move.js` | `decide` (only act chooser), `SLIDE_K`, `slideEnd`, `clampToBox`, `busy`, `wallPause`, `sysIdle`, `IDLE`, `sysFeed` |
-| Mating (act `breeding`, needs full HP, mood kept), scraps, eggs, hatching, box capacity | `mate.js` | `interactEligible` |
+| Market screen, game-over check | `mkt.js` | `openMkt`, `renderMkt`, `mktDone`, `armOverWatch` |
+| Entity system (rarely touched), draw order (dragged item on top, faster bug on top of a slower one it overlaps) | `ecs.js` | `ecsQuery`, `C`, `ecsFront` |
+| Act choice, walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down, busy bug skips walking, idle (INT 5+ picks equally from `IDLE`), mood in box, feeding also in fight, overlap layering (faster bug via `ecsFront`, speed = `pos.v`) | `move.js` | `resolveBodies`, `decide` (only act chooser), `SLIDE_K`, `slideEnd`, `clampToBox`, `busy`, `wallPause`, `sysIdle`, `IDLE`, `sysFeed` |
+| Mating (act `breeding`, needs full HP and both not `mated`, mood kept), love bites (`loveBites`, also when a pair is `mated`), eggs, hatching, box capacity | `mate.js` | `interactEligible` |
 | Breeding lab (sorting, selection, offspring) | `lab.js` | |
-| Barracks screen (modes, tier buttons 01–10, team picking, BOSS stat-sum filter) | `chal.js` | `setMode`, `setTier`, `teamMax`, `bossFit` |
+| Booker screen (modes, tier buttons 01–10, team picking, BOSS stat-sum filter) | `boo.js` | `openBoo`, `setMode`, `setTier`, `teamMax`, `bossFit` |
 | Fight AI, targeting, ability firing, target switch to weakest attacker, panic burst | `combatai.js` | `panicAll` |
 | What is drawn each frame (food also in fight), bottom info line, red hit overlay, floating damage numbers, grey corpse fade | `render.js` | `drawHit` |
 | Hit-testing under the finger, dragging, obstacle rotation by circling | `input.js` | `nearest`, `obstacleAt`, `draggableAt`, `dragStart`, `dragMove`, `endDrag` |
@@ -45,7 +46,7 @@ DOM event binding, so definition files never run DOM code at load time.
 | Enemy generation (stat sum by tier), bosses (BOSS 2×, RB 3× 10 HP, WB 3× 50 HP, kept per tier), prize $80×T×HP multiplier, fight start (salute toast + freeze), result screen, MC break (food + NEXT), fight-end and stalemate check, fight end removes all fight entities | `fight.js` | `statsOf`, `buildEnemies`, `BOSS`, `bosses`, `wbKeep`, `weekOf`, `checkFightEnd`, `endFight`, `showFightResult` |
 | Bug designer overlay | `dz.js` | |
 | Info / Morphology / Abilities texts | `wiki.js` | |
-| Records screen | `records.js` | `bugbox_records` |
+| Records screen (columns this run / all games, `Last loss` = `run.end`) | `records.js` | `renderRecords`, `bugbox_records` |
 
 ## Naming rules
 - `SCREAMING_SNAKE_CASE` — constants that never change.
@@ -122,7 +123,8 @@ You are in mode B when the repo is checked out and you can commit.
 - `bugbox_records` in localStorage = cross-game **records** (games, kills, fights,
   wins, best bug count, best stat sum, top killer, longest dynasty). Persists. Reset button only.
 - `bugbox_wb` in localStorage = World Bosses of the current week (lost HP kept until Sunday 23:59, killed WB is replaced). The only saved bugs.
-- Tutorial and achievements (`prog`) are **one game each**. Never persist them.
+- Tutorial, achievements (`prog`) and `run` (this game's records) are **one game each**. Never persist them.
+- `mated` resets for all bugs only in `showFightResult` (completed fight). Leave skips it.
 - Player bugs, money, eggs, BOSS and RB are never saved. Reloading the page starts a new game.
 
 ### User info

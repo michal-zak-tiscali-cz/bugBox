@@ -1,6 +1,6 @@
 const RECORDS0 = { games: 0, kills: 0, fights: 0, wins: 0, maxBugs: 0, bestKill: 0, bestName: "\u2014", bestSum: 0, bestSumName: "\u2014", longestDynasty: 0, fN: 0, fSum: 0, fMin: 0, fMax: 0 };
-let records = { ...RECORDS0 };
-try { const s = localStorage.getItem("bugbox_records"); s && (records = { ...records, ...JSON.parse(s) }) } catch (e) {}
+const records = { ...RECORDS0 }, run = { ...RECORDS0, games: 1 }, RECS = [records, run];
+try { const s = localStorage.getItem("bugbox_records"); s && Object.assign(records, JSON.parse(s)) } catch (e) {}
 function saveRecords() { try { localStorage.setItem("bugbox_records", JSON.stringify(records)) } catch (e) {} }
 records.games++, saveRecords();
 let achSt = { done: {}, own: 0, ownMax: 0, fed: 0, bought: 0, kills: 0, wins: 0, streak: 0, bred: 0, lost: 0, culled: 0, hatched: 0 };
@@ -109,13 +109,14 @@ achSt[field] += add == null ? 1 : add; marks.forEach(m => achSt[field] >= m && a
 }
 function achOwn(added) {
 added && (achSt.own += added), achSt.ownMax = max(achSt.ownMax, bugsOwned.length);
-records.maxBugs = max(records.maxBugs, bugsOwned.length);
+RECS.forEach(r => {
+r.maxBugs = max(r.maxBugs, bugsOwned.length);
 bugsOwned.forEach(b => {
-(b.killsTotal || 0) > records.bestKill && (records.bestKill = b.killsTotal, records.bestName = b.name);
+(b.killsTotal || 0) > r.bestKill && (r.bestKill = b.killsTotal, r.bestName = b.name);
 const s = round(statSum(b));
-s > records.bestSum && (records.bestSum = s, records.bestSumName = b.name)
-});
-saveRecords();
+s > r.bestSum && (r.bestSum = s, r.bestSumName = b.name)
+})
+}), saveRecords();
 bugsOwned.length && achieve("own"), achSt.ownMax >= 10 && achieve("own10"),
 [50, 75, 100].forEach(m => achSt.own >= m && achieve("own" + m));
 const kinds = new Set;
@@ -151,7 +152,7 @@ function achFight(won, lost, alive) {
 achieve("fight");
 lost && achStep("lost", [1, 5, 10, 25, 50], "lost", lost);
 [3, 6, 9, 15, 20].forEach(m => lost >= m && achieve("lostM" + m));
-records.fMin = records.fN++ ? min(records.fMin, fightMs) : fightMs, records.fMax = max(records.fMax, fightMs), records.fSum += fightMs, records.fights++, won && records.wins++, saveRecords();
+RECS.forEach(r => (r.fMin = r.fN++ ? min(r.fMin, fightMs) : fightMs, r.fMax = max(r.fMax, fightMs), r.fSum += fightMs, r.fights++, won && r.wins++)), saveRecords();
 if (!won) return void (achSt.streak = 0);
 achieve("tier" + enemyTier), achieve("win" + fightMode), achieve(fightMode + enemyTier);
 achSt.streak++, achStep("wins", [5, 25, 50], "win"),
@@ -164,8 +165,8 @@ function renderTutorial() { $("itab-tut").innerHTML = achList(TUTORIAL) }
 function renderAchievements() {
 $("itab-ach").innerHTML = `<div style="color:#ffdd44;margin-bottom:6px;">${ACHIEVEMENTS.filter(([k])=>achSt.done[k]).length} / ${ACHIEVEMENTS.length}</div>` + achList(ACHIEVEMENTS)
 }
-function addKills(n) { n > 0 && (records.kills += n, saveRecords(), achStep("kills", [10, 50, 100], "kill", n)) }
+function addKills(n) { n > 0 && (RECS.forEach(r => r.kills += n), saveRecords(), achStep("kills", [10, 50, 100], "kill", n)) }
 function trackDynasty(gen) {
-gen > records.longestDynasty && (records.longestDynasty = gen, saveRecords());
+RECS.forEach(r => r.longestDynasty = max(r.longestDynasty, gen)), saveRecords();
 [5, 10, 15, 20, 25, 30, 33].forEach(m => gen >= m && achieve("gen" + m))
 }

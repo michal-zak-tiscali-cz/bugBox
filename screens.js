@@ -19,7 +19,7 @@ on || cancelAnimationFrame(dzAnim), $(id).style.display = on ? "flex" : "none";
 OV_PAUSE.includes(id) && (on ? ovSpd < 0 && (ovSpd = simSpd, simSpd = 0) : ovSpd >= 0 && !OV_PAUSE.some(o => "flex" === $(o).style.display) && (simSpd = ovSpd, ovSpd = -1), tickDebt = 0, syncSpeedLabel())
 }
 function showScreen(id) {
-"s-shop" === id || cancelOverWatch();
+"s-mkt" === id || cancelOverWatch();
 "s-terr" === id || markEggsReady();
 ("s-terr" !== id || !combatState) && ov("ov-res", 0);
 "s-terr" !== id || combatState || (simSpd = 1, tickDebt = 0, syncSpeedLabel());
@@ -35,6 +35,6 @@ combatState === wantCombat && (combatState && ecsQuery("bug").length ? resizeBox
 }
 }
 function updateMoney() {
-$("shop-money").textContent = "$" + money, $("terr-money").textContent = "$" + money, $("lab-money").textContent = "$" + money;
+$("mkt-money").textContent = "$" + money, $("terr-money").textContent = "$" + money, $("lab-money").textContent = "$" + money;
 money >= 1000 && achieve("rich1k"), money >= 5000 && achieve("rich5k")
 }

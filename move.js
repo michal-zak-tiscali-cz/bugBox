@@ -9,7 +9,7 @@ const CORPSE_SLOW = .25;
 const COMBAT_STEP_MS = 16, MAX_STEPS_PER_FRAME = 64;
 const wallPause = e => random() < (11 - intOf(C.bug.get(e))) / 20 && intPause(e);
 const slideEnd = e => (C.wall.get(e).phase = "wall", wallPause(e) || (C.walk.get(e).act = "walk"));
-const busy = (b, p) => b.scrap || p.dropStuck;
+const busy = (b, p) => b.loveBite || p.dropStuck;
 function decide(e) {
 const b = C.bug.get(e), t = C.walk.get(e), r = random();
 if ("fighting" === b.mood) return void(t.act = "fighting", t.actT = 1 / 0);
@@ -166,19 +166,19 @@ const ca = C.combat.get(ents[i]),
 cbb = C.combat.get(ents[j]);
 if (ca && ca.dead || cbb && cbb.dead) continue;
 if ("breeding" === C.walk.get(ents[i]).act && "breeding" === C.walk.get(ents[j]).act) continue;
-const minD = sepPair(ents[i], ents[j]);
-if (minD <= 0) continue;
-const a = C.pos.get(ents[i]),
+const minD = sepPair(ents[i], ents[j]),
+a = C.pos.get(ents[i]),
 c = C.pos.get(ents[j]),
 dx = c.x - a.x,
 dy = c.y - a.y,
-dist = hypot(dx, dy) || .001;
-if (dist >= minD) continue;
-const ov = minD - dist,
-nx = dx / dist,
-ny = dy / dist,
+dist = hypot(dx, dy) || .001,
 ba = C.bug.get(ents[i]),
 bb = C.bug.get(ents[j]);
+a.v > c.v * 1.2 && dist < morphR(ba) + morphR(bb) && ecsFront(ents[i]);
+if (minD <= 0 || dist >= minD) continue;
+const ov = minD - dist,
+nx = dx / dist,
+ny = dy / dist;
 const fast = [ba.mood, bb.mood].some(m => "fighting" === m || combatState && "rushing" === m),
 h = min(ov / 2, step * (fast ? SEP_FIGHT_MULT : 1));
 a.x -= nx * h, a.y -= ny * h, c.x += nx * h, c.y += ny * h
@@ -217,9 +217,10 @@ p.x = clamp(p.x, m, boxLW - m), p.y = clamp(p.y, m, boxLH - m)
 }
 function sysResolve(ents, dtS) {
 const step = RESOLVE_MAX * (dtS || COMBAT_STEP_MS / 1e3);
+ents.forEach(e => { const p = C.pos.get(e); p.v = hypot(p.x - (p.lx ?? p.x), p.y - (p.ly ?? p.y)) });
 resolveBodies(ents, step);
 resolveObstacles(ents, dtS);
-ents.forEach(clampToBox)
+ents.forEach(e => { clampToBox(e); const p = C.pos.get(e); p.lx = p.x, p.ly = p.y })
 }
 const SHADE_FLAT = "rgba(0,0,0,.35)";
 let flatCx = null;
@@ -242,7 +243,7 @@ function sysIdle(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => {
 const b = C.bug.get(e), p = C.pos.get(e), t = C.walk.get(e);
-if (IDLE.indexOf(t.act) < 1 || b.scrap) return;
+if (IDLE.indexOf(t.act) < 1 || b.loveBite) return;
 if (hpFrac(b) < 1) return void intPause(e);
 const fl = "flankTraining" === t.act;
 if (t.idlE == null) {

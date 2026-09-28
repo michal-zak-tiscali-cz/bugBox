@@ -1,14 +1,14 @@
 const INTERACT_CHANCE = .10, MATE_COOLDOWN_MS = 15000, BOX_CAP = 100;
 const boxFull = () => bugsOwned.length + boxEggs.length >= BOX_CAP;
 const MATE_HOLD_MIN = 3000, MATE_HOLD_MAX = 7000, MATE_TURN_MAX = 1500;
-let boxEggs = [], mates = [], scraps = [], mateTouch = new Set();
+let boxEggs = [], mates = [], loveBites = [], mateTouch = new Set();
 function eggRadius(a, b) { return max(bodyLenOf(a), bodyLenOf(b)) * .25 }
-const SCRAP_REACH = 2.5, SCRAP_CONE = 1;
+const LOVE_BITE_REACH = 2.5, LOVE_BITE_CONE = 1;
 const mateOdds = () => bugsOwned.length <= 3 ? 1 : bugsOwned.length <= 10 ? .5 : .25;
 const nibble = (a, t) => (t.hitT = 1, t.curHp = max(1, (t.curHp == null ? maxHpOf(t) : t.curHp) - a.str * rollVar()));
 function interactEligible(e) {
 const b = C.bug.get(e);
-return hpFrac(b) >= 1 && !(b.mateCd > 0) && "breeding" !== C.walk.get(e).act && !b.scrap
+return hpFrac(b) >= 1 && !(b.mateCd > 0) && "breeding" !== C.walk.get(e).act && !b.loveBite
 }
 function sysMate(dt, ents) {
 const dtS = dt / 1e3;
@@ -24,9 +24,9 @@ seen.add(key);
 if (mateTouch.has(key)) continue;
 if (!interactEligible(ea) || !interactEligible(eb)) continue;
 if (random() >= INTERACT_CHANCE) continue;
-if (random() >= mateOdds() || boxFull()) {
-ba.scrap = bbg.scrap = 1;
-scraps.push({ a: ea, b: eb, ta: 1, tb: 1 });
+if (ba.mated || bbg.mated || random() >= mateOdds() || boxFull()) {
+ba.loveBite = bbg.loveBite = 1;
+loveBites.push({ a: ea, b: eb, ta: 1, tb: 1 });
 continue
 }
 const subFirst = ba.str < bbg.str || (ba.str === bbg.str && random() < .5),
@@ -36,21 +36,21 @@ mates.push({ sub, top, phase: "turn", t: 0, hold: 0 })
 }
 mateTouch = seen
 
-for (let k = scraps.length - 1; k >= 0; k--) {
-const s = scraps[k];
+for (let k = loveBites.length - 1; k >= 0; k--) {
+const s = loveBites[k];
 if (!combatState && ECS.pos.has(s.a) && ECS.pos.has(s.b)) {
 const pa = C.pos.get(s.a), pb = C.pos.get(s.b);
-if (hypot(pb.x - pa.x, pb.y - pa.y) <= sepPair(s.a, s.b) * SCRAP_REACH) {
+if (hypot(pb.x - pa.x, pb.y - pa.y) <= sepPair(s.a, s.b) * LOVE_BITE_REACH) {
 for (const [x, y, k2] of [[s.a, s.b, "ta"], [s.b, s.a, "tb"]]) {
 if (!s[k2]) continue;
 const px = C.pos.get(x), py = C.pos.get(y), bx = C.bug.get(x), a = atan2(py.y - px.y, py.x - px.x);
 C.vel.get(x).wanderAngle = a, turnToward(px, a, turningOf(bx) * dtS);
-abs(norm(a - px.dir)) < SCRAP_CONE && (bx.prepT = (bx.prepT || BITE_PREP_MS) - dt) <= 0 && (s[k2] = bx.prepT = 0, nibble(bx, C.bug.get(y)), SFX.bite())
+abs(norm(a - px.dir)) < LOVE_BITE_CONE && (bx.prepT = (bx.prepT || BITE_PREP_MS) - dt) <= 0 && (s[k2] = bx.prepT = 0, nibble(bx, C.bug.get(y)), SFX.bite())
 }
 if (s.ta || s.tb) continue
 }
 }
-scrapEnd(s), scraps.splice(k, 1)
+loveBiteEnd(s), loveBites.splice(k, 1)
 }
 for (let k = mates.length - 1; k >= 0; k--) {
 const m = mates[k];
@@ -87,16 +87,16 @@ function mateSnap(m, away) {
 const sp = C.pos.get(m.sub), tp = C.pos.get(m.top), g = mateGap(m);
 sp.dir = away, tp.dir = away, tp.x = sp.x - cos(away) * g, tp.y = sp.y - sin(away) * g
 }
-function scrapEnd(s) {
+function loveBiteEnd(s) {
 [s.a, s.b].forEach(en => {
 if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
-b.scrap = b.prepT = 0, intPause(en)
+b.loveBite = b.prepT = 0, intPause(en)
 })
 }
 function mateCancel(e) {
-for (let k = scraps.length - 1; k >= 0; k--)
-(scraps[k].a === e || scraps[k].b === e) && (scrapEnd(scraps[k]), scraps.splice(k, 1));
+for (let k = loveBites.length - 1; k >= 0; k--)
+(loveBites[k].a === e || loveBites[k].b === e) && (loveBiteEnd(loveBites[k]), loveBites.splice(k, 1));
 for (let k = mates.length - 1; k >= 0; k--)
 (mates[k].sub === e || mates[k].top === e) && (mateEnd(mates[k], !1), mates.splice(k, 1))
 }
