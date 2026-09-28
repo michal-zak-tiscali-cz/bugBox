@@ -62,10 +62,12 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <button class="warn bt" id="bt-leave" style="display:none;margin-left:auto;">← Leave</button>
 </div>
 <canvas id="terr-canvas"></canvas>
-<div id="terr-bar">
+<div id="terr-bar" style="position:relative;">
+<button class="warn bt" id="bt-next" style="display:none;position:absolute;right:6px;bottom:100%;margin-bottom:6px;">NEXT →</button>
 <div id="terr-bar-row" style="justify-content:flex-end;">
 <button class="bt" id="bt-fow" style="display:none;" title="fog of war: hide everything outside the focused bug's field of view">👁 FOW</button>
 <button class="nav-lab bt" id="bt-lab">↓ BREED 🧬</button>
+<button id="bt-bg" class="bt" style="display:none;">🖼 BG</button>
 <button id="bt-des" class="bt">🎨 DESIGN</button>
 <button class="bt" onclick="openInfoTab('tut')">📖 INFO</button>
 <button id="bt-speed" class="bt">Speed 1×</button>
@@ -103,18 +105,18 @@ if(typeof window[n]==="undefined")bar().textContent+="NOT LOADED: "+n+"\n"})
 <div>
 <span style="font-size:10px;color:#888;">Mode: </span>
 <div class="mode-row">
-<button class="bt-mode prim" id="bt-1v1" onclick="setMode(1)">1 v 1</button>
-<button class="bt-mode" id="bt-2v2" onclick="setMode(2)">2 v 2</button>
-<button class="bt-mode" id="bt-3v3" onclick="setMode(3)">3 v 3</button>
-<button class="bt-mode" id="bt-6v6" onclick="setMode(6)">6 v 6</button>
-<button class="bt-mode" id="bt-mayhem" onclick="setMayhem()">MAYHEM</button>
+<button class="bt-mode prim" onclick="setMode(1)">1 v 1</button>
+<button class="bt-mode" onclick="setMode(2)">2 v 2</button>
+<button class="bt-mode" onclick="setMode(3)">3 v 3</button>
+<button class="bt-mode" onclick="setMode(6)">6 v 6</button>
+<button class="bt-mode" onclick="setMode('mayhem')">MAYHEM</button>
+<button class="bt-mode" onclick="setMode('mc')">MC</button>
+<button class="bt-mode" onclick="setMode('boss')">BOSS</button>
+<button class="bt-mode" onclick="setMode('rb')">RB</button>
+<button class="bt-mode" onclick="setMode('wb')">WB</button>
 </div>
-<span style="font-size:9px;color:#555566;">Enemy tier: </span>
-<div class="mode-row" style="margin-top:4px;">
-<button class="bt-tier" id="bt-t0" onclick="setTier(0)">Weak (+$80)</button>
-<button class="bt-tier" id="bt-t1" onclick="setTier(1)">Even (+$180)</button>
-<button class="bt-tier" id="bt-t2" onclick="setTier(2)">Strong (+$350)</button>
-</div>
+<span style="font-size:9px;color:#555566;">Tier:</span>
+<div class="mode-row" id="tier-row" style="margin-top:4px;"></div>
 <p style="font-size:9px;color:#555566;margin-top:4px;">
 <span style="color:#ff4444;">⚠</span> Bugs that LOSE a fight DIE permanently.
 </p>
@@ -151,13 +153,17 @@ Looks like you have ran out of bugs to kill... Good!
 <hr class="dos-hr">
 <div id="itab-info" class="itab" style="font-size:10px;color:#aabbaa;line-height:1.8;max-height:60vh;overflow-y:auto;padding:0 4px;">
 <p><b style="color:#ffdd44;">STATS</b><br>
-CON toughness · STR power · AGI speed · INT smarts · PER perception</p>
+CON toughness · STR power · AGI speed · INT wits · PER perception</p>
 <p><b style="color:#ffdd44;">FEEDING</b><br>
 Drop food in the terrarium: each item restores 1/5 of max HP.</p>
 <p><b style="color:#ffdd44;">BREEDING</b><br>
 Pick two bugs (Parent A + B) to hatch a new Gen+1 larva. Only full-HP bugs can mate. Stats blend from both parents.</p>
 <p><b style="color:#ffdd44;">FIGHT TIERS</b><br>
-Weak +$80 · Even +$180 · Strong +$350<br>
+T01–T10: enemy stat sum 5×T−2 to 5×T, prize $80×T (RB ×10, WB ×50)<br>
+MC: one bug fights T1 to T10 in a row, food drops after each win<br>
+BOSS: one bug with stat sum 5×T−5 to 5×T vs a double-size boss<br>
+RB: 1–10 bugs vs a triple-size boss with 10× HP<br>
+WB: like RB with 50× HP; its lost HP stays until Sunday 23:59<br>
 Bugs that LOSE a fight DIE permanently.</p>
 <p><b style="color:#ffdd44;">CARD INFO</b><br>
 Gen = generation · K = kills · F = fights fought</p>

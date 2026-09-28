@@ -37,7 +37,7 @@ b.hitT > 0 && (b.hitT = max(0, b.hitT - dt / 200));
 });
 fight && (sysSeek(ents), sysCombatAI(dt));
 sysThinkWander(dt, ents), sysSteer(dtS, ents), sysMove(dtS, fight ? all : ents);
-fight || (sysSmartIdle(dt, ents), sysMate(dt, ents), sysFeed());
+fight || (sysIdle(dt, ents), sysMate(dt, ents)), sysFeed();
 sysResolve(fight ? all : ents, dtS)
 }
 let speedBeforePause = 1;

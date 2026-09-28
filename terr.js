@@ -54,7 +54,7 @@ el.innerHTML = sciBtn(null, "ALL", "turn every toggle below on or off", allSci()
 sciShown().map(([k, lbl, tip]) => sciBtn(k, lbl, tip, sciCur()[k])).join("")
 }
 let hudWas = null;
-const HUD_FIGHT_ONLY = ["bt-leave", "bt-pause"],
+const HUD_FIGHT_ONLY = ["bt-leave", "bt-pause", "bt-bg"],
 HUD_BOX_ONLY = ["bt-lab", "bt-chal", "bt-terr-shop"];
 function hudCombat() { return combatState }
 function syncHud(force) {
@@ -63,7 +63,7 @@ if (c === hudWas && !force) return;
 hudWas = c;
 HUD_FIGHT_ONLY.forEach(id => $(id).style.display = c ? "" : "none");
 HUD_BOX_ONLY.forEach(id => $(id).style.display = c ? "none" : "");
-$("terr-title").style.color = c ? "#fa4" : "#4f8";
+$("terr-title").style.color = c ? "#fa4" : "#4f8", $("terr-title").textContent = c && { mc: "MORTAL COMBAT T", boss: "BOSS FIGHT T", rb: "RAID BOSS T", wb: "WORLD BOSS T" }[fightMode] + enemyTier || "BUGBOX", $("bt-next").style.display = "none";
 boxCv.style.borderColor = c ? "#fa4" : "#4cf";
 syncSciHud()
 }
@@ -121,6 +121,7 @@ killsThis: cb.killsThis || 0
 })
 }
 function genObstacles(inCombat) {
+if (3 === bugTheme) return;
 const lw = boxLW, lh = boxLH, n = 8 + ri(5), placed = [];
 for (let i = 0; i < n; i++) {
 const k = ri(OBST.length), t = OBST[k], v = t[0][ri(t[0].length)], r = (12 + ri(10)) * (t[2] || 1);
@@ -156,7 +157,7 @@ function restoreTerrWorld() {
 if (!savedWorld) return;
 ecsQuery("obstacle").forEach(e => ecsKill(e));
 ecsQuery("food").forEach(e => ecsKill(e));
-savedWorld.obs.forEach(o => ecsSpawn({ obstacle: { r: o.r, kind: o.kind, v: o.v, rot: o.rot }, pos: { x: o.x, y: o.y, dir: 0 } }));
+3 === bugTheme || savedWorld.obs.forEach(o => ecsSpawn({ obstacle: { r: o.r, kind: o.kind, v: o.v, rot: o.rot }, pos: { x: o.x, y: o.y, dir: 0 } }));
 savedWorld.food.forEach(f => ecsSpawn({ food: {}, pos: { x: f.x, y: f.y, dir: 0 } }));
 savedWorld = null
 }
@@ -192,7 +193,7 @@ const c = bugEntity(b, 0 === tm ? .18 * lw : .82 * lw, gap * (i + 1), 0 === tm ?
 const mhp = maxHpOf(b);
 c.combat = {
 ...COMBAT_DEFAULTS,
-curHp: 0 === tm && b.curHp != null ? max(1, min(b.curHp, mhp)) : mhp,
+curHp: max(1, min(b.curHp, mhp)),
 maxHp: mhp
 };
 intPause(ecsSpawn(c))

@@ -1,31 +1,24 @@
-function buildEnemies(count) {
-const R = [
-[1, 3.5],
-[2.5, 6.5],
-[5, 9.5]
-][enemyTier],
-[lo, hi] = R,
-pavg = {};
-return SK.forEach(k => pavg[k] = fightTeam.reduce((s, b) => s + b[k], 0) / fightTeam.length), Array.from({
-length: count
-}, () => {
-const s = {};
-SK.forEach(k => {
-let v = rf(lo, hi);
-1 === enemyTier && (v = .5 * v + .5 * pavg[k]), s[k] = round(clamp(v, 1, 10))
-});
-const hue = rf(0, 45),
-eb = makeBug({
-...s,
-name: genName(),
-gen: 1,
-hue: hue
-});
-return eb
-})
+const statsOf = S => { const s = {}; SK.forEach(k => s[k] = 1); while (S-- > 5) { const k = SK[ri(5)]; s[k] < 10 ? s[k]++ : S++ } return s };
+const BOSS = { boss: [2, 1], rb: [3, 10], wb: [3, 50] }, weekOf = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7).toDateString() };
+let bosses = {}, wbWeek = "";
+try { const s = JSON.parse(localStorage.getItem("bugbox_wb")); s && (wbWeek = s.week, Object.entries(s.bugs).forEach(([k, b]) => bosses[k] = { ...b, id: bid++ })) } catch (e) {}
+function wbKeep() {
+if ("wb" !== fightMode || !combatState) return;
+ecsQuery("team", "combat").forEach(e => { const c = C.combat.get(e); C.team.get(e).team && (c.dead ? delete bosses["wb" + enemyTier] : C.bug.get(e).curHp = c.curHp) });
+try { localStorage.setItem("bugbox_wb", JSON.stringify({ week: wbWeek, bugs: Object.fromEntries(Object.entries(bosses).filter(([k]) => "w" === k[0])) })) } catch (e) {}
+}
+function buildEnemies() {
+const m = BOSS[fightMode], k = fightMode + enemyTier, w = weekOf();
+if (!m) return fightTeam.map(() => makeBug({ ...statsOf(max(5, 5 * enemyTier - ri(3))), hue: rf(0, 45) }));
+wbWeek !== w && (Object.keys(bosses).forEach(x => "w" === x[0] && delete bosses[x]), wbWeek = w);
+if (!bosses[k]) {
+const b = bosses[k] = makeBug({ ...statsOf(5 * enemyTier), hue: rf(0, 45), hpMul: m[1], abilities: shuf(ABIL_IDS.slice()).slice(0, enemyTier < 5 ? 0 : enemyTier - 1 >> 1) });
+["bodyLength", "bodyWidth", "headSize", "legLen"].forEach(x => b.morph[x] *= m[0])
+}
+return [bosses[k]]
 }
 function startFight() {
-bgPick(), fightNum++, enemies = buildEnemies(mayhem ? fightTeam.length : fightMode), groundMarks = [], dmgPops = [], fightDone = !1, combatState = !0, simSpd = 0, tickDebt = 0, syncSpeedLabel();
+bgPick(), fightNum++, enemies = buildEnemies(), groundMarks = [], dmgPops = [], fightDone = !1, combatState = !0, simSpd = 0, tickDebt = 0, syncSpeedLabel();
 markEggsReady();
 showScreen("s-terr"), resizeBoxCV(), spawnTerr(), toast("Morituri te salutant");
 setTimeout(() => { combatState && (simSpd = 1, syncSpeedLabel()) }, 1000)
@@ -37,7 +30,7 @@ combatState = !1, tickDebt = 0, simSpd = speedBeforePause, ecsQuery("team").forE
 function showFightResult() {
 resultTimer = null;
 if (!combatState) return;
-simSpd = 0;
+wbKeep();
 const alive0 = bugsInTerr.filter(f => 0 === f.team && !f.dead),
 dead0 = bugsInTerr.filter(f => 0 === f.team && f.dead),
 alive1 = bugsInTerr.filter(f => 1 === f.team && !f.dead),
@@ -56,13 +49,18 @@ lb && (lb.losses++, lb.fights = (lb.fights || 0) + 1, lb.killsTotal = (lb.killsT
 });
 let html = "";
 if (won) {
-const prize = TIER_PRIZE[enemyTier];
+const prize = 80 * enemyTier * (BOSS[fightMode] || [0, 1])[1];
 money += prize, alive0.forEach(f => {
 const lb = bugsOwned.find(b => b.id === f.b.id);
 lb && (lb.wins++, lb.fights = (lb.fights || 0) + 1, lb.killsTotal = (lb.killsTotal || 0) + (f.killsThis || 0), achSurvive(lb))
 }), updateMoney(), html += `<p style="color:#44ff88;font-size:10px;margin-bottom:8px;">+${prize}</p>`
 } else updateMoney();
 achFight(won, dead0.length, alive0.length), achOwn(0), bugsOwned.forEach(b => b.mated = 0);
+if (won && "mc" === fightMode && enemyTier < 10) {
+for (let n = 1 + ri(3); n--;) ecsSpawn({ food: {}, pos: { x: 30 + random() * (boxLW - 60), y: 30 + random() * (boxLH - 60), dir: 0 } });
+return void($("bt-next").style.display = "")
+}
+simSpd = 0;
 const playerScale = scaleMaxOf(allPlayer.map(f => f.b)),
 enemyScale = scaleMaxOf(allEnemy.map(f => f.b));
 const buildCard = (f, isPlayer) => {
@@ -111,7 +109,7 @@ ov("ov-res", 1)
 }
 function leaveFight() {
 if (labSt.larva) { const l = labSt.larva; bugsOwned.some(x => x.id === l.id) || bugsOwned.push(l), labSt.larva = null }
-endFight(), fightTeam = fightTeam.filter(b => bugsOwned.find(s => s.id === b.id)), openTerr()
+wbKeep(), endFight(), fightTeam = fightTeam.filter(b => bugsOwned.find(s => s.id === b.id)), openTerr()
 }
 function checkFightEnd() {
 const ents = ecsQuery("team", "combat");

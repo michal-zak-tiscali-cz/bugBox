@@ -29,7 +29,7 @@ const ACHIEVEMENTS = [
 ["heavy", "breed a heavy bug (con 5+)"],
 ["strong", "breed a strong bug (str 5+)"],
 ["fast", "breed a fast bug (agi 5+)"],
-["smart", "breed a smart bug (int 5+)"],
+["clever", "breed a clever bug (int 5+)"],
 ["aware", "breed an aware bug (per 5+)"],
 ["weak", "breed a weak bug (stat sum 5)"],
 ["powerful", "breed a powerful bug (stat sum 20+)"],
@@ -40,13 +40,14 @@ const ACHIEVEMENTS = [
 ["skilful", "breed a skilful bug (2 abilities)"],
 ["expert", "breed an expert bug (3 abilities)"],
 ["master", "breed a master bug (4 abilities)"],
-["beatWeak", "beat a weak bug"],
-["beatEven", "beat an even bug"],
-["beatStrong", "beat a strong bug"],
+["beatWeak", "win at tier 1"],
+["beatEven", "win at tier 5"],
+["beatStrong", "win at tier 10"],
 ["win1", "win 1on1"],
 ["win3", "win 3on3"],
 ["win6", "win 6on6"],
-["winMayhem", "win mayhem"],
+["winmayhem", "win mayhem"],
+...Object.entries({ mc: "mortal combat", boss: "boss fight", rb: "raid boss" }).flatMap(([m, n]) => Array.from({ length: 10 }, (_, i) => [m + (i + 1), `beat ${n} T${i + 1}`])),
 ["tough", "create a tough bug (survived 5 combats)"],
 ["rough", "create a rough bug (survived 10 combats)"],
 ["veteran", "create a veteran bug (survived 15 combats)"],
@@ -136,7 +137,7 @@ function achChild(b) {
 achieve("breed"), achStep("bred", [10, 50], "bred");
 const sum = SK.reduce((t, k) => t + b[k], 0),
 na = (b.abilities || []).length;
-[["con", "heavy"], ["str", "strong"], ["agi", "fast"], ["int", "smart"], ["per", "aware"]].forEach(([k, a]) => b[k] >= 5 && achieve(a));
+[["con", "heavy"], ["str", "strong"], ["agi", "fast"], ["int", "clever"], ["per", "aware"]].forEach(([k, a]) => b[k] >= 5 && achieve(a));
 sum <= 5 && achieve("weak");
 [[20, "powerful"], [30, "superior"], [40, "elite"], [50, "godlike"]].forEach(([v, a]) => sum >= v && achieve(a));
 [[1, "skilled"], [2, "skilful"], [3, "expert"], [4, "master"]].forEach(([v, a]) => na >= v && achieve(a));
@@ -153,7 +154,7 @@ lost && achStep("lost", [1, 5, 10, 25, 50], "lost", lost);
 [3, 6, 9, 15, 20].forEach(m => lost >= m && achieve("lostM" + m));
 records.fights++, won && records.wins++, saveRecords();
 if (!won) return void (achSt.streak = 0);
-achieve(["beatWeak", "beatEven", "beatStrong"][enemyTier]), achieve(mayhem ? "winMayhem" : "win" + fightMode);
+achieve({ 1: "beatWeak", 5: "beatEven", 10: "beatStrong" }[enemyTier]), achieve("win" + fightMode), achieve(fightMode + enemyTier);
 achSt.streak++, achStep("wins", [5, 25, 50], "win"),
 achSt.streak >= 5 && achieve("streak5"), lost || achieve("flawless"), 1 === alive && achieve("lastStand")
 }

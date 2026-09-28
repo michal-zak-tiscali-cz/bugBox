@@ -54,12 +54,13 @@ if (inCombat) {
 groundMarks.forEach(m => {
 boxCx.globalAlpha = .4 * m.t, boxCx.fillStyle = `hsl(${m.hue},40%,18%)`, boxCx.fillRect(m.x - 8, m.y - 4, 16, 8), boxCx.globalAlpha = 1
 });
-} else {
+}
 ecsQuery("food", "pos").forEach(e => {
 const p = C.pos.get(e);
 boxCx.fillStyle = "#c86", boxCx.beginPath(), boxCx.arc(p.x, p.y, 4, 0, 7), boxCx.fill();
 boxCx.fillStyle = "#eb9", boxCx.beginPath(), boxCx.arc(p.x - 1, p.y - 1, 1.5, 0, 7), boxCx.fill()
 });
+if (!inCombat) {
 boxEggs.forEach(g => {
 boxCx.save(), boxCx.translate(g.x, g.y);
 boxCx.fillStyle = "#8d8a80", boxCx.beginPath(), boxCx.ellipse(0, 0, g.r, g.r * .74, 0, 0, 7), boxCx.fill();
@@ -93,8 +94,8 @@ const cfg = ensureMorph(b), r = morphR(b);
 if (isGrey(e)) {
 cb.greyAt || (cb.greyAt = performance.now());
 const k = min(1, floor((performance.now() - cb.greyAt) / 40) / 10);
-drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1, !1, null, sci("col") ? TEAM_HUE[tm.team] : null);
-k > 0 && drawMorphBug(boxCx, cfg, "#3a3a42", p.x, p.y, p.dir + HALF_PI, { alpha: k, shadow: !1 });
+drawBugStyled(boxCx, b, p.x, p.y, p.dir, 1 - k, !1, null, sci("col") ? TEAM_HUE[tm.team] : null);
+drawMorphBug(boxCx, cfg, "#6e6e76", p.x, p.y, p.dir + HALF_PI, { alpha: k, flat: 1 });
 return;
 }
 cb.greyAt = 0;

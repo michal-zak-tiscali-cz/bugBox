@@ -10,6 +10,8 @@ DOM event binding, so definition files never run DOM code at load time.
   Never say "terrarium" or "arena" for these two states.
 - **box** = the canvas and its bugs, in both combat states.
 - **barracks** = the screen where the player picks bugs, mode and tier. File `chal.js`, id `s-chal`.
+- **modes** (`fightMode`): `1 2 3 6` (NvN), `mayhem` (any count), `mc` (mortal combat: 1 bug, T1→T10 in a row), `boss` (1 bug, stat sum 5T−5..5T), `rb` raid boss and `wb` world boss (1–10 bugs).
+- **tier** (`enemyTier` 1–10): enemy stat sum 5T−2..5T, boss 5T; boss abilities 0 (T1–4), 2 (T5–6), 3 (T7–8), 4 (T9–10).
 
 ## Routing table — "I want to change X" → open this file, look for this symbol
 
@@ -19,28 +21,28 @@ DOM event binding, so definition files never run DOM code at load time.
 | Colours, fonts, sizes, spacing, screen shake | `style.css` | `#toast`, `.shake` |
 | Version number, math helpers, sound effects | `core.js` | `GAME_VERSION` (line 1) |
 | Tutorial list, achievement list, unlock rules, toasts on unlock | `achievements.js` | `achSt` |
-| Starting money, pauses, tunables (walk timers, tier prizes), global variables | `state.js` | `bugsOwned`, `combatState`, `WALK_MIN`, `WALK_MAX`, `intPause` (only pause setter and only way to end an act, length by INT), `newDir` (random walk direction, called only by `decide`) |
-| Bug object, names, stat bars, max HP | `bug.js` | |
+| Starting money, pauses, tunables (walk timers), global variables, fight modes | `state.js` | `bugsOwned`, `combatState`, `fightMode`, `MODES`, `enemyTier` (1–10), `WALK_MIN`, `WALK_MAX`, `intPause` (only pause setter and only way to end an act, length by INT), `newDir` (random walk direction, called only by `decide`) |
+| Bug object, names, stat bars, max HP (boss HP multiplier) | `bug.js` | `maxHpOf`, `hpMul` |
 | Ability list, ability rules, bite damage, bite shove, bite prep by agi, inheritance | `abilities.js` | |
 | Bug cards (shop/lab/barracks/result), HP bars, kill button, focus line, blocked-flash, toast text | `cards.js` | `makeBugCard`, `drawHpBar`, `inspectLine`, `toast`, `flashBlocked` |
 | Screen switching, info overlay tabs, money display | `screens.js` | |
-| Bug body shapes, colour palette, walk style (gait) | `morph.js` | `randomMorph`, `setPalette`, `setGait` |
+| Bug body shapes, colour palette, walk style (gait), graphics theme (Neon Lab removes obstacles), one-colour corpse | `morph.js` | `randomMorph`, `setPalette`, `setGait`, `setBugTheme`, `drawMorphBug` option `flat` |
 | Drawing one bug, card thumbnails | `drawbug.js` | `drawBugStyled` |
-| Box background art | `bg.js` | `drawBg` |
+| Box background art (random per fight, `#bt-bg` rerolls) | `bg.js` | `drawBg`, `bgPick` |
 | Obstacle types, shapes and variants (index = kind, `v` = variant) | `obst.js` | `OBST` |
-| Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning (mood by HP) | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr` |
+| Box canvas, Science HUD toggles (kept per combat state), obstacle and bug spawning (mood by HP, none in Neon Lab), fight-only buttons, top-left title per mode | `terr.js` | `bugsInTerrView`, `sciSt`, `genObstacles`, `spawnTerr`, `HUD_FIGHT_ONLY`, `syncHud` |
 | Market screen | `shop.js` | `openShop`, `renderShop` |
 | Entity system (rarely touched), draw order (dragged item on top) | `ecs.js` | `ecsQuery`, `C`, `ecsFront` |
-| Act choice, walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down, busy bug skips walking, idle and smartIdle, mood in box | `move.js` | `decide` (only act chooser), `SLIDE_K`, `slideEnd`, `clampToBox`, `busy`, `wallPause`, `sysSmartIdle`, `SMART` |
-| Mating (act `breeding`), scraps, eggs, hatching, box capacity | `mate.js` | `interactEligible` |
+| Act choice, walking, wandering, feeding, collisions, wall hit (slide → pause → turn → pause), wall margin = bug radius, stuck manoeuvre, corpse slow-down, busy bug skips walking, idle (INT 5+ picks equally from `IDLE`), mood in box, feeding also in fight | `move.js` | `decide` (only act chooser), `SLIDE_K`, `slideEnd`, `clampToBox`, `busy`, `wallPause`, `sysIdle`, `IDLE`, `sysFeed` |
+| Mating (act `breeding`, needs full HP, mood kept), scraps, eggs, hatching, box capacity | `mate.js` | `interactEligible` |
 | Breeding lab (sorting, selection, offspring) | `lab.js` | |
-| Barracks screen (modes, tiers, team picking) | `chal.js` | |
+| Barracks screen (modes, tier buttons 01–10, team picking, BOSS stat-sum filter) | `chal.js` | `setMode`, `setTier`, `teamMax`, `bossFit` |
 | Fight AI, targeting, ability firing, target switch to weakest attacker, panic burst | `combatai.js` | `panicAll` |
-| What is drawn each frame, bottom info line, red hit overlay | `render.js` | `drawHit` |
+| What is drawn each frame (food also in fight), bottom info line, red hit overlay, floating damage numbers, grey corpse fade | `render.js` | `drawHit` |
 | Hit-testing under the finger, dragging, obstacle rotation by circling | `input.js` | `nearest`, `obstacleAt`, `draggableAt`, `dragStart`, `dragMove`, `endDrag` |
 | All DOM `onclick` bindings, triple-tap panic, focus on corpses | `main.js` | `tapT` |
-| Simulation loop, speed | `loop.js` | `tick(dt, fight)` = one simulation step, sole countdown of `actT` and `hitT` |
-| Enemy generation, fight start (salute toast + freeze), result screen, fight-end and stalemate check, fight end removes all fight entities | `fight.js` | `checkFightEnd`, `endFight` |
+| Simulation loop, speed, box backdrop | `loop.js` | `tick(dt, fight)` = one simulation step, sole countdown of `actT` and `hitT`, `drawBoxBackdrop` |
+| Enemy generation (stat sum by tier), bosses (BOSS 2×, RB 3× 10 HP, WB 3× 50 HP, kept per tier), prize $80×T×HP multiplier, fight start (salute toast + freeze), result screen, MC break (food + NEXT), fight-end and stalemate check, fight end removes all fight entities | `fight.js` | `statsOf`, `buildEnemies`, `BOSS`, `bosses`, `wbKeep`, `weekOf`, `checkFightEnd`, `endFight`, `showFightResult` |
 | Bug designer overlay | `dz.js` | |
 | Info / Morphology / Abilities texts | `wiki.js` | |
 | Records screen | `records.js` | `bugbox_records` |
@@ -55,7 +57,7 @@ DOM event binding, so definition files never run DOM code at load time.
 - **act** = what a bug does now, one timer: `walk.act` + `walk.actT`.
   Values: `intPause walk slide idle observing stalking flankTraining breeding fighting`.
   `fighting` = movement driven by `combatai.js`.
-- **mood** = why, on `bug.mood`: `peace seeking fighting fleeing idle smartIdle`.
+- **mood** = why, on `bug.mood`: `peace seeking fighting fleeing idle`.
   Mating checks HP, not mood.
 
 ## Running it
@@ -119,8 +121,9 @@ You are in mode B when the repo is checked out and you can commit.
 ### Saved data
 - `bugbox_records` in localStorage = cross-game **records** (games, kills, fights,
   wins, best bug count, best stat sum, top killer, longest dynasty). Persists. Reset button only.
+- `bugbox_wb` in localStorage = World Bosses of the current week (lost HP kept until Sunday 23:59, killed WB is replaced). The only saved bugs.
 - Tutorial and achievements (`prog`) are **one game each**. Never persist them.
-- Bugs, money and eggs are never saved. Reloading the page starts a new game.
+- Player bugs, money, eggs, BOSS and RB are never saved. Reloading the page starts a new game.
 
 ### User info
 - Android phone only. No desktop, no build tools, no terminal.

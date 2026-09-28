@@ -11,8 +11,7 @@ bugsOwned = [],
 bid = 1,
 fightTeam = [],
 fightMode = 1,
-mayhem = !1,
-enemyTier = 0,
+enemyTier = 1,
 lastSurvivors = null,
 labSt = {
 phase: "pick",
@@ -23,8 +22,7 @@ fB: 0,
 fL: 0,
 larva: null
 };
-const TIER_PRIZE = [80, 180, 350],
-TIER_LABEL = ["WEAK", "EVEN", "STRONG"],
+const MODES = [1, 2, 3, 6, "mayhem", "mc", "boss", "rb", "wb"],
 ri = n => floor(random() * n),
 rf = (a, b) => a + random() * (b - a),
 clamp = (v, a, b) => max(a, min(b, v));

@@ -392,13 +392,7 @@ if (t.scanRemain <= 0) b.mood = "seeking", decide(e), t.scanRemain = 0, cb.memT 
 }
 cb.mvOn = 1
 });
-dmgPops.forEach(d => {
-const v = dt / 40,
-sgn = d.team === 0 ? 1 : -1;
-d.t -= dt / 1600;
-d.y -= v * 0.866;
-d.x += sgn * v * 0.5 + sin((1 - d.t) * 14) * v * .2
-});
+dmgPops.forEach(d => (d.t -= dt / 1600, d.y -= dt / 40));
 dmgPops = dmgPops.filter(d => d.t > 0);
 groundMarks.forEach(m => m.t = max(0, m.t - dt / 2800));
 groundMarks = groundMarks.filter(m => m.t > 0);

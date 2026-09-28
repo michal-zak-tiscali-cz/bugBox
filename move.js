@@ -14,8 +14,7 @@ function decide(e) {
 const b = C.bug.get(e), t = C.walk.get(e), r = random();
 if ("fighting" === b.mood) return void(t.act = "fighting", t.actT = 1 / 0);
 if (C.wall.get(e).phase || combatState || "seeking" === b.mood || r < .7) return void(t.act = "walk", t.actT = rf(WALK_MIN, WALK_MAX), newDir(e));
-const s = intOf(b) > 4 && r < .85;
-t.act = s ? SMART[ri(hasAbil(b, "flanking") ? 3 : 2)] : "idle", b.mood = s ? "smartIdle" : "idle", t.actT = IDL_MIN + random() * IDL_SPAN, t.idlS = random() < .5 ? -1 : 1, t.idlA = TAU, t.idlE = null
+t.act = IDLE[intOf(b) > 4 ? ri(hasAbil(b, "flanking") ? 4 : 3) : 0], b.mood = "idle", t.actT = IDL_MIN + random() * IDL_SPAN, t.idlS = random() < .5 ? -1 : 1, t.idlA = TAU, t.idlE = null
 }
 function sysThinkWander(dt, ents) {
 const dtS = dt / 1e3;
@@ -82,7 +81,7 @@ for (const be of bugs) {
 const bp = C.pos.get(be), b = C.bug.get(be);
 if (hpFrac(b) < 1 && hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
 const mx = maxHpOf(b);
-b.curHp = min(mx, b.curHp + mx / 5);
+b.curHp = min(mx, b.curHp + mx / 5), ECS.combat.has(be) && (C.combat.get(be).curHp = b.curHp);
 intPause(be);
 achieve("feed"), achStep("fed", [10, 50], "fed"), ecsKill(fe);
 break
@@ -237,19 +236,19 @@ boxCx.restore()
 }
 })
 }
-const IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2, SMART = ["observing", "stalking", "flankTraining"];
-function sysSmartIdle(dt, ents) {
+const IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2, IDLE = ["idle", "observing", "stalking", "flankTraining"];
+function sysIdle(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => {
 const b = C.bug.get(e), p = C.pos.get(e), t = C.walk.get(e);
-if (!SMART.includes(t.act) || b.scrap) return;
+if (IDLE.indexOf(t.act) < 1 || b.scrap) return;
 if (hpFrac(b) < 1) return void intPause(e);
 const fl = "flankTraining" === t.act;
 if (t.idlE == null) {
 const tg = (fl ? [...ecsQuery("obstacle", "pos"), ...ecsQuery("food", "pos")] : ents.filter(o => o !== e)).find(o => seesPoint(b, p, C.pos.get(o).x, C.pos.get(o).y));
 if (tg == null) {
 const s = min(t.idlA, turningOf(b) * dtS);
-return void(p.dir = norm(p.dir + t.idlS * s), (t.idlA -= s) <= 0 && (t.act = b.mood = "idle"))
+return void(p.dir = norm(p.dir + t.idlS * s), (t.idlA -= s) <= 0 && (t.act = "idle"))
 }
 const op = C.pos.get(tg);
 t.idlE = tg, t.idlX = op.x, t.idlY = op.y, t.idlA = rf(PI / 4, 2.5 * PI), t.idlR = max(hypot(op.x - p.x, op.y - p.y), bugRadius(b) + 10), t.idlD = t.idlS * spdOf(b) * dtS / t.idlR

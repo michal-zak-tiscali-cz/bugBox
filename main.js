@@ -49,7 +49,7 @@ openChal(), showScreen("s-chal")
 }, document.addEventListener("click", e => {
 if (e.target.closest(".bt-shop")) return combatState && leaveFight(), openShop();
 e.target.closest(".bt-terr") && leaveFight()
-}), document.addEventListener("click", closeKill), $("bt-combat").onclick = startFight;
+}), document.addEventListener("click", closeKill), $("bt-combat").onclick = () => ("mc" === fightMode && (enemyTier = 1), startFight()), $("bt-next").onclick = () => (enemyTier++, startFight());
 $("bt-speed").onclick = () => {
 const seq = [.5, 1, 2, 4, 16],
 cur = simSpd === 0 ? speedBeforePause : simSpd,
@@ -63,7 +63,7 @@ achieve("abandon");
 const survivors = bugsInTerr.filter(f => 0 === f.team && !f.dead).map(f => f.b);
 endFight(), spawnTerr(), openChal(!0, survivors), showScreen("s-chal"), toast("Fight abandoned. Your bugs are safe.")
 }, updateMoney();
-$("bt-des").onclick = openDz;
+$("bt-des").onclick = openDz, $("bt-bg").onclick = bgPick;
 $("bt-set").onclick = () => {
 $("gset-snd").checked = sound.on;
 $("gset-sci").checked = scienceOn;
