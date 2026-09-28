@@ -1,4 +1,4 @@
-const RECORDS0 = { games: 0, kills: 0, fights: 0, wins: 0, maxBugs: 0, bestKill: 0, bestName: "\u2014", bestSum: 0, bestSumName: "\u2014", longestDynasty: 0 };
+const RECORDS0 = { games: 0, kills: 0, fights: 0, wins: 0, maxBugs: 0, bestKill: 0, bestName: "\u2014", bestSum: 0, bestSumName: "\u2014", longestDynasty: 0, fN: 0, fSum: 0, fMin: 0, fMax: 0 };
 let records = { ...RECORDS0 };
 try { const s = localStorage.getItem("bugbox_records"); s && (records = { ...records, ...JSON.parse(s) }) } catch (e) {}
 function saveRecords() { try { localStorage.setItem("bugbox_records", JSON.stringify(records)) } catch (e) {} }
@@ -40,14 +40,13 @@ const ACHIEVEMENTS = [
 ["skilful", "breed a skilful bug (2 abilities)"],
 ["expert", "breed an expert bug (3 abilities)"],
 ["master", "breed a master bug (4 abilities)"],
-["beatWeak", "win at tier 1"],
-["beatEven", "win at tier 5"],
-["beatStrong", "win at tier 10"],
-["win1", "win 1on1"],
-["win3", "win 3on3"],
-["win6", "win 6on6"],
+...[1, 2, 3, 4, 5].map(t => ["tier" + t, "win at tier " + t]),
+["win1", "win 1 v 1"],
+["win2", "win 2 v 2"],
+["win3", "win 3 v 3"],
+["win6", "win 6 v 6"],
 ["winmayhem", "win mayhem"],
-...Object.entries({ mc: "mortal combat", boss: "boss fight", rb: "raid boss" }).flatMap(([m, n]) => Array.from({ length: 10 }, (_, i) => [m + (i + 1), `beat ${n} T${i + 1}`])),
+...Object.entries({ mc: "mortal combat", boss: "boss fight", rb: "raid boss", wb: "world boss" }).flatMap(([m, n]) => Array.from({ length: 5 }, (_, i) => [m + (i + 1), `beat ${n} T${i + 1}`])),
 ["tough", "create a tough bug (survived 5 combats)"],
 ["rough", "create a rough bug (survived 10 combats)"],
 ["veteran", "create a veteran bug (survived 15 combats)"],
@@ -152,9 +151,9 @@ function achFight(won, lost, alive) {
 achieve("fight");
 lost && achStep("lost", [1, 5, 10, 25, 50], "lost", lost);
 [3, 6, 9, 15, 20].forEach(m => lost >= m && achieve("lostM" + m));
-records.fights++, won && records.wins++, saveRecords();
+records.fMin = records.fN++ ? min(records.fMin, fightMs) : fightMs, records.fMax = max(records.fMax, fightMs), records.fSum += fightMs, records.fights++, won && records.wins++, saveRecords();
 if (!won) return void (achSt.streak = 0);
-achieve({ 1: "beatWeak", 5: "beatEven", 10: "beatStrong" }[enemyTier]), achieve("win" + fightMode), achieve(fightMode + enemyTier);
+achieve("tier" + enemyTier), achieve("win" + fightMode), achieve(fightMode + enemyTier);
 achSt.streak++, achStep("wins", [5, 25, 50], "win"),
 achSt.streak >= 5 && achieve("streak5"), lost || achieve("flawless"), 1 === alive && achieve("lastStand")
 }

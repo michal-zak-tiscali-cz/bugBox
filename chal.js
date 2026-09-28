@@ -1,5 +1,5 @@
 const teamMax = () => ({ mayhem: 1 / 0, rb: 10, wb: 10 })[fightMode] || +fightMode || 1,
-bossFit = b => { const d = 5 * enemyTier - round(statSum(b)); return d >= 0 && d <= 5 };
+bossFit = b => { const d = 10 * enemyTier - round(statSum(b)); return d >= 0 && d < 10 };
 function openChal(keepMode, keepTeam) {
 fightTeam = keepTeam ? keepTeam.filter(f => bugsOwned.find(b => b.id === f.id)).map(f => bugsOwned.find(b => b.id === f.id)) : [], keepMode || (fightMode = 1, enemyTier = 1), renderChalGrid(), updateChalUI()
 }
@@ -14,7 +14,7 @@ const empty = !bugsOwned.length;
 $("bt-chal-shop").style.display = empty ? "" : "none";
 $("bt-chal-terr").style.marginLeft = empty ? "0" : "auto";
 document.querySelectorAll("#s-chal .bt-mode").forEach((el, i) => el.className = "bt-mode" + (!empty && fightMode === MODES[i] ? " prim" : ""));
-$("tier-row").innerHTML = Array.from({ length: 10 }, (_, i) => `<button class="bt-tier${!empty && i + 1 === enemyTier ? " prim" : ""}" onclick="setTier(${i + 1})">${String(i + 1).padStart(2, "0")}</button>`).join("");
+$("tier-row").innerHTML = Array.from({ length: 5 }, (_, i) => `<button class="bt-tier${!empty && i + 1 === enemyTier ? " prim" : ""}" onclick="setTier(${i + 1})">${String(i + 1).padStart(2, "0")}</button>`).join("");
 $("chal-info").textContent = empty ? "" : `${fightTeam.length}/${isFinite(teamMax()) ? teamMax() : "∞"} selected — ${"mc" === fightMode ? "T1→T10" : `T${enemyTier} +$${80 * enemyTier}`}`;
 $("bt-combat").disabled = !(fightTeam.length && ("string" == typeof fightMode || fightTeam.length === fightMode))
 }

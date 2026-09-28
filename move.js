@@ -1,7 +1,7 @@
 const BASE_WALK = 20;
 const agiOf     = b => clamp(b.agi || 5, 1, 10);
 const sf        = b => hasAbil(b, "steadfast") ? 2 : 1;
-const spdOf     = b => BASE_WALK * agiOf(b) * sf(b);
+const spdOf     = b => BASE_WALK * agiOf(b) * sf(b) * ("rushing" === b.mood ? 1.25 : 1);
 const turningOf = b => TAU / (6.6 - .61 * agiOf(b)) * sf(b);
 const STUCK_CHECK_MS = 2000;
 const SLIDE_K = .25;
@@ -24,7 +24,7 @@ p = C.pos.get(e),
 v = C.vel.get(e),
 t = C.walk.get(e),
 w = C.wall.get(e);
-combatState || (b.mood = hpFrac(b) < 1 ? "seeking" : "walk" === t.act || "intPause" === t.act || "slide" === t.act ? "peace" : b.mood);
+combatState ? "rushing" === b.mood && (b.mood = "seeking") : (b.mood = hpFrac(b) < 1 ? "seeking" : "walk" === t.act || "intPause" === t.act || "slide" === t.act ? "peace" : b.mood);
 if ("walk" !== t.act) return;
 const px = p.x, py = p.y;
 if (busy(b, p)) return void(p.frzMs = 0, p.lastX = px, p.lastY = py);
@@ -61,6 +61,7 @@ const fp = C.pos.get(fe), dx = fp.x - p.x, dy = fp.y - p.y, d2 = dx * dx + dy * 
 d2 < fD2 && seesPoint(b, p, fp.x, fp.y) && (fD2 = d2, fT = fp)
 });
 if (fT && "seeking" === b.mood) {
+b.mood = "rushing";
 const want = atan2(fT.y - p.y, fT.x - p.x);
 turnToward(p, want, turningOf(b) * dtS) || (p.hold = 1);
 v.wanderAngle = p.dir;
@@ -178,7 +179,7 @@ nx = dx / dist,
 ny = dy / dist,
 ba = C.bug.get(ents[i]),
 bb = C.bug.get(ents[j]);
-const fast = "fighting" === ba.mood || "fighting" === bb.mood,
+const fast = [ba.mood, bb.mood].some(m => "fighting" === m || combatState && "rushing" === m),
 h = min(ov / 2, step * (fast ? SEP_FIGHT_MULT : 1));
 a.x -= nx * h, a.y -= ny * h, c.x += nx * h, c.y += ny * h
 }

@@ -9,19 +9,18 @@ try { localStorage.setItem("bugbox_wb", JSON.stringify({ week: wbWeek, bugs: Obj
 }
 function buildEnemies() {
 const m = BOSS[fightMode], k = fightMode + enemyTier, w = weekOf();
-if (!m) return fightTeam.map(() => makeBug({ ...statsOf(max(5, 5 * enemyTier - ri(3))), hue: rf(0, 45) }));
+if (!m) return fightTeam.map(() => makeBug({ ...statsOf(10 * enemyTier - ri(enemyTier > 1 ? 10 : 6)), hue: rf(0, 45) }));
 wbWeek !== w && (Object.keys(bosses).forEach(x => "w" === x[0] && delete bosses[x]), wbWeek = w);
 if (!bosses[k]) {
-const b = bosses[k] = makeBug({ ...statsOf(5 * enemyTier), hue: rf(0, 45), hpMul: m[1], abilities: shuf(ABIL_IDS.slice()).slice(0, enemyTier < 5 ? 0 : enemyTier - 1 >> 1) });
+const b = bosses[k] = makeBug({ ...statsOf(10 * enemyTier), hue: rf(0, 45), hpMul: m[1], abilities: shuf(ABIL_IDS.slice()).slice(0, enemyTier - 1) });
 ["bodyLength", "bodyWidth", "headSize", "legLen"].forEach(x => b.morph[x] *= m[0])
 }
 return [bosses[k]]
 }
 function startFight() {
-bgPick(), fightNum++, enemies = buildEnemies(), groundMarks = [], dmgPops = [], fightDone = !1, combatState = !0, simSpd = 0, tickDebt = 0, syncSpeedLabel();
+bgPick(), fightNum++, enemies = buildEnemies(), groundMarks = [], dmgPops = [], fightDone = !1, fightMs = 0, combatState = !0, simSpd = 1, tickDebt = 0, syncSpeedLabel();
 markEggsReady();
-showScreen("s-terr"), resizeBoxCV(), spawnTerr(), toast("Morituri te salutant");
-setTimeout(() => { combatState && (simSpd = 1, syncSpeedLabel()) }, 1000)
+showScreen("s-terr"), resizeBoxCV(), spawnTerr(), toast("Morituri te salutant")
 }
 function endFight() {
 resultTimer && (clearTimeout(resultTimer), resultTimer = null);
@@ -55,8 +54,9 @@ const lb = bugsOwned.find(b => b.id === f.b.id);
 lb && (lb.wins++, lb.fights = (lb.fights || 0) + 1, lb.killsTotal = (lb.killsTotal || 0) + (f.killsThis || 0), achSurvive(lb))
 }), updateMoney(), html += `<p style="color:#44ff88;font-size:10px;margin-bottom:8px;">+${prize}</p>`
 } else updateMoney();
+scienceOn && (html += `<p style="color:#888;font-size:10px;margin-bottom:8px;">Time ${fmtT(fightMs)}</p>`);
 achFight(won, dead0.length, alive0.length), achOwn(0), bugsOwned.forEach(b => b.mated = 0);
-if (won && "mc" === fightMode && enemyTier < 10) {
+if (won && "mc" === fightMode && enemyTier < 5) {
 for (let n = 1 + ri(3); n--;) ecsSpawn({ food: {}, pos: { x: 30 + random() * (boxLW - 60), y: 30 + random() * (boxLH - 60), dir: 0 } });
 return void($("bt-next").style.display = "")
 }

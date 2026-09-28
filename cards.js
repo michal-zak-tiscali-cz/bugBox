@@ -19,7 +19,7 @@ c.strokeStyle = "#555566", c.lineWidth = 1, c.strokeRect(x, y, w, h);
 c.fillStyle = col || hpColor(frac), c.fillRect(x, y, w * clamp(frac, 0, 1), h)
 }
 function drawPrepBar(p, frac, r) {
-const c = boxCx, w = 20, x = p.x - w / 2, y = p.y + r + 3;
+const c = boxCx, w = 20, x = p.x - w / 2, y = p.y - r - 4;
 c.fillStyle = "#1a1a1a", c.fillRect(x, y, w, 2), c.fillStyle = "#fff", c.fillRect(x, y, w * frac, 2)
 }
 function bugCardBody(o) {
@@ -108,14 +108,16 @@ function inspectLine(b) {
 const [hp, mhp] = liveHp(b);
 return `${b.name} | Gen${b.gen} | K${b.killsTotal||0}/F${b.fights||0} | ` +
 SK.map((k, i) => `<span style="color:#44ff88;font-size:9px;">${SN[i]}:${round(b[k])}</span>`).join(" ") +
-` | <span style="color:${hp>=mhp?"#44ff88":"#ff5555"};">${hp}/${mhp}</span>` +
+` | <span style="color:${hp>=mhp?"#44ff88":"#ff5555"};">${hp}/${mhp}</span> ${b.mood}` +
 abilTags(b)
 }
-let toastTimer = null, toastBot = 96;
-function toast(m) {
+let toastQ = [], toastBot = 96;
+const toastLbl = (el = $("toast")) => (el.textContent = toastQ[0] + (toastQ[1] ? ` +${toastQ.length - 1}` : ""), el.style.boxShadow = toastQ.slice(1, 4).map((_, i) => (i = 3 * i + 3, `${i}px ${-i}px 0 -1px #0d0d2a,${i}px ${-i}px 0 #3a3aff`)).join() || "none");
+function toast(m) { toastQ.push(m) > 1 ? toastLbl() : toastNext() }
+function toastNext() {
 const el = $("toast"), r = $("terr-canvas").getBoundingClientRect();
 r.height && (toastBot = innerHeight - r.bottom + 10), el.style.bottom = toastBot + "px";
-el.textContent = m, el.classList.add("show"), toastTimer && clearTimeout(toastTimer), toastTimer = setTimeout(() => el.classList.remove("show"), 2800)
+toastLbl(), el.classList.add("show"), setTimeout(() => (el.classList.remove("show"), setTimeout(() => (toastQ.shift(), toastQ.length && toastNext()), 300)), 1700)
 }
 function flashBlocked(div) {
 div.classList.remove("blocked-fade"), div.classList.add("card-sel2", "blocked-fill"), requestAnimationFrame(() => requestAnimationFrame(() => {

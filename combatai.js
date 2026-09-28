@@ -17,7 +17,7 @@ setTimeout(() => boxCv.classList.remove("shake"), 500);
 ecsQuery("bug", "pos", "combat").forEach(e => {
 const cb = C.combat.get(e), p = C.pos.get(e);
 if (cb.dead) return;
-wakeToFight(e);
+wakeToFight(e), C.bug.get(e).mood = "rushing";
 cb.panicA = norm(p.dir + (random() < .5 ? -1 : 1) * (HALF_PI + random() * HALF_PI));
 cb.panicT = PANIC_MIN + random() * PANIC_SPAN, cb.panicT2 = 0, cb.stunT = 0
 })
@@ -83,7 +83,7 @@ p = C.pos.get(e),
 tm = C.team.get(e),
 cb = C.combat.get(e),
 t = C.walk.get(e);
-const bodyL = bodyLenOf(b), engageDist = engageDistOf(b), spd = spdOf(b), turn = turningOf(b), tier = huntTierOf(b);
+const bodyL = bodyLenOf(b), engageDist = engageDistOf(b), spd = spdOf(b), turn = turningOf(b), tier = huntTierOf(b), go = a => (turnToward(p, a, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1);
 if (cb.dead && !(cb.phoenixT > 0)) { clearActionState(cb); return }
 tickTimers(cb, p, b, dt);
 if (cb.curHp <= 0 && !cb.dead) {
@@ -135,12 +135,7 @@ if (!spotted && !callFor(e, p, tm.team, ents, cb)) return;
 wakeToFight(e)
 }
 if (cb.stunT > 0) return;
-if (cb.panicT > 0 || cb.panicT2 > 0) {
-if (cb.panicT > 0) { cb.panicT -= dt; cb.panicT <= 0 && (cb.panicA = atan2(boxLH / 2 - p.y + rf(-30, 30), boxLW / 2 - p.x + rf(-30, 30)), cb.panicT2 = PANIC_HOME_MS) }
-else cb.panicT2 -= dt;
-turnToward(p, cb.panicA, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1;
-return
-}
+if (cb.panicT > 0) return (cb.panicT -= dt) <= 0 && (cb.panicA = atan2(boxLH / 2 - p.y + rf(-30, 30), boxLW / 2 - p.x + rf(-30, 30)), cb.panicT2 = PANIC_HOME_MS, b.mood = "fighting"), void go(cb.panicA);
 if ("intPause" === t.act) return;
 let target = null,
 minD2 = 1 / 0;
@@ -196,6 +191,7 @@ const pcb = ECS.combat.has(cb.pickE) ? C.combat.get(cb.pickE) : null;
 let minD = 1 / 0;
 cb.curTarget = target == null ? -1 : target;
 if (target) { const ts = snap.get(target); minD = hypot(ts.x - myS.x, ts.y - myS.y) }
+if (cb.panicT2 > 0) { if (target == null) return cb.panicT2 -= dt, void go(cb.panicA); cb.panicT2 = 0 }
 if (hasAbil(b, "flee") && cb.fleeT <= 0 && cb.fakeT <= 0) {
 const frac = cb.curHp / (cb.maxHp || 1),
 lvl = frac < .25 ? 2 : frac < .5 ? 1 : 0;
@@ -207,9 +203,7 @@ cb.fleeT = FLEE_MIN_MS + random() * (FLEE_MAX_MS - FLEE_MIN_MS), cb.aimLock = 0,
 }
 if (cb.fleeT > 0) {
 b.mood = "fleeing";
-turnToward(p, cb.fleeA, turn * dtS);
-cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1;
-return
+return void go(cb.fleeA)
 }
 "fleeing" === b.mood && (b.mood = "seeking", decide(e))
 abilBlocked = false;
@@ -220,6 +214,7 @@ tcb = C.combat.get(target),
 tb = C.bug.get(target);
 cb.goOn = 0;
 const attackReach = engageDist + bugRadius(tb), sepAB = bugRadius(b) + bugRadius(tb);
+b.mood = minD > attackReach && !cb.dashT && seesPoint(b, p, tp.x, tp.y) ? "rushing" : "fighting";
 if (abilReady(e, "mark")) {
 abilFire(e, "mark");
 cb.callT = ABILITIES.mark.dur, cb.callR = callRadius(b), cb.callTeam = tm.team, cb.callCry = 0, cb.callX = tp.x, cb.callY = tp.y;
@@ -346,7 +341,7 @@ if (abilReady(e, "swiftbite") && !cb.swiftPend) { cb.swiftPend = 1; abilFire(e, 
 if (abilReady(e, "loud")) { cb.loudT = ABILITIES.loud.dur; abilFire(e, "loud") }
 }
 } else {
-cb.aimLock = 0, cb.aimTarget = -1;
+b.mood = "fighting", cb.aimLock = 0, cb.aimTarget = -1;
 cb.dashT = 0, cb.dashHitPend = 0;
 const stp = turn * dtS;
 cb.memT > 0 && (cb.memT -= dt);

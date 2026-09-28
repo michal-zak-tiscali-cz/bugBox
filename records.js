@@ -10,6 +10,7 @@ r("Total kills", records.kills, "#ff5566") +
 r("Total fights", records.fights, "#4f8") +
 r("Total wins", records.wins, "#4f8") +
 r("Win rate", winRate + "%", "#fa4") +
+r("Fight time min/avg/max", records.fN ? [records.fMin, records.fSum / records.fN, records.fMax].map(fmtT).join(" / ") : "\u2014", "#fff") +
 r("Longest dynasty", "Gen " + records.longestDynasty, "#a4f") +
 r("Most bugs at once", records.maxBugs, "#4cf") +
 r("Best bug ever", records.bestSum > 0 ? `${records.bestSumName} (${records.bestSum})` : "\u2014", "#4f8") +

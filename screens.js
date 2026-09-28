@@ -12,7 +12,12 @@ t === "rec" && renderRecords();
 $("info-foot").innerHTML = (t === "rec" ? '<button class="danger bt" id="bt-rec-rst" onclick="resetRecords()">Reset</button>' : "") +
 '<button class="ok bt" id="bt-inf-close" onclick="ov(&quot;ov-inf&quot;,0)">OK</button>'
 }
-function ov(id, on) { on || cancelAnimationFrame(dzAnim), $(id).style.display = on ? "flex" : "none" }
+const OV_PAUSE = ["ov-set", "ov-inf", "ov-design"];
+let ovSpd = -1;
+function ov(id, on) {
+on || cancelAnimationFrame(dzAnim), $(id).style.display = on ? "flex" : "none";
+OV_PAUSE.includes(id) && (on ? ovSpd < 0 && (ovSpd = simSpd, simSpd = 0) : ovSpd >= 0 && !OV_PAUSE.some(o => "flex" === $(o).style.display) && (simSpd = ovSpd, ovSpd = -1), tickDebt = 0, syncSpeedLabel())
+}
 function showScreen(id) {
 "s-shop" === id || cancelOverWatch();
 "s-terr" === id || markEggsReady();

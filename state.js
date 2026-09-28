@@ -25,7 +25,8 @@ larva: null
 const MODES = [1, 2, 3, 6, "mayhem", "mc", "boss", "rb", "wb"],
 ri = n => floor(random() * n),
 rf = (a, b) => a + random() * (b - a),
-clamp = (v, a, b) => max(a, min(b, v));
+clamp = (v, a, b) => max(a, min(b, v)),
+fmtT = ms => { const d = floor(ms / 100), p = n => String(n).padStart(2, "0"); return p(floor(d / 600)) + ":" + p(floor(d / 10) % 60) + "." + d % 10 };
 function turnToward(p, want, step) {
 const d = norm(want - p.dir);
 return abs(d) <= step ? (p.dir = norm(want), !0) : (p.dir = norm(p.dir + sign(d) * step), !1)

@@ -7,6 +7,7 @@ combatState = !1,
 groundMarks = [],
 fightNum = 0,
 fightDone = !1,
+fightMs = 0,
 resultTimer = null,
 dmgPops = [],
 enemies = [],
@@ -70,7 +71,7 @@ syncSciHud()
 function canDrag(kind) { return !hudCombat() }
 const MAX_FOOD = 30;
 function canPlaceFood() { return !hudCombat() && ecsQuery("food").length < MAX_FOOD }
-function spawnDmgPop(x, y, amount, isMiss, team) { dmgPops.push({ x, y, amount, isMiss, team: team || 0, t: 1 }) }
+function spawnDmgPop(x, y, amount, team) { dmgPops.push({ x, y, amount, team: team || 0, t: 1 }) }
 function openTerr() {
 simLastT = 0, updateMoney(), achOwn(0), showScreen("s-terr")
 }

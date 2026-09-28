@@ -27,6 +27,7 @@ sysAnimPhase(), syncHud();
 sysRender(combatState)
 }
 function tick(dt, fight) {
+if (fight && (fightDone || (fightMs += dt), fightMs <= 1e3)) return;
 const dtS = dt / 1e3,
 all = ecsQuery("bug", "pos", "vel", "walk", "wall"),
 ents = fight ? all.filter(e => "fighting" !== C.walk.get(e).act && !C.combat.get(e).dead) : all;

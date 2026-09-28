@@ -152,11 +152,12 @@ boxCx.textAlign = "center", boxCx.font = "bold 9px 'Courier New'";
 dmgPops.forEach(d => {
 boxCx.save(), boxCx.globalAlpha = max(0, min(1, d.t));
 boxCx.fillStyle = d.team === 0 ? "#f66" : "#4cf";
-boxCx.fillText(d.isMiss ? "miss" : round(d.amount), d.x, d.y);
+boxCx.fillText(round(d.amount), d.x, d.y);
 boxCx.restore()
 })
 }
 drawCooldowns();
+inCombat && scienceOn && (boxCx.save(), boxCx.fillStyle = "#fff", boxCx.font = "9px 'Courier New'", boxCx.textAlign = "left", boxCx.textBaseline = "top", boxCx.fillText(fmtT(fightMs), 4, 4), boxCx.restore());
 const infoEl = $("terr-info");
 syncFowBtn();
 if (inspected) { infoEl.innerHTML = inspectLine(inspected); return }
