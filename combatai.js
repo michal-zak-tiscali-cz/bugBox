@@ -22,53 +22,39 @@ cb.panicA = norm(p.dir + (random() < .5 ? -1 : 1) * (HALF_PI + random() * HALF_P
 cb.panicT = PANIC_MIN + random() * PANIC_SPAN, cb.panicT2 = 0, cb.stunT = 0
 })
 }
-let abilBlocked = false;
-const abilReady = (e, id) => !abilBlocked && hasAbil(C.bug.get(e), id) && C.combat.get(e)[cdFieldOf(id)] <= 0;
-const abilFire = (e, id) => C.combat.get(e)[cdFieldOf(id)] = ABILITIES[id].cd;
-const ACTION_KEYS = ["jumpT", "jumpElapsed", "turn180", "turn180Delay", "dashT", "dashHitPend",
-"spinRemain", "backflipT", "preppingBite", "grabTarget", "grabbedBy", "grabDragLeft",
+const abilReady = (e, id) => { const cb = C.combat.get(e); return !cb.muted && hasAbil(C.bug.get(e), id) && !(cb.cd[id] > 0) };
+const abilFire = (e, id) => { const cb = C.combat.get(e); cb.cd[id] = ABILITIES[id].cd, cb.abTxt = ABILITIES[id].name, cb.abT = 2000 };
+const ACTION_KEYS = ["flyT", "airT", "dashT", "spinRemain", "dashHitPend",
+"backflipT", "preppingBite", "grabTarget", "grabbedBy", "grabDragLeft",
 "grabTimeLeft", "mvSpd", "mvOn", "imX", "imY", "aimLock", "aimTarget"];
 const clearActionState = cb => ACTION_KEYS.forEach(k => cb[k] = COMBAT_DEFAULTS[k]);
-function tickTimers(cb, p, b, dt) {
-const ticks = dt / COMBAT_STEP_MS, dtS = dt / 1e3;
+function tickTimers(cb, p, dt) {
+const ticks = dt / COMBAT_STEP_MS;
+if (cb.kbX || cb.kbY) {
+cb.imX += cb.kbX * ticks; cb.imY += cb.kbY * ticks;
+const damp = pow(KB_DAMP, ticks);
+cb.kbX *= damp; cb.kbY *= damp;
+abs(cb.kbX) < .15 && (cb.kbX = 0);
+abs(cb.kbY) < .15 && (cb.kbY = 0);
+const st = cb.kbX || cb.kbY ? cb.spinRemain * (1 - damp) : cb.spinRemain;
+p.dir += cb.spinDir * st, cb.spinRemain -= st;
+}
 cb.dodT > 0 && (cb.dodT = max(0, cb.dodT - dt / 200));
-CD_KEYS.forEach(k => cb[k] > 0 && (cb[k] -= dt));
+for (const k in cb.cd) cb.cd[k] -= dt;
 cb.stunT > 0 && (cb.stunT -= dt);
 cb.fakeT > 0 || cb.fleeT > 0 && (cb.fleeT = max(0, cb.fleeT - dt));
 cb.loudT > 0 && (cb.loudT -= dt);
+cb.abT > 0 && (cb.abT -= dt);
 cb.callT > 0 && (cb.callT -= dt, cb.callCry && (cb.callX = p.x, cb.callY = p.y));
 cb.backflipT > 0 && (cb.backflipT -= dt);
 cb.dashT > 0 && (cb.dashT -= dt);
+cb.airT > 0 && (cb.airT -= dt);
 cb.flankT > 0 && (cb.flankT = max(0, cb.flankT - dt));
 cb.prepVisT > 0 && (cb.prepVisT = max(0, cb.prepVisT - dt));
 cb.grabTimeLeft > 0 && (cb.grabTimeLeft = max(0, cb.grabTimeLeft - dt));
-if (cb.kbX || cb.kbY) {
-cb.imX += cb.kbX * ticks; cb.imY += cb.kbY * ticks;
-const damp = pow(.72, ticks);
-cb.kbX *= damp; cb.kbY *= damp;
-if (cb.stunT <= 0) { cb.kbX *= 0.5; cb.kbY *= 0.5 }
-abs(cb.kbX) < .15 && (cb.kbX = 0);
-abs(cb.kbY) < .15 && (cb.kbY = 0);
-}
-if (cb.spinRemain > 0) {
-const step = min(cb.spinRemain, cb.spinRate * dtS);
-p.dir += cb.spinDir * step;
-cb.spinRemain -= step;
-}
-if (cb.jumpT > 0) {
-const was = cb.jumpT;
-cb.jumpElapsed += dtS;
-cb.jumpT = max(0, 1 - cb.jumpElapsed / cb.jumpDur);
-const frac = was - cb.jumpT;
-cb.imX += (cb.jumpToX - cb.jumpFromX) * frac;
-cb.imY += (cb.jumpToY - cb.jumpFromY) * frac;
-}
-if (cb.turn180Delay > 0) {
-cb.turn180Delay = max(0, cb.turn180Delay - dt);
-} else if (cb.turn180 > 0) {
-const step = turningOf(b) * dtS;
-p.dir += min(cb.turn180, step);
-cb.turn180 = max(0, cb.turn180 - step);
+if (cb.flyT > 0) {
+const f = min(cb.flyT, dt / cb.airMs);
+cb.flyT -= f, cb.imX += cb.flyDx * f, cb.imY += cb.flyDy * f, p.dir += cb.flySp * f;
 }
 }
 function sysCombatAI(dt) {
@@ -83,32 +69,23 @@ p = C.pos.get(e),
 tm = C.team.get(e),
 cb = C.combat.get(e),
 t = C.walk.get(e);
-const bodyL = bodyLenOf(b), engageDist = engageDistOf(b), spd = spdOf(b), turn = turningOf(b), tier = huntTierOf(b), go = a => (turnToward(p, a, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1);
+const bodyL = bugLen(b), engageDist = engageDistOf(b), spd = spdOf(b), turn = turningOf(b), tier = huntTierOf(b), go = a => (turnToward(p, a, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1);
 if (cb.dead && !(cb.phoenixT > 0)) { clearActionState(cb); return }
-tickTimers(cb, p, b, dt);
-if (cb.curHp <= 0 && !cb.dead) {
-if (hasAbil(b, "phoenix") && !cb.phoenixUsed) { cb.phoenixUsed = 1; cb.phoenixT = ABILITIES.phoenix.dur; cb.dead = true; cb.curHp = 0; clearActionState(cb); return }
-cb.dead = !0, cb.curHp = 0; clearActionState(cb);
-groundMarks.push({ x: p.x, y: p.y, hue: b.hue, t: 1 });
-return;
-}
-if (cb.curHp <= 0 && cb.phoenixT <= 0) { cb.dead = true; cb.curHp = 0; cb.fakeT = 0; clearActionState(cb); return }
+tickTimers(cb, p, dt);
+if (cb.curHp <= 0 && !cb.dead) { cb.phoenixUsed = 1; cb.phoenixT = ABILITIES.phoenix.dur; cb.dead = true; cb.curHp = 0; clearActionState(cb); return }
 if (cb.dead && cb.phoenixT > 0) {
 cb.phoenixT -= dt;
 if (cb.phoenixT > 0) return;
-cb.phoenixT = 0, cb.dead = false, cb.curHp = cb.maxHp * 0.1;
+cb.phoenixT = 0, cb.dead = false, cb.curHp = cb.maxHp * 0.1, abilFire(e, "phoenix");
 }
-if (cb.fakeT > 0) {
-cb.fakeT -= dt;
-if (cb.fakeT > 0) return;
-}
-if (hasAbil(b, "fake") && cb.fakeUsed < 2 && !cb.fakeT && cb.curHp > 0 && cb.curHp < cb.maxHp * 0.5) {
-cb.fakeUsed++; cb.fakeT = ABILITIES.fake.dur; clearActionState(cb); return;
+if (cb.fakeT > 0 && (cb.fakeT = max(0, cb.fakeT - dt))) return;
+if (hasAbil(b, "fake") && cb.fakeUsed < 2 && !cb.fakeT && cb.curHp < cb.maxHp * (cb.fakeUsed ? .25 : .5)) {
+cb.fakeUsed++; cb.fakeT = ABILITIES.fake.dur; clearActionState(cb); abilFire(e, "fake"); return;
 }
 if (cb.grabbedBy >= 0) {
 const hcb = ECS.combat.has(cb.grabbedBy) ? C.combat.get(cb.grabbedBy) : null;
 if (!hcb || hcb.dead || hcb.grabTarget !== e || hcb.grabDragLeft <= 0) { cb.grabbedBy = -1; cb.stunT = 0; if (hcb && hcb.grabTarget === e) hcb.grabTarget = -1 }
-else { clearActionState(cb); return }
+else { cb.mvSpd = cb.mvOn = cb.preppingBite = 0; return }
 }
 if (cb.grabTarget >= 0) {
 const gcb = ECS.combat.has(cb.grabTarget) ? C.combat.get(cb.grabTarget) : null;
@@ -162,8 +139,7 @@ const va = norm(atan2(dy, dx) - myS.dir);
 if (abs(va) <= fovHalf) consider(oe, d2);
 });
 if (cb.avengeE >= 0) {
-const acb = ECS.combat.has(cb.avengeE) ? C.combat.get(cb.avengeE) : null;
-if (!acb || acb.dead || acb.curHp <= 0) cb.avengeE = -1;
+if (!liveE(cb.avengeE)) cb.avengeE = -1;
 else {
 const dOf = te => { const ts2 = snap.get(te); return ts2 ? hypot(ts2.x - myS.x, ts2.y - myS.y) : 1 / 0 };
 if (!(target != null && dOf(target) <= engageDist)) target = cb.avengeE;
@@ -184,10 +160,10 @@ hypot(os.x - myS.x, os.y - myS.y) < near && (n++, ocb.curHp < pickHp && (pickHp 
 cb.pickE = n > 1 ? pick : -1
 }
 if (cb.pickE >= 0) {
-const pcb = ECS.combat.has(cb.pickE) ? C.combat.get(cb.pickE) : null;
-!pcb || pcb.dead || pcb.curHp <= 0 ? cb.pickE = -1 : target = cb.pickE
+liveE(cb.pickE) ? target = cb.pickE : cb.pickE = -1
 }
 }
+cb.flyE >= 0 && (liveE(cb.flyE) ? target = cb.flyE : cb.flyE = -1);
 let minD = 1 / 0;
 cb.curTarget = target == null ? -1 : target;
 if (target) { const ts = snap.get(target); minD = hypot(ts.x - myS.x, ts.y - myS.y) }
@@ -198,7 +174,7 @@ lvl = frac < .25 ? 2 : frac < .5 ? 1 : 0;
 if (lvl && !(cb.fledLvl >= lvl)) {
 cb.fledLvl = cb.fledLvl + 1;
 cb.fleeA = norm(p.dir + (30 + random() * 150) * PI / 180 * (random() < .5 ? -1 : 1));
-cb.fleeT = FLEE_MIN_MS + random() * (FLEE_MAX_MS - FLEE_MIN_MS), cb.aimLock = 0, cb.aimTarget = -1
+cb.fleeT = FLEE_MIN_MS + random() * (FLEE_MAX_MS - FLEE_MIN_MS), cb.aimLock = 0, cb.aimTarget = -1, abilFire(e, "flee")
 }
 }
 if (cb.fleeT > 0) {
@@ -206,8 +182,7 @@ b.mood = "fleeing";
 return void go(cb.fleeA)
 }
 "fleeing" === b.mood && (b.mood = "seeking", decide(e))
-abilBlocked = false;
-ents.forEach(oe => { const ocb = C.combat.get(oe), otm = C.team.get(oe); if (ocb.loudT > 0 && otm.team !== tm.team && !ocb.dead) { const op = C.pos.get(oe); if (hypot(op.x - p.x, op.y - p.y) < loudRadius(C.bug.get(oe))) abilBlocked = true } });
+cb.muted = ents.some(oe => { const ocb = C.combat.get(oe), op = C.pos.get(oe); return ocb.loudT > 0 && !ocb.dead && C.team.get(oe).team !== tm.team && hypot(op.x - p.x, op.y - p.y) < loudRadius(C.bug.get(oe)) });
 if (target) {
 const tp = C.pos.get(target),
 tcb = C.combat.get(target),
@@ -220,9 +195,10 @@ abilFire(e, "mark");
 cb.callT = ABILITIES.mark.dur, cb.callR = callRadius(b), cb.callTeam = tm.team, cb.callCry = 0, cb.callX = tp.x, cb.callY = tp.y;
 }
 const flank = hasAbil(b, "flanking");
-const inJumpSeq = cb.jumpT > 0 || cb.turn180 > 0;
-let facingOK = false, frontCone60 = false, aiming = false;
-if (!inJumpSeq) {
+const air = cb.flyT > 0;
+let airT = cb.airT > 0 || tcb.airT > 0;
+let facingOK = false, aiming = false;
+if (!air) {
 const aimDiff = norm(atan2(tp.y - p.y, tp.x - p.x) - p.dir);
 if (cb.aimTarget !== target) { cb.aimTarget = target; cb.aimLock = 0 }
 if (minD <= attackReach) cb.aimLock = 0;
@@ -234,26 +210,26 @@ turnToward(p, p.dir + aimDiff, st) ? far && (cb.aimLock = 1) : aiming = far;
 }
 cb.lostSide = sign(aimDiff) || cb.lostSide || 1;
 cb.memT = memMsOf(b), cb.memX = tp.x, cb.memY = tp.y, cb.memA = tp.dir, cb.searchPhase = 0;
-facingOK = abs(aimDiff) < 0.6;
-frontCone60 = abs(aimDiff) < PI / 3;
+facingOK = abs(aimDiff) < FRONT_CONE;
+facingOK && (cb.flyE = -1);
 if (cb.regather) { if (facingOK) cb.regather = 0; else aiming = true }
 }
 if (abilReady(e, "dash") && !cb.dashT && !cb.dashHitPend && minD > attackReach && minD <= dashRange(b)) {
-cb.dashT = ABILITIES.dash.dur; abilFire(e, "dash"); cb.dashHitPend = 1;
+cb.dashT = ABILITIES.dash.dur; abilFire(e, "dash"); cb.dashHitPend = 1; cb.airT = cb.airMs = min(cb.dashT, (minD - attackReach) / (spd * 8) * 1e3);
 }
 if (cb.dashHitPend && minD <= attackReach) {
-cb.dashHitPend = 0; cb.dashT = 0;
-biteDodged(b, tb, tp, tm.team, tcb) || (applyBite(cb, b, p, tcb, tb, tp, 1, tm.team, e), biteNoticed(target));
+cb.dashHitPend = 0; cb.dashT = 0; cb.airT = 0;
+biteDodged(b, p, tb, tp, tm.team, tcb) || (applyBite(cb, b, p, tcb, tb, tp, 1, tm.team, e), biteNoticed(target));
 cb.bitePrep = cb.bitePrepMax || bitePrepOf(b);
 SFX.bite();
 }
 let moveSpd = cb.dashT > 0 ? spd * 8 : spd;
 if (aiming) moveSpd = 0;
-if (abilReady(e, "grab") && cb.grabTarget < 0 && tcb.grabbedBy < 0 && minD <= attackReach && !cb.jumpT && !cb.turn180 && !tcb.jumpT) {
+if (abilReady(e, "grab") && cb.grabTarget < 0 && tcb.grabbedBy < 0 && minD <= attackReach && !airT) {
 const rel2 = atan2(p.y - tp.y, p.x - tp.x);
 const fd2 = abs(((rel2 - tp.dir + PI) % (TAU) + TAU) % (TAU) - PI);
 if (fd2 > HALF_PI) {
-cb.grabTarget = target; tcb.grabbedBy = e; abilFire(e, "grab"); cb.grabDragLeft = bodyL * 3; cb.grabTimeLeft = GRAB_HOLD_MS;
+cb.grabTarget = target; tcb.grabbedBy = e; abilFire(e, "grab"); cb.grabDragLeft = bodyL; cb.grabTimeLeft = GRAB_HOLD_MS;
 const ga = atan2(tp.y - p.y, tp.x - p.x);
 cb.grabDx = cos(ga); cb.grabDy = sin(ga);
 }
@@ -262,7 +238,7 @@ if (flank && cb.flankReady && !cb.flankArmed && minD > attackReach && minD < fla
 if (minD > flankRange(tb)) cb.flankArmed = 0;
 if (cb.backflipT > 0) {
 cb.mvA = p.dir + PI, cb.mvSpd = spd;
-} else if (inJumpSeq) {
+} else if (air) {
 } else if (flank && cb.flankReady && cb.flankT > 0 && minD > attackReach && minD < flankRange(tb)) {
 const rel = norm(atan2(p.y - tp.y, p.x - tp.x) - tp.dir);
 if (abs(rel) > TAU / 3) {
@@ -297,18 +273,14 @@ const ux = dx / d, uy = dy / d;
 ocb.imX += ux * stepT, ocb.imY += uy * stepT;
 });
 }
-if (minD <= attackReach && frontCone60 && abilReady(e, "jump") && !cb.jumpT && !cb.turn180) {
-const approachA = atan2(tp.y - p.y, tp.x - p.x), tm2 = ensureMorph(tb);
-cb.jumpT = 1; cb.jumpFromX = p.x; cb.jumpFromY = p.y;
-cb.jumpToX = tp.x + cos(approachA) * (tm2.bodyLength + tm2.headSize);
-cb.jumpToY = tp.y + sin(approachA) * (tm2.bodyLength + tm2.headSize);
+if (minD <= attackReach && facingOK && abilReady(e, "jump") && !airT) {
+const a = atan2(tp.y - p.y, tp.x - p.x), tm2 = ensureMorph(tb), L = tm2.bodyLength + tm2.headSize;
+cb.flyT = 1, cb.flyDx = tp.x + cos(a) * L - p.x, cb.flyDy = tp.y + sin(a) * L - p.y, cb.flySp = PI * (5 / 6 + random() / 3), cb.flyE = target, cb.airT = cb.airMs = ABILITIES.jump.dur, airT = 1;
 abilFire(e, "jump");
-cb.turn180 = PI; tcb.turn180 = PI; tcb.turn180Delay = 2000;
-cb.jumpDur = PI / (2 * turn); cb.jumpElapsed = 0;
 }
 const inRange = minD <= attackReach * (cb.wasInRange ? 1.1 : 1);
 cb.wasInRange = inRange ? 1 : 0;
-if (inRange && facingOK && !inJumpSeq) {
+if (inRange && facingOK && !airT) {
 if (cb.bitePrep > 0) cb.bitePrep -= dt;
 cb.preppingBite = 1;
 cb.prepVisT = 20;
@@ -316,21 +288,21 @@ cb.prepVisT = 20;
 cb.bitePrep = max(cb.bitePrep, 0);
 cb.preppingBite = 0;
 } else { cb.preppingBite = 0 }
-if (inRange && facingOK && cb.bitePrep <= 0 && !inJumpSeq) {
-if (!biteDodged(b, tb, tp, tm.team, tcb)) {
+if (inRange && facingOK && cb.bitePrep <= 0 && !airT) {
+if (!biteDodged(b, p, tb, tp, tm.team, tcb)) {
 let strongMult = 1;
 if (cb.strongPend) { strongMult = 2; cb.strongPend = 0 }
 applyBite(cb, b, p, tcb, tb, tp, strongMult, tm.team, e), biteNoticed(target);
 cb.flankReady = true; cb.flankT = 0; cb.flankArmed = 0;
 const kbA = atan2(tp.y - p.y, tp.x - p.x);
 const braced = hasAbil(tb, "braced");
-if (abilReady(e, "kickback")) { const stub = braced; const kbDist = max(0, 8 + .5 * (b.str - tb.con)) * (stub ? 0.5 : 1); tcb.kbX += cos(kbA) * kbDist, tcb.kbY += sin(kbA) * kbDist; if (!stub) { tcb.stunT = max(tcb.stunT, ABILITIES.kickback.dur); const spinAmt = rnd() * PI, spinDir = (rnd() < 0.5 ? -1 : 1); tcb.spinRemain = spinAmt; tcb.spinDir = spinDir; tcb.spinRate = 3 * turningOf(tb); tcb.regather = 1 } abilFire(e, "kickback") }
+if (abilReady(e, "kickback")) { const d = max(.25, 1.5 + .28 * (b.str - tb.con)) * (braced ? .5 : 1), kbDist = bugLen(tb) * d * (1 - KB_DAMP); tcb.kbX += cos(kbA) * kbDist, tcb.kbY += sin(kbA) * kbDist; if (!braced) { tcb.stunT = max(tcb.stunT, ABILITIES.kickback.dur); const sa = (min(PI, d * PI / 3) + (floor(rnd() * 5) - 2) * PI / 18) * (rnd() < .5 ? -1 : 1); tcb.spinRemain = abs(sa); tcb.spinDir = sign(sa); tcb.regather = 1 } abilFire(e, "kickback") }
 if (abilReady(e, "knockout")) {
-if (!braced) { tcb.stunT = max(200, 2400 + 200 * (b.str - tb.con)); tcb.regather = 1 }
+if (!braced) { tcb.stunT = max(200, ABILITIES.knockout.dur + 200 * (b.str - tb.con)); tcb.regather = 1 }
 abilFire(e, "knockout");
 }
 cb.biteE === target || (cb.biteE = target, cb.biteN = 0), cb.biteN++;
-if (cb.biteN >= 3 && tcb.stunT <= 0 && abilReady(e, "backflip")) { cb.backflipT = ABILITIES.backflip.dur; abilFire(e, "backflip") }
+if (cb.biteN >= 3 && tcb.stunT <= 0 && abilReady(e, "backflip")) { cb.backflipT = ABILITIES.backflip.dur, cb.airT = cb.airMs = cb.backflipT / 2; abilFire(e, "backflip") }
 SFX.bite();
 }
 let baseCd = bitePrepOf(b);
@@ -387,7 +359,7 @@ if (t.scanRemain <= 0) b.mood = "seeking", decide(e), t.scanRemain = 0, cb.memT 
 }
 cb.mvOn = 1
 });
-dmgPops.forEach(d => (d.t -= dt / 1600, d.y -= dt / 40));
+dmgPops.forEach(d => (d.t -= dt / 1600, d.x += cos(d.a) * dt / 20, d.y += sin(d.a) * dt / 20));
 dmgPops = dmgPops.filter(d => d.t > 0);
 groundMarks.forEach(m => m.t = max(0, m.t - dt / 2800));
 groundMarks = groundMarks.filter(m => m.t > 0);

@@ -119,6 +119,6 @@ nb.mood = "seeking", nb.curHp = mhp;
 const lw = boxLW, lh = boxLH,
 c = bugEntity(nb, 0 === dzSide ? .18 * lw : .82 * lw, 30 + random() * (lh - 60), 0 === dzSide ? 0 : PI, dzSide);
 c.vel.wanderAngle = 0;
-c.combat = { ...COMBAT_DEFAULTS, curHp: mhp, maxHp: mhp };
+c.combat = newCombat(mhp, mhp);
 ecsSpawn(c);
 }

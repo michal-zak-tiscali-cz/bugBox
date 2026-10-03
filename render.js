@@ -26,7 +26,6 @@ boxCx.beginPath(), boxCx.arc(p.x, p.y, nearVisR(b), 0, 7), boxCx.stroke(), boxCx
 }
 })
 }
-const cdFieldOf = id => ({ strongbite: "cdStrong", swiftbite: "cdSwift" })[id] || "cd" + id[0].toUpperCase() + id.slice(1);
 function drawCooldowns() {
 if (!sci("abi")) return;
 boxCx.font = "8px 'Courier New'", boxCx.textAlign = "left";
@@ -39,9 +38,7 @@ list = (b.abilities || []).filter(id => id === "phoenix" ? !cb.phoenixUsed : id 
 const r = morphR(b);
 let yy = p.y + 4;
 list.forEach(id => {
-const f = cdFieldOf(id),
-has = ABILITIES[id].cd > 0 && f in cb,
-cd = cb[f] || 0;
+const has = ABILITIES[id].cd > 0, cd = cb.cd[id] || 0;
 boxCx.fillStyle = has ? (cd <= 0 ? "#4f8" : "#fa6") : "#c8f";
 boxCx.fillText(`${ABILITIES[id].name}${has?" "+(cd<=0?"\u2713":(cd/1000).toFixed(1)):""}`, p.x + r + 4, yy), yy += 9
 })
@@ -104,8 +101,12 @@ let offX = 7 * hitFrac * (cb.hitDx || 0) + 7 * (cb.dodT || 0) * (cb.dodDx || 0),
 offY = 7 * hitFrac * (cb.hitDy || 0) + 7 * (cb.dodT || 0) * (cb.dodDy || 0);
 if (cb.loudT > 0) { const amp = (cfg.legLen * 0.5 / 3) * sin(cb.loudT / 20), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
 boxCx.globalAlpha = 1;
-drawBugStyled(boxCx, b, p.x + offX, p.y + offY, p.dir, 1, b === inspected, cb.backflipT > 0 ? null : posPhase(p), sci("col") ? TEAM_HUE[tm.team] : null);
-drawHit(b, p.x + offX, p.y + offY, p.dir);
+const k = cb.airT > 0 ? sin(PI * (1 - cb.airT / cb.airMs)) * (cb.dashT > 0 ? .5 : 1) : 0, by = p.y + offY - bugLen(b) * k * (cb.dashT > 0 ? .5 : 1), s = 1 + .15 * k;
+k && (boxCx.fillStyle = "rgba(0,0,0,.45)", boxCx.beginPath(), boxCx.ellipse(p.x, p.y, r * (1 - .4 * k), r * .55 * (1 - .4 * k), p.dir, 0, TAU), boxCx.fill());
+boxCx.save(), boxCx.translate(p.x + offX, by), boxCx.scale(s, s);
+drawBugStyled(boxCx, b, 0, 0, p.dir, 1, b === inspected, k ? null : posPhase(p), sci("col") ? TEAM_HUE[tm.team] : null);
+boxCx.restore();
+drawHit(b, p.x + offX, by, p.dir);
 post.push(() => {
 if (cb.stunT > 0) { boxCx.save(), boxCx.fillStyle = "#fd4", boxCx.font = "9px Courier New", boxCx.textAlign = "center", boxCx.fillText("\u2726", p.x, p.y - r - 13), boxCx.restore() }
 if (sci("hp")) {
@@ -113,6 +114,7 @@ const f = max(0, cb.curHp / cb.maxHp);
 drawHpBar(p, f, r, sci("col") ? `hsl(${TEAM_HUE[tm.team]},85%,55%)` : f >= 1 ? "#00ff66" : null)
 }
 if (sci("nam")) { boxCx.fillStyle = 0 === tm.team ? "#44ccff" : "#ffaa44", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 11) }
+if (cb.abT > 0) { boxCx.fillStyle = "#c8f", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(cb.abTxt, p.x, p.y - r - 19) }
 if (sci("bite") && cb.prepVisT > 0) {
 const prepR = max(0, min(1, 1 - cb.bitePrep / (cb.bitePrepMax || BITE_PREP_MS)));
 prepR > 0 && drawPrepBar(p, prepR, r)

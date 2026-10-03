@@ -2,36 +2,12 @@ function renderAbilWiki() {
 const el = $("itab-abil");
 if (el.dataset.done) return;
 el.dataset.done = "1";
-const detail = {
-dash: `Charges from up to 3 body lengths out at double walking speed and bites the instant it arrives, skipping the usual wind-up. It runs until it gets there, not for a set time. Sight range does not limit it.`,
-jump: "Leaps clean over the target and lands behind it. Both bugs then spin around \u2014 the target reacts 2s late, so the rear strike usually lands first.",
-knockout: "Stuns the target. Duration scales with your STR and with how far it beats the target's STR (up to 3x). Resilient bugs are immune.",
-kickback: "Shoves the target away and spins it 0-180 degrees. Distance scales with STR. Resilient bugs take half the shove and no spin.",
-flanking: `Tries to circle around to the target's rear for up to ${FLANK_WINDOW_MS / 1e3}s once inside 2 body lengths of the target, then bites. Can flank again after a successful bite.`,
-strongbite: "Charges up: the next bite deals double damage.",
-swiftbite: `The next bite needs only half the usual wind-up: ${BITE_PREP_MS/2} ms instead of ${BITE_PREP_MS} ms.`,
-backflip: `After landing a bite, hops backward and retreats at walking pace for ${ABILITIES.backflip.dur / 1e3}s before re-engaging.`,
-grab: `Seizes an enemy approached from its side or rear and drags it backward at half walking speed for up to ${GRAB_HOLD_MS / 1e3}s. The victim cannot act at all.`,
-mark: `On a hit, on spotting an enemy it marks that spot with a green X for 3s. Every ally within 7 body lengths that cannot see an enemy itself heads there. An ally that reaches the X without seeing anything turns 270 degrees on the spot, then goes back to its normal search. The X stays put, and the bug can mark again 6s after the last one. They all switch to it for ${ABILITIES.mark.dur / 1e3}s.`,
-phoenix: `Once per fight: on death, lies still for ${(ABILITIES.phoenix.dur/1000).toFixed(0)}s, then rises again at 10% HP.`,
-fake: `Below 50% HP, drops and plays dead for ${(ABILITIES.fake.dur/1000).toFixed(0)}s. Enemies stop targeting it. Usable twice per fight.`,
-loud: `Screams for ${(ABILITIES.loud.dur / 1e3).toFixed(1)}s. Every enemy within 3 body lengths cannot use any ability at all.`,
-v360: "Passive, always on. Adds a blind-spot-free ring of awareness around the bug out to a quarter of its sight range \u2014 it notices anything that close beside or behind it.",
-cry: "Passive, always on. When bitten, it cries for 7s: every ally within 7 body lengths that cannot see an enemy itself comes to its aid, and keeps following it while it moves.",
-braced: "Passive, always on. Immune to stun; kickback shoves it only half as far and never spins it.",
-focus: "Passive, always on. Targets the weakest visible enemy by current HP instead of the closest one.",
-resilient: "Passive, always on. Carries 50% more health than its CON alone would give. Nothing else changes: bites land as hard as ever, there is simply more bug to chew through.",
-chitin: "Passive, always on. Every bite this bug takes does half damage \u2014 no duration, no cooldown, nothing to time.",
-tank: "Passive, always on. Never stops advancing \u2014 keeps walking at its own full speed even while biting, shoving any bug without Tank out of its path. The glass stops it; nothing else does.",
-steadfast: `Passive, always on. Walks and turns at double speed \u2014 ${2 * BASE_WALK} px/s per AGI point instead of ${BASE_WALK}, and half the time for every turn.`,
-flee: `Twice per fight \u2014 once below half its health, once below a quarter \u2014 it turns sharply away and runs for ${FLEE_MIN_MS / 1e3}\u2013${FLEE_MAX_MS / 1e3}s before hunting again. A bug that also plays dead does that first and only starts running once it is back on its feet.`
-};
 el.innerHTML = SK.map(k =>
 `<div class="mw-title">${STAT_FULL[k]}</div>` + ABIL_IDS.filter(id => ABILITIES[id].stat === k).map(id => {
 const a = ABILITIES[id],
 cd = a.cd > 0 ? ` &middot; cd ${(a.cd/1000).toFixed(0)}s` : " &middot; passive";
 return `<div class="panel"><b style="color:#c8f;">\u2b22 ${a.name}</b> <span style="color:#556;">\u2014 req ${k.toUpperCase()}&ge;5${cd}</span><br>
-        <span style="color:#9ab;">${detail[id]}</span></div>`
+        <span style="color:#9ab;">${a.txt.replaceAll("{d}", a.dur / 1e3)}</span></div>`
 }).join("")).join("")
 }
 const STAT_FULL = { con: "Constitution", str: "Strength", agi: "Agility", int: "Intelligence", per: "Perception" };

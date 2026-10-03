@@ -11,10 +11,12 @@ const wallPause = e => random() < (11 - intOf(C.bug.get(e))) / 20 && intPause(e)
 const slideEnd = e => (C.wall.get(e).phase = "wall", wallPause(e) || (C.walk.get(e).act = "walk"));
 const busy = (b, p) => b.loveBite || p.dropStuck;
 function decide(e) {
-const b = C.bug.get(e), t = C.walk.get(e), r = random();
+const b = C.bug.get(e), t = C.walk.get(e), p = C.pos.get(e), r = random();
 if ("fighting" === b.mood) return void(t.act = "fighting", t.actT = 1 / 0);
 if (C.wall.get(e).phase || combatState || "seeking" === b.mood || r < .7) return void(t.act = "walk", t.actT = rf(WALK_MIN, WALK_MAX), newDir(e));
-t.act = IDLE[intOf(b) > 4 ? ri(hasAbil(b, "flanking") ? 4 : 3) : 0], b.mood = "idle", t.actT = IDL_MIN + random() * IDL_SPAN, t.idlS = random() < .5 ? -1 : 1, t.idlA = TAU, t.idlE = null
+t.act = IDLE[intOf(b) > 4 ? ri(hasAbil(b, "flanking") ? 4 : 3) : 0], b.mood = "idle", t.actT = IDL_MIN + random() * IDL_SPAN, t.idlA = PI * (1 + .75 * (2 * random() - 1)), t.idlE = null;
+const dW = [p.x, boxLW - p.x, p.y, boxLH - p.y];
+t.idlS = sign(norm([0, PI, HALF_PI, -HALF_PI][dW.indexOf(min(...dW))] - p.dir)) || 1
 }
 function sysThinkWander(dt, ents) {
 const dtS = dt / 1e3;
@@ -116,9 +118,9 @@ if (cb && "fighting" === t.act) {
 let moved = 0;
 if (cb.mvSpd) {
 const step = cb.mvSpd * dtS * slow;
-let ax = cos(cb.mvA), ay = sin(cb.mvA);
-(p.x <= m && ax < 0 || p.x >= lw - m && ax > 0) && (ax = -ax);
-(p.y <= m && ay < 0 || p.y >= lh - m && ay > 0) && (ay = -ay);
+let ax = cos(cb.mvA), ay = sin(cb.mvA), wk = cb.backflipT > 0 ? 0 : -1;
+(p.x <= m && ax < 0 || p.x >= lw - m && ax > 0) && (ax *= wk);
+(p.y <= m && ay < 0 || p.y >= lh - m && ay > 0) && (ay *= wk);
 p.x += ax * step, p.y += ay * step, moved = 1
 }
 if (cb.imX || cb.imY) { const lim = bugLen(b) * 2; p.x += clamp(cb.imX || 0, -lim, lim), p.y += clamp(cb.imY || 0, -lim, lim), cb.imX = 0, cb.imY = 0, moved = 1 }
@@ -164,7 +166,7 @@ for (let i = 0; i < ents.length; i++)
 for (let j = i + 1; j < ents.length; j++) {
 const ca = C.combat.get(ents[i]),
 cbb = C.combat.get(ents[j]);
-if (ca && ca.dead || cbb && cbb.dead) continue;
+if ([ca, cbb].some(c => c && (c.dead || c.airT > 0))) continue;
 if ("breeding" === C.walk.get(ents[i]).act && "breeding" === C.walk.get(ents[j]).act) continue;
 const minD = sepPair(ents[i], ents[j]),
 a = C.pos.get(ents[i]),
@@ -263,7 +265,7 @@ const th = atan2(p.y - op.y, p.x - op.x) + t.idlD;
 p.x = op.x + cos(th) * t.idlR, p.y = op.y + sin(th) * t.idlR, p.dir = norm(th + t.idlS * HALF_PI)
 } else {
 turnToward(p, atan2(op.y - p.y, op.x - p.x), turningOf(b) * dtS);
-if ("stalking" !== t.act || hypot(op.x - p.x, op.y - p.y) <= bodyLenOf(b) * IDL_GAP) return;
+if ("stalking" !== t.act || hypot(op.x - p.x, op.y - p.y) <= bugLen(b) * IDL_GAP) return;
 const s = min(spdOf(C.bug.get(t.idlE)), spdOf(b)) * dtS;
 p.x += cos(p.dir) * s, p.y += sin(p.dir) * s
 }

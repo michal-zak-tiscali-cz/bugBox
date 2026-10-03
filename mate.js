@@ -2,7 +2,7 @@ const INTERACT_CHANCE = .10, MATE_COOLDOWN_MS = 15000, BOX_CAP = 100;
 const boxFull = () => bugsOwned.length + boxEggs.length >= BOX_CAP;
 const MATE_HOLD_MIN = 3000, MATE_HOLD_MAX = 7000, MATE_TURN_MAX = 1500;
 let boxEggs = [], mates = [], loveBites = [], mateTouch = new Set();
-function eggRadius(a, b) { return max(bodyLenOf(a), bodyLenOf(b)) * .25 }
+function eggRadius(a, b) { return max(bugLen(a), bugLen(b)) * .25 }
 const LOVE_BITE_REACH = 2.5, LOVE_BITE_CONE = 1;
 const mateOdds = () => bugsOwned.length <= 3 ? 1 : bugsOwned.length <= 10 ? .5 : .25;
 const nibble = (a, t) => (t.hitT = 1, t.curHp = max(1, (t.curHp == null ? maxHpOf(t) : t.curHp) - a.str * rollVar()));
@@ -82,7 +82,7 @@ mateEnd(m, !0), mates.splice(k, 1)
 }
 }
 }
-function mateGap(m) { return bodyLenOf(C.bug.get(m.sub)) * .55 }
+function mateGap(m) { return bugLen(C.bug.get(m.sub)) * .55 }
 function mateSnap(m, away) {
 const sp = C.pos.get(m.sub), tp = C.pos.get(m.top), g = mateGap(m);
 sp.dir = away, tp.dir = away, tp.x = sp.x - cos(away) * g, tp.y = sp.y - sin(away) * g

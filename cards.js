@@ -117,7 +117,7 @@ function toast(m) { toastQ.push(m) > 1 ? toastLbl() : toastNext() }
 function toastNext() {
 const el = $("toast"), r = $("terr-canvas").getBoundingClientRect();
 r.height && (toastBot = innerHeight - r.bottom + 10), el.style.bottom = toastBot + "px";
-toastLbl(), el.classList.add("show"), setTimeout(() => (el.classList.remove("show"), setTimeout(() => (toastQ.shift(), toastQ.length && toastNext()), 300)), 1700)
+toastLbl(), el.classList.add("show"), setTimeout(() => (el.classList.remove("show"), setTimeout(() => (toastQ.shift(), toastQ.length && toastNext()), 300)), 2000)
 }
 function flashBlocked(div) {
 div.classList.remove("blocked-fade"), div.classList.add("card-sel2", "blocked-fill"), requestAnimationFrame(() => requestAnimationFrame(() => {

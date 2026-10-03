@@ -71,7 +71,7 @@ syncSciHud()
 function canDrag(kind) { return !hudCombat() }
 const MAX_FOOD = 30;
 function canPlaceFood() { return !hudCombat() && ecsQuery("food").length < MAX_FOOD }
-function spawnDmgPop(x, y, amount, team) { dmgPops.push({ x, y, amount, team: team || 0, t: 1 }) }
+function spawnDmgPop(tp, tb, amount, team, a) { const o = bugLen(tb) / 2 + 3; dmgPops.push({ x: tp.x - cos(tp.dir) * o, y: tp.y - sin(tp.dir) * o, amount, team, a, t: 1 }) }
 function openTerr() {
 simLastT = 0, updateMoney(), achOwn(0), showScreen("s-terr")
 }
@@ -192,11 +192,7 @@ const gap = lh / (arr.length + 1);
 arr.forEach((b, i) => {
 const c = bugEntity(b, 0 === tm ? .18 * lw : .82 * lw, gap * (i + 1), 0 === tm ? 0 : PI, tm);
 const mhp = maxHpOf(b);
-c.combat = {
-...COMBAT_DEFAULTS,
-curHp: max(1, min(b.curHp, mhp)),
-maxHp: mhp
-};
+c.combat = newCombat(max(1, min(b.curHp, mhp)), mhp);
 intPause(ecsSpawn(c))
 })
 };
