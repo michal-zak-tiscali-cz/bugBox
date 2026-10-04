@@ -57,11 +57,7 @@ p.hold = 0;
 v.angVel += .9 * (random() - .5) * dtS, v.angVel *= .95, v.wanderAngle += v.angVel;
 let vx = cos(v.wanderAngle),
 vy = sin(v.wanderAngle);
-let fT = null, fD2 = 1 / 0;
-hpFrac(b) < 1 && foods.forEach(fe => {
-const fp = C.pos.get(fe), dx = fp.x - p.x, dy = fp.y - p.y, d2 = dx * dx + dy * dy;
-d2 < fD2 && seesPoint(b, p, fp.x, fp.y) && (fD2 = d2, fT = fp)
-});
+const fT = hungry(e) ? seenFood(b, p, foods) : null;
 if (fT && "seeking" === b.mood) {
 b.mood = "rushing";
 const want = atan2(fT.y - p.y, fT.x - p.x);
@@ -76,17 +72,27 @@ const maxStep = turningOf(b) * dtS;
 p.dir += max(-maxStep, min(maxStep, diff))
 })
 }
+const hurt = e => { const b = C.bug.get(e), c = C.combat.get(e); return !(c && c.dead) && (c || b).curHp < maxHpOf(b) };
+const hungry = e => { const c = C.combat.get(e); return hurt(e) && !(c && 2 * c.curHp > c.maxHp) };
+function seenFood(b, p, foods = ecsQuery("food", "pos")) {
+let fT = null, fD2 = 1 / 0;
+foods.forEach(fe => {
+const fp = C.pos.get(fe), dx = fp.x - p.x, dy = fp.y - p.y, d2 = dx * dx + dy * dy;
+d2 < fD2 && seesPoint(b, p, fp.x, fp.y) && (fD2 = d2, fT = fp)
+});
+return fT
+}
 function sysFeed() {
 const foods = ecsQuery("food", "pos"), bugs = ecsQuery("bug", "pos", "walk");
 foods.forEach(fe => {
 const fp = C.pos.get(fe);
 for (const be of bugs) {
 const bp = C.pos.get(be), b = C.bug.get(be);
-if (hpFrac(b) < 1 && hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
-const mx = maxHpOf(b);
-b.curHp = min(mx, b.curHp + mx / 5), ECS.combat.has(be) && (C.combat.get(be).curHp = b.curHp);
-intPause(be);
-achieve("feed"), achStep("fed", [10, 50], "fed"), ecsKill(fe);
+if (hurt(be) && hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
+const h = C.combat.get(be) || b, mx = maxHpOf(b);
+h.curHp = min(mx, h.curHp + mx / 5);
+combatState || intPause(be);
+achieve("feed"), combatState && achieve("feedFight"), 1 === C.team.get(be).team && achieve("fedEnemy"), achStep("fed", [10, 50], "fed"), ecsKill(fe);
 break
 }
 }
@@ -188,7 +194,6 @@ a.x -= nx * h, a.y -= ny * h, c.x += nx * h, c.y += ny * h
 }
 function resolveObstacles(ents, dtS) {
 const obs = ecsQuery("obstacle", "pos");
-if (!obs.length) return;
 ents.forEach(e => {
 if (drag && drag.e === e) return;
 const dcb = C.combat.get(e);
@@ -222,13 +227,19 @@ const step = RESOLVE_MAX * (dtS || COMBAT_STEP_MS / 1e3);
 ents.forEach(e => { const p = C.pos.get(e); p.v = hypot(p.x - (p.lx ?? p.x), p.y - (p.ly ?? p.y)) });
 resolveBodies(ents, step);
 resolveObstacles(ents, dtS);
-ents.forEach(e => { clampToBox(e); const p = C.pos.get(e); p.lx = p.x, p.ly = p.y })
+ents.forEach(e => {
+clampToBox(e);
+const p = C.pos.get(e);
+p.lx = p.x, p.ly = p.y;
+p.top && drag?.e !== e && !ents.some(o => o !== e && hypot(C.pos.get(o).x - p.x, C.pos.get(o).y - p.y) < engageDistOf(C.bug.get(o)) + bugRadius(C.bug.get(e))) && (p.top = 0)
+})
 }
 const SHADE_FLAT = "rgba(0,0,0,.35)";
 let flatCx = null;
-function sysRenderObstacles() {
+function sysRenderObstacles(top) {
 const pass = 3 === bugTheme ? [0] : [1, 0];
-eachObstacle((o, p) => {
+eachObstacle((o, p, e) => {
+if ((drag?.e === e) !== top) return;
 const d = OBST[o.kind][1];
 for (const f of pass) {
 boxCx.save(), boxCx.translate(p.x + 2 * f, p.y + 2.5 * f), boxCx.rotate(o.rot);

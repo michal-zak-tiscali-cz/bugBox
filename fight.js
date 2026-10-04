@@ -18,7 +18,7 @@ const b = bosses[k] = makeBug({ ...statsOf(10 * enemyTier), hue: rf(0, 45), hpMu
 return [bosses[k]]
 }
 function startFight() {
-bgPick(), fightNum++, enemies = buildEnemies(), groundMarks = [], dmgPops = [], fightDone = !1, fightMs = 0, combatState = !0, simSpd = 1, tickDebt = 0, syncSpeedLabel();
+bgPick(), fightNum++, enemies = buildEnemies(), groundMarks = [], dmgPops = [], fightDone = !1, fightMs = 0, foodLeft = 3, combatState = !0, simSpd = 1, tickDebt = 0, syncSpeedLabel();
 markEggsReady();
 showScreen("s-terr"), resizeBoxCV(), spawnTerr(), toast("Morituri te salutant")
 }

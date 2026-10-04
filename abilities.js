@@ -2,7 +2,7 @@ const bugLen = b => b ? ensureMorph(b).bodyLength : 22;
 const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 7, flankRange = b => bugLen(b) * 2;
 const FLANK_WINDOW_MS = 1000;
 const GRAB_HOLD_MS = 2500, FRONT_CONE = 20 * PI / 180, KB_DAMP = .72;
-const FLEE_MIN_MS = 3000, FLEE_MAX_MS = 6000;
+const FLEE_MIN_MS = 3000, FLEE_MAX_MS = 6000, FOOD_PULL = 40;
 const BITE_PREP_MS = 800, BITE_PREP_MAX = 1000, BITE_PREP_MIN = 600;
 const ABILITIES = {};
 [
@@ -50,13 +50,12 @@ if (hasAbil(b, "v360") && d2 < vr * vr * .0625) return !0;
 return abs(norm(atan2(dy, dx) - p.dir)) <= fovHalfOf(b)
 }
 const liveE = x => { const c = ECS.combat.has(x) && C.combat.get(x); return c && !c.dead && c.curHp > 0 };
-const memMsOf = b => (intOf(b) + 2) * 1000;
+const memMsOf = b => (intOf(b) + 2) * 1000, scanOf = b => TAU * (intOf(b) - 1) / 9;
 const huntTierOf = b => { const i = intOf(b); return i <= 3 ? 1 : i <= 6 ? 2 : i <= 8 ? 3 : 4 };
-function rollVar() { return sci("rnd") ? 0.8 + 0.4 * random() : 1.0 }
-function rollDodge(chance) { return sci("rnd") && random() < chance }
+const rollVar = () => .8 + .4 * random();
 function biteDodged(atkB, p, tb, tp, atkTeam, tcb) {
 const chance = clamp(.12 + .04 * (tb.agi - atkB.agi), 0, .25);
-if (!rollDodge(chance)) return !1;
+if (random() >= chance) return !1;
 if (tcb) { const a = tp.dir + HALF_PI * (random() < .5 ? -1 : 1); tcb.dodT = 1, tcb.dodDx = cos(a), tcb.dodDy = sin(a) }
 return spawnDmgPop(tp, tb, 0, atkTeam, atan2(tp.y - p.y, tp.x - p.x)), !0
 }
@@ -96,7 +95,6 @@ tcb.dead = !0, tcb.curHp = 0, cb.killsThis = (cb.killsThis || 0) + 1, cb.memT = 
 groundMarks.push({ x: tp.x, y: tp.y, hue: tb.hue, t: 1 })
 }
 }
-function rnd() { return sci("rnd") ? random() : 0.5 }
 const COMBAT_DEFAULTS = {
 dead: !1, killsThis: 0,
 bitePrep: BITE_PREP_MS, bitePrepMax: BITE_PREP_MS, preppingBite: 0, prepVisT: 0,

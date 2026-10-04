@@ -26,13 +26,12 @@ el.innerHTML +=
       Every bite needs <b>${BITE_PREP_MS} ms</b> of standing in range and facing the target. The wind-up only advances while facing.</p>
      <p><b class="c-hdr">DAMAGE FORMULA</b><br>
       <code>damage = STR &times; variance &times; flank &times; strongBite</code>, then halved if the target has Shield up.<br>
-      variance = <b>0.8&ndash;1.2</b> (exactly <b>1.0</b> with the RND toggle off) &middot; strongBite = <b>2</b> on a charged bite, else <b>1</b>.<br>
+      variance = <b>0.8&ndash;1.2</b> &middot; strongBite = <b>2</b> on a charged bite, else <b>1</b>.<br>
       Max HP = <code>12 &times; CON</code>. Dodge chance = <b>2.5% &times; AGI</b>, capped at <b>25%</b>.</p>
      <p><b class="c-hdr">FLANK ZONES</b> (angle between the incoming hit and where the target faces \u2014 each zone spans 120&deg;)<br>
       &bull; <b>Front</b> 0&ndash;60&deg; &rarr; <b class="c-money">&times;1</b> &nbsp; &bull; <b>Side</b> 60&ndash;120&deg; &rarr; <b class="c-money">&times;1.5</b> &nbsp; &bull; <b>Rear</b> 120&ndash;180&deg; &rarr; <b class="c-money">&times;2</b></p>
      <p><b class="c-hdr">SCIENCE MODE</b> (Settings)<br>
-      Adds a toggle row over the box: <b>VIS ABI NAME HP ZONE BITE DMG RND COL</b> \u2014 vision cones, cooldown readouts, names, HP bars, flank sectors, wind-up bars, damage numbers, randomness and flat team colours.<br>
-      With <b>RND</b> off: flat damage, no dodges, stable turn order, deterministic wandering \u2014 the same fight replays identically.</p>`
+      Adds a toggle row over the box: <b>VIS ABI NAME HP ZONE BITE DMG COL</b> \u2014 vision cones, cooldown readouts, names, HP bars, flank sectors, wind-up bars, damage numbers and flat team colours.</p>`
 }
 function renderMorphWiki() {
 const el = $("itab-morph");

@@ -33,15 +33,7 @@ const now = performance.now();
 tapT = tapT.filter(o => now - o.t < TAP_MS && hypot(o.x - cx, o.y - cy) < TAP_R), tapT.push({ x: cx, y: cy, t: now });
 if (tapT.length >= 3) return tapT = [], void panicAll()
 }
-if (inspected) return void(inspected = null);
-if (!canPlaceFood()) return;
-const fHit = ecsQuery("food", "pos").find(en => {
-const fp = C.pos.get(en);
-return hypot(fp.x - cx, fp.y - cy) < 8
-});
-if (fHit != null) return;
-if (obstacleAt(cx, cy) != null) return;
-ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed()
+inspected = null
 }, window.addEventListener("resize", () => {
 $("s-terr").classList.contains("active") && !combatState ? spawnTerr() : resizeBoxCV()
 }), $("bt-lab").onclick = () => openLab(), $("bt-boo").onclick = () => {

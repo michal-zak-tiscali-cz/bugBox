@@ -46,7 +46,9 @@ boxCx.fillText(`${ABILITIES[id].name}${has?" "+(cd<=0?"\u2713":(cd/1000).toFixed
 }
 const drawHit = (b, x, y, dir) => b.hitT > 0 && drawMorphBug(boxCx, ensureMorph(b), "#ff2828", x, y, dir + HALF_PI, { alpha: b.hitT, shadow: !1 });
 function sysRender(inCombat) {
-sysRenderObstacles(), drawZoneVisOverlay();
+const fe = inspected && ecsQuery("bug", "pos").find(en => C.bug.get(en) === inspected || C.bug.get(en).id === inspected.id);
+fe == null && (inspected = null), syncFowBtn();
+sysRenderObstacles(!1), drawZoneVisOverlay();
 if (inCombat) {
 groundMarks.forEach(m => {
 boxCx.globalAlpha = .4 * m.t, boxCx.fillStyle = `hsl(${m.hue},40%,18%)`, boxCx.fillRect(m.x - 8, m.y - 4, 16, 8), boxCx.globalAlpha = 1
@@ -67,9 +69,9 @@ boxCx.restore()
 }
 const ents = inCombat ? ecsQuery("bug", "pos", "team", "combat") : ecsQuery("bug", "pos", "vel", "walk", "wall");
 const isGrey = e => { const c = C.combat.get(e); return c.dead || c.phoenixT > 0 || c.fakeT > 0 };
-const tops = new Set(mates.map(m => m.top));
+const tops = new Set(mates.map(m => m.top)), rk = e => (tops.has(e) ? 1 : 0) + (C.pos.get(e).top ? 2 : 0);
 const drawOrder = inCombat ? [...ents].sort((a, bb) => (isGrey(a) ? 0 : 1) - (isGrey(bb) ? 0 : 1)) :
-[...ents].sort((a, bb) => (tops.has(a) ? 1 : 0) - (tops.has(bb) ? 1 : 0));
+[...ents].sort((a, bb) => rk(a) - rk(bb));
 const post = [];
 drawOrder.forEach(e => {
 const b = C.bug.get(e),
@@ -130,10 +132,8 @@ boxCx.stroke(), boxCx.restore();
 }
 boxCx.globalAlpha = 1;
 });
-post.forEach(fn => fn());
-if (fow && inspected != null) {
-const fe = ecsQuery("bug", "pos").find(en => C.bug.get(en) === inspected || C.bug.get(en).id === inspected.id);
-if (fe != null) {
+sysRenderObstacles(!0), post.forEach(fn => fn());
+if (fow) {
 const fp = C.pos.get(fe), fb = C.bug.get(fe),
 fr = visRangeOf(fb), fh = fovHalfOf(fb), fhr = nearVisR(fb);
 boxCx.save();
@@ -148,7 +148,6 @@ boxCx.beginPath(), boxCx.moveTo(fp.x, fp.y), boxCx.arc(fp.x, fp.y, fr, fp.dir - 
 boxCx.moveTo(fp.x + fhr, fp.y), boxCx.arc(fp.x, fp.y, fhr, 0, 7);
 boxCx.strokeStyle = VIS_COL, boxCx.lineWidth = 1, boxCx.stroke()
 }
-}
 if (inCombat && sci("dmg")) {
 boxCx.textAlign = "center", boxCx.font = "bold 9px 'Courier New'";
 dmgPops.forEach(d => {
@@ -161,11 +160,10 @@ boxCx.restore()
 drawCooldowns();
 inCombat && scienceOn && (boxCx.save(), boxCx.fillStyle = "#fff", boxCx.font = "9px 'Courier New'", boxCx.textAlign = "left", boxCx.textBaseline = "top", boxCx.fillText(fmtT(fightMs), 4, 4), boxCx.restore());
 const infoEl = $("terr-info");
-syncFowBtn();
 if (inspected) { infoEl.innerHTML = inspectLine(inspected); return }
 if (!inCombat) return void(infoEl.textContent = `${bugsOwned.length} bug${1!==bugsOwned.length?"s":""} \u2014 select a bug to inspect`);
 const [a0, a1] = teamAlive(ents);
-infoEl.textContent = `Fight #${fightNum} \u2014 YOURS: ${a0} alive \u00b7 ${a1} alive :ENEMY`
+infoEl.textContent = `Fight #${fightNum} \u2014 YOURS: ${a0} alive \u00b7 ${a1} alive :ENEMY \u2014 food ${foodLeft}`
 }
 function teamAlive(ents) {
 const live = ents.filter(e => { const c = C.combat.get(e); return !c.dead || c.phoenixT > 0 || c.fakeT > 0 });

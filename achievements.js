@@ -12,6 +12,7 @@ const TUTORIAL = [
 ["breed", "breed a bug"],
 ["mate", "mate a bug"],
 ["fight", "fight a bug"],
+["feedFight", "feed a fighting bug"],
 ["kill", "kill a bug"]
 ];
 const ACHIEVEMENTS = [
@@ -54,6 +55,7 @@ const ACHIEVEMENTS = [
 ["legendary", "create a legendary bug (survived 30 combats)"],
 ["fed10", "feed bugs 10 times"],
 ["fed50", "feed bugs 50 times"],
+["fedEnemy", "feed an enemy bug"],
 ["hatch1", "hatch an egg in the terrarium"],
 ["hatch10", "hatch 10 eggs"],
 ["buy10", "buy 10 bugs on the market"],

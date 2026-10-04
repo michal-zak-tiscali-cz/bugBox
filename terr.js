@@ -6,6 +6,7 @@ simSpd = 1,
 combatState = !1,
 groundMarks = [],
 fightNum = 0,
+foodLeft = 0,
 fightDone = !1,
 fightMs = 0,
 resultTimer = null,
@@ -23,11 +24,10 @@ const SCI_KEYS = [
 ["zone", "ZONE", "flank sectors + engage ring", 0],
 ["bite", "BITE", "bite wind-up bar", 1],
 ["dmg", "DMG", "floating damage numbers", 0],
-["rnd", "RND", "combat randomness (off = repeatable fight)", 0],
 ["col", "COL", "team colours instead of bug hue", 0]
 ];
 const sciShown = () => SCI_KEYS.filter(([, , , a, c]) => combatState ? c !== 0 : a);
-const VIZ_OFF = { zone: 0, vis: 0, vis1: 0, vis2: 0, visr: 1, bite: 1, dmg: 1, abi: 0, rnd: 1, nam: 1, hp: 1, col: 0 };
+const VIZ_OFF = { zone: 0, vis: 0, vis1: 0, vis2: 0, visr: 1, bite: 1, dmg: 1, abi: 0, nam: 1, hp: 1, col: 0 };
 let scienceOn = !1;
 const sciNew = () => SCI_KEYS.reduce((o, [k]) => (o[k] = 0, o), {}),
 sciSt = [sciNew(), sciNew()],
@@ -70,7 +70,7 @@ syncSciHud()
 }
 function canDrag(kind) { return !hudCombat() }
 const MAX_FOOD = 30;
-function canPlaceFood() { return !hudCombat() && ecsQuery("food").length < MAX_FOOD }
+function canPlaceFood() { return combatState ? foodLeft > 0 && !fightDone : ecsQuery("food").length < MAX_FOOD }
 function spawnDmgPop(tp, tb, amount, team, a) { const o = bugLen(tb) / 2 + 3; dmgPops.push({ x: tp.x - cos(tp.dir) * o, y: tp.y - sin(tp.dir) * o, amount, team, a, t: 1 }) }
 function openTerr() {
 simLastT = 0, updateMoney(), achOwn(0), showScreen("s-terr")

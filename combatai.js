@@ -62,7 +62,7 @@ const dtS = dt / 1e3;
 const ents = ecsQuery("bug", "pos", "team", "combat");
 const snap = new Map();
 ents.forEach(e => { const p = C.pos.get(e); snap.set(e, { x: p.x, y: p.y, dir: p.dir }) });
-if (sci("rnd")) for (let i = ents.length - 1; i > 0; i--) { const j = floor(random() * (i + 1)); [ents[i], ents[j]] = [ents[j], ents[i]] }
+for (let i = ents.length - 1; i > 0; i--) { const j = floor(random() * (i + 1)); [ents[i], ents[j]] = [ents[j], ents[i]] }
 ents.forEach(e => {
 const b = C.bug.get(e),
 p = C.pos.get(e),
@@ -177,11 +177,15 @@ cb.fleeA = norm(p.dir + (30 + random() * 150) * PI / 180 * (random() < .5 ? -1 :
 cb.fleeT = FLEE_MIN_MS + random() * (FLEE_MAX_MS - FLEE_MIN_MS), cb.aimLock = 0, cb.aimTarget = -1, abilFire(e, "flee")
 }
 }
+const fd = hurt(e) && seenFood(b, p);
 if (cb.fleeT > 0) {
 b.mood = "fleeing";
-return void go(cb.fleeA)
+let a = cb.fleeA;
+if (fd) { const dx = fd.x - p.x, dy = fd.y - p.y, k = FOOD_PULL / (dx * dx + dy * dy || 1); a = atan2(sin(a) + dy * k, cos(a) + dx * k) }
+return void go(a)
 }
 "fleeing" === b.mood && (b.mood = "seeking", decide(e))
+if (fd && hungry(e)) return b.mood = "seeking", cb.aimLock = 0, cb.aimTarget = -1, void go(atan2(fd.y - p.y, fd.x - p.x));
 cb.muted = ents.some(oe => { const ocb = C.combat.get(oe), op = C.pos.get(oe); return ocb.loudT > 0 && !ocb.dead && C.team.get(oe).team !== tm.team && hypot(op.x - p.x, op.y - p.y) < loudRadius(C.bug.get(oe)) });
 if (target) {
 const tp = C.pos.get(target),
@@ -296,7 +300,7 @@ applyBite(cb, b, p, tcb, tb, tp, strongMult, tm.team, e), biteNoticed(target);
 cb.flankReady = true; cb.flankT = 0; cb.flankArmed = 0;
 const kbA = atan2(tp.y - p.y, tp.x - p.x);
 const braced = hasAbil(tb, "braced");
-if (abilReady(e, "kickback")) { const d = max(.25, 1.5 + .28 * (b.str - tb.con)) * (braced ? .5 : 1), kbDist = bugLen(tb) * d * (1 - KB_DAMP); tcb.kbX += cos(kbA) * kbDist, tcb.kbY += sin(kbA) * kbDist; if (!braced) { tcb.stunT = max(tcb.stunT, ABILITIES.kickback.dur); const sa = (min(PI, d * PI / 3) + (floor(rnd() * 5) - 2) * PI / 18) * (rnd() < .5 ? -1 : 1); tcb.spinRemain = abs(sa); tcb.spinDir = sign(sa); tcb.regather = 1 } abilFire(e, "kickback") }
+if (abilReady(e, "kickback")) { const d = max(.25, 1.5 + .28 * (b.str - tb.con)) * (braced ? .5 : 1), kbDist = bugLen(tb) * d * (1 - KB_DAMP); tcb.kbX += cos(kbA) * kbDist, tcb.kbY += sin(kbA) * kbDist; if (!braced) { tcb.stunT = max(tcb.stunT, ABILITIES.kickback.dur); const sa = (min(PI, d * PI / 3) + (floor(random() * 5) - 2) * PI / 18) * (random() < .5 ? -1 : 1); tcb.spinRemain = abs(sa); tcb.spinDir = sign(sa); tcb.regather = 1 } abilFire(e, "kickback") }
 if (abilReady(e, "knockout")) {
 if (!braced) { tcb.stunT = max(200, ABILITIES.knockout.dur + 200 * (b.str - tb.con)); tcb.regather = 1 }
 abilFire(e, "knockout");
@@ -334,7 +338,7 @@ cb.mvOn = 1;
 return
 }
 cb.goOn = 0, cb.callDoneX = cb.goX, cb.callDoneY = cb.goY, cb.memT = 0;
-cb.searchPhase = 2, t.scanRemain = .75 * TAU, cb.lostSide = random() < .5 ? -1 : 1
+cb.searchPhase = 2, t.scanRemain = scanOf(b), cb.lostSide = random() < .5 ? -1 : 1
 }
 if (cb.memT > 0 && tier < 4 && cb.searchPhase === 0) {
 const dxm = cb.memX - p.x, dym = cb.memY - p.y, dm = hypot(dxm, dym);
@@ -345,14 +349,14 @@ return
 }
 if (tier === 1) { cb.memT = 0, b.mood = "seeking", decide(e), cb.mvOn = 1; return }
 cb.searchPhase = tier === 3 ? 1 : 2;
-t.scanRemain = TAU;
+t.scanRemain = scanOf(b);
 cb.lostSide = random() < .5 ? -1 : 1
 }
 if (cb.searchPhase === 1) {
 if (!turnToward(p, cb.memA, stp)) { cb.mvOn = 1; return }
-cb.searchPhase = 2, t.scanRemain = TAU
+cb.searchPhase = 2
 }
-t.scanRemain > 0 || (t.scanRemain = TAU);
+cb.searchPhase || (cb.searchPhase = 2, t.scanRemain = TAU);
 const step = min(t.scanRemain, stp);
 p.dir = norm(p.dir + step * (cb.lostSide || 1)), t.scanRemain -= step;
 if (t.scanRemain <= 0) b.mood = "seeking", decide(e), t.scanRemain = 0, cb.memT = 0, cb.searchPhase = 0

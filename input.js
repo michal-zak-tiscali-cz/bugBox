@@ -1,5 +1,5 @@
-let drag = null, suppressClick = !1;
-const DRAG_SLOP = 8;
+let drag = null, suppressClick = !1, holdT = 0;
+const DRAG_SLOP = 8, HOLD_MS = 250;
 const boxPt = e => { const r = boxCv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top] };
 function nearest(comps, cx, cy, radius) {
 let hit = null, best = 1 / 0;
@@ -20,6 +20,7 @@ return e == null ? null : { e: e, kind: "obstacle", pad: C.obstacle.get(e).r }
 }
 function dragStart(e) {
 const [cx, cy] = boxPt(e), t = draggableAt(cx, cy);
+suppressClick = !1, holdT = t ? 0 : setTimeout(() => canPlaceFood() && (ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed(), combatState && foodLeft--, suppressClick = !0), HOLD_MS);
 if (!t || !canDrag(t.kind)) return;
 const op = C.pos.get(t.e);
 "bug" === t.kind && mateCancel(t.e);
@@ -34,7 +35,7 @@ if (!drag.moved && hypot(cx - drag.sx, cy - drag.sy) < DRAG_SLOP) return;
 drag.moved || achieve("drag"), drag.moved = !0;
 p.x = clamp(cx + drag.ox, drag.pad, boxLW - drag.pad);
 p.y = clamp(cy + drag.oy, drag.pad, boxLH - drag.pad);
-"bug" === drag.kind && (intPause(drag.e), p.dropStuck = 1);
+"bug" === drag.kind && (intPause(drag.e), p.dropStuck = p.top = 1);
 if ("obstacle" === drag.kind && hypot(cx - drag.sx, cy - drag.sy) > 6) {
 const a = atan2(cy - drag.sy, cx - drag.sx), d = drag.ha == null ? 0 : norm(a - drag.ha);
 drag.ha = a, drag.sx = cx, drag.sy = cy, abs(d) < 2 && (drag.turn = (drag.turn || 0) + d);
@@ -42,4 +43,4 @@ abs(drag.turn) > 5.6 && (C.obstacle.get(drag.e).rot += sign(drag.turn) * PI / 4,
 }
 e.preventDefault()
 }
-function endDrag() { drag && (suppressClick = drag.moved, drag = null) }
+function endDrag() { clearTimeout(holdT), drag && (suppressClick = drag.moved, drag = null) }
