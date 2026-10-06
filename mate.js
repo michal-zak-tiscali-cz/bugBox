@@ -31,7 +31,7 @@ continue
 }
 const subFirst = ba.str < bbg.str || (ba.str === bbg.str && random() < .5),
 sub = subFirst ? ea : eb, top = subFirst ? eb : ea;
-[ea, eb].forEach(x => { const t = C.walk.get(x); t.act = "breeding", t.actT = 1 / 0 });
+[ea, eb].forEach(x => setAct(x, "breeding"));
 mates.push({ sub, top, phase: "turn", t: 0, hold: 0 })
 }
 mateTouch = seen
@@ -91,7 +91,7 @@ function loveBiteEnd(s) {
 [s.a, s.b].forEach(en => {
 if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
-b.loveBite = b.prepT = 0, intPause(en)
+b.loveBite = b.prepT = 0, think(en)
 })
 }
 function mateCancel(e) {
@@ -104,7 +104,7 @@ function mateEnd(m, ok) {
 [m.sub, m.top].forEach(en => {
 if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
-b.mateCd = MATE_COOLDOWN_MS, ok && (b.mated = 1), intPause(en, ok && en === m.sub ? 2 : 1)
+b.mateCd = MATE_COOLDOWN_MS, ok && (b.mated = 1), think(en, ok && en === m.sub ? 2 : 1)
 })
 }
 function markEggsReady() { boxEggs.forEach(g => g.ready = 1) }
@@ -113,7 +113,7 @@ const keep = [];
 boxEggs.forEach(g => {
 if (!g.ready) return void keep.push(g);
 const nb = g.bug;
-nb.curHp = maxHpOf(nb), nb.mood = "peace", nb.mateCd = MATE_COOLDOWN_MS;
+nb.curHp = maxHpOf(nb), nb.mateCd = MATE_COOLDOWN_MS;
 bugsOwned.push(nb), achOwn(1), achChild(nb), achStep("hatched", [1, 10], "hatch");
 trackDynasty(nb.gen);
 SFX.hatch()

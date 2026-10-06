@@ -29,15 +29,15 @@ sysRender(combatState)
 function tick(dt, fight) {
 if (fight && (fightDone || (fightMs += dt), fightMs <= 1e3)) return;
 const dtS = dt / 1e3,
-all = ecsQuery("bug", "pos", "vel", "walk", "wall"),
-ents = fight ? all.filter(e => "fighting" !== C.walk.get(e).act && !C.combat.get(e).dead) : all;
+all = ecsQuery("bug", "pos", "vel", "walk"),
+ents = fight ? all.filter(e => !aiAct(C.walk.get(e)) && !C.combat.get(e).dead) : all;
 all.forEach(e => {
 const t = C.walk.get(e), b = C.bug.get(e);
 b.hitT > 0 && (b.hitT = max(0, b.hitT - dt / 200));
-drag?.moved && drag.e === e || "walk" === t.act && (C.wall.get(e).phase || C.pos.get(e).hold) || (t.actT -= dt) > 0 || ("intPause" === t.act ? decide(e) : "slide" === t.act ? slideEnd(e) : intPause(e))
+drag?.moved && drag.e === e || C.combat.get(e)?.fakeT > 0 || (t.actT -= dt) > 0 || ("thinking" === t.act || "fleeing" === t.act ? decide(e) : t.slide != null ? wallNext(e) : think(e))
 });
 fight && (sysSeek(ents), sysCombatAI(dt));
-sysThinkWander(dt, ents), sysSteer(dtS, ents), sysMove(dtS, fight ? all : ents);
+sysSteer(dt, ents), sysMove(dtS, fight ? all : ents);
 fight || (sysIdle(dt, ents), sysMate(dt, ents)), sysFeed();
 sysResolve(fight ? all : ents, dtS)
 }

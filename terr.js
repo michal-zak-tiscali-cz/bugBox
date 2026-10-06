@@ -137,13 +137,11 @@ break
 }
 }
 function bugEntity(b, x, y, dir, tm) {
-b.mood = combatState || hpFrac(b) < 1 ? "seeking" : "peace";
 return {
 bug: b,
 pos: { x: x, y: y, dir: dir },
 vel: { wanderAngle: dir, angVel: 0 },
-walk: { act: "intPause", actT: 0, scanRemain: 0, seekX: null, seekY: null },
-wall: { phase: null, targetAngle: 0 },
+walk: { act: "thinking", actT: 0, scanRemain: 0, seekX: null, seekY: null },
 team: { team: tm }
 }
 }
@@ -193,7 +191,7 @@ arr.forEach((b, i) => {
 const c = bugEntity(b, 0 === tm ? .18 * lw : .82 * lw, gap * (i + 1), 0 === tm ? 0 : PI, tm);
 const mhp = maxHpOf(b);
 c.combat = newCombat(max(1, min(b.curHp, mhp)), mhp);
-intPause(ecsSpawn(c))
+think(ecsSpawn(c))
 })
 };
 side(fightTeam, 0), side(enemies, 1), syncHud(!0)

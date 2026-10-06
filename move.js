@@ -1,71 +1,51 @@
-const BASE_WALK = 20;
+const BASE_WALK = 20, RUSH = 1.25;
 const agiOf     = b => clamp(b.agi || 5, 1, 10);
 const sf        = b => hasAbil(b, "steadfast") ? 2 : 1;
-const spdOf     = b => BASE_WALK * agiOf(b) * sf(b) * ("rushing" === b.mood ? 1.25 : 1);
+const spdOf     = b => BASE_WALK * agiOf(b) * sf(b);
 const turningOf = b => TAU / (6.6 - .61 * agiOf(b)) * sf(b);
 const STUCK_CHECK_MS = 2000;
 const SLIDE_K = .25;
 const CORPSE_SLOW = .25;
 const COMBAT_STEP_MS = 16, MAX_STEPS_PER_FRAME = 64;
-const wallPause = e => random() < (11 - intOf(C.bug.get(e))) / 20 && intPause(e);
-const slideEnd = e => (C.wall.get(e).phase = "wall", wallPause(e) || (C.walk.get(e).act = "walk"));
+const wallNext = e => random() < (11 - intOf(C.bug.get(e))) / 20 && think(e) || decide(e);
+const facing = (p, a) => max(0, cos(a - p.dir));
 const busy = (b, p) => b.loveBite || p.dropStuck;
 function decide(e) {
-const b = C.bug.get(e), t = C.walk.get(e), p = C.pos.get(e), r = random();
-if ("fighting" === b.mood) return void(t.act = "fighting", t.actT = 1 / 0);
-if (C.wall.get(e).phase || combatState || "seeking" === b.mood || r < .7) return void(t.act = "walk", t.actT = rf(WALK_MIN, WALK_MAX), newDir(e));
-t.act = IDLE[intOf(b) > 4 ? ri(hasAbil(b, "flanking") ? 4 : 3) : 0], b.mood = "idle", t.actT = IDL_MIN + random() * IDL_SPAN, t.idlA = PI * (1 + .75 * (2 * random() - 1)), t.idlE = null;
+const b = C.bug.get(e), t = C.walk.get(e), p = C.pos.get(e);
+if (t.turnA != null) return setAct(e, "turning");
+if (combatState || hpFrac(b) < 1 || random() < .7) return setAct(e, "walking", rf(WALK_MIN, WALK_MAX)), newDir(e);
+setAct(e, IDLE[intOf(b) > 4 ? ri(hasAbil(b, "flanking") ? 4 : 3) : 0], IDL_MIN + random() * IDL_SPAN), t.idlA = rf(HALF_PI, PI), t.idlE = null;
 const dW = [p.x, boxLW - p.x, p.y, boxLH - p.y];
 t.idlS = sign(norm([0, PI, HALF_PI, -HALF_PI][dW.indexOf(min(...dW))] - p.dir)) || 1
 }
-function sysThinkWander(dt, ents) {
-const dtS = dt / 1e3;
-ents.forEach(e => {
-const b = C.bug.get(e),
-p = C.pos.get(e),
-v = C.vel.get(e),
-t = C.walk.get(e),
-w = C.wall.get(e);
-combatState ? "rushing" === b.mood && (b.mood = "seeking") : (b.mood = hpFrac(b) < 1 ? "seeking" : "walk" === t.act || "intPause" === t.act || "slide" === t.act ? "peace" : b.mood);
-if ("walk" !== t.act) return;
-const px = p.x, py = p.y;
-if (busy(b, p)) return void(p.frzMs = 0, p.lastX = px, p.lastY = py);
-if (w.phase) {
-if (turnToward(p, w.targetAngle, turningOf(b) * dtS)) { const wl = "wall" === w.phase; v.wanderAngle = p.dir, w.phase = null, wl && (wallPause(e) || decide(e)) }
-return
-}
-if ((p.frzMs = (p.frzMs || 0) + dt) >= STUCK_CHECK_MS) {
-p.frzMs = 0;
-if (hypot(px - (p.lastX == null ? px : p.lastX), py - (p.lastY == null ? py : p.lastY)) < bugLen(b)) {
-p.frzSide = p.frzSide || (random() < .5 ? -1 : 1);
-v.wanderAngle = norm(p.dir + p.frzSide * (HALF_PI + random() * HALF_PI)), w.targetAngle = v.wanderAngle, w.phase = "rotating", p.hold = 0
-} else p.frzSide = 0;
-p.lastX = px, p.lastY = py
-}
-})
-}
-function sysSteer(dtS, ents) {
-const foods = ecsQuery("food", "pos"), obs = ecsQuery("obstacle", "pos");
+function sysSteer(dt, ents) {
+const dtS = dt / 1e3, foods = ecsQuery("food", "pos"), obs = ecsQuery("obstacle", "pos");
 ents.forEach(e => {
 const t = C.walk.get(e),
-w = C.wall.get(e),
 b = C.bug.get(e),
 p = C.pos.get(e),
-v = C.vel.get(e);
-if ("walk" !== t.act || w.phase || busy(b, p)) return;
-p.hold = 0;
+v = C.vel.get(e),
+tu = "turning" === t.act,
+ru = "rushing" === t.act;
+if (!tu && !ru && "walking" !== t.act || t.slide != null) return;
+if (busy(b, p)) return void(p.frzMs = 0, p.lastX = p.x, p.lastY = p.y);
+if (tu) return void(turnToward(p, t.turnA, turningOf(b) * dtS) && (v.wanderAngle = p.dir, t.turnA = null, wallNext(e)));
+if ((p.frzMs = (p.frzMs || 0) + dt) >= STUCK_CHECK_MS) {
+const stuck = hypot(p.x - (p.lastX ?? p.x), p.y - (p.lastY ?? p.y)) < bugLen(b);
+p.frzMs = 0, p.lastX = p.x, p.lastY = p.y;
+if (stuck) return p.frzSide = p.frzSide || (random() < .5 ? -1 : 1), t.turnA = norm(p.dir + p.frzSide * rf(HALF_PI, PI)), void setAct(e, "turning");
+p.frzSide = 0
+}
+const fT = hungry(e) ? seenFood(b, p, foods) : null;
+if (fT) {
+const want = atan2(fT.y - p.y, fT.x - p.x);
+ru || setAct(e, "rushing"), turnToward(p, want, turningOf(b) * dtS), (t.rushK = RUSH * facing(p, want)) || (p.frzMs = 0);
+return
+}
+if (ru) return void decide(e);
 v.angVel += .9 * (random() - .5) * dtS, v.angVel *= .95, v.wanderAngle += v.angVel;
 let vx = cos(v.wanderAngle),
 vy = sin(v.wanderAngle);
-const fT = hungry(e) ? seenFood(b, p, foods) : null;
-if (fT && "seeking" === b.mood) {
-b.mood = "rushing";
-const want = atan2(fT.y - p.y, fT.x - p.x);
-turnToward(p, want, turningOf(b) * dtS) || (p.hold = 1);
-v.wanderAngle = p.dir;
-return
-}
-if (fT) { const dx = fT.x - p.x, dy = fT.y - p.y, d = hypot(dx, dy) || .001; vx += dx / d * 2.2, vy += dy / d * 2.2 }
 [vx, vy] = rockAvoid(p, vx, vy, obs);
 const diff = norm(atan2(vy, vx) - p.dir);
 const maxStep = turningOf(b) * dtS;
@@ -73,7 +53,7 @@ p.dir += max(-maxStep, min(maxStep, diff))
 })
 }
 const hurt = e => { const b = C.bug.get(e), c = C.combat.get(e); return !(c && c.dead) && (c || b).curHp < maxHpOf(b) };
-const hungry = e => { const c = C.combat.get(e); return hurt(e) && !(c && 2 * c.curHp > c.maxHp) };
+const hungry = e => { const c = C.combat.get(e); return hurt(e) && !(c && 4 * c.curHp > 3 * c.maxHp) };
 function seenFood(b, p, foods = ecsQuery("food", "pos")) {
 let fT = null, fD2 = 1 / 0;
 foods.forEach(fe => {
@@ -91,7 +71,7 @@ const bp = C.pos.get(be), b = C.bug.get(be);
 if (hurt(be) && hypot(bp.x - fp.x, bp.y - fp.y) < 16) {
 const h = C.combat.get(be) || b, mx = maxHpOf(b);
 h.curHp = min(mx, h.curHp + mx / 5);
-combatState || intPause(be);
+combatState || think(be);
 achieve("feed"), combatState && achieve("feedFight"), 1 === C.team.get(be).team && achieve("fedEnemy"), achStep("fed", [10, 50], "fed"), ecsKill(fe);
 break
 }
@@ -114,13 +94,12 @@ corpses = ents.filter(en => { const c = C.combat.get(en); return c && c.dead });
 const slowOf = (e, p) => corpses.some(oe => oe !== e && hypot(C.pos.get(oe).x - p.x, C.pos.get(oe).y - p.y) < bugRadius(C.bug.get(oe))) ? CORPSE_SLOW : 1;
 ents.forEach(e => {
 const t = C.walk.get(e),
-w = C.wall.get(e),
 b = C.bug.get(e),
 p = C.pos.get(e),
 cb = C.combat.get(e);
 if (cb && cb.dead) return;
 const slow = corpses.length ? slowOf(e, p) : 1, m = bugRadius(b);
-if (cb && "fighting" === t.act) {
+if (cb && aiAct(t)) {
 let moved = 0;
 if (cb.mvSpd) {
 const step = cb.mvSpd * dtS * slow;
@@ -135,23 +114,24 @@ cb.mvOn = 0;
 if (moved) clampToBox(e);
 return
 }
-if (w.phase || p.hold || busy(b, p) || "walk" !== t.act && "slide" !== t.act) return;
-const spd = spdOf(b) * slow;
-if ("slide" === t.act) {
-if ((abs(sin(w.slideA)) > .5 ? (p.x < lw / 2 ? -1 : 1) * cos(p.dir) : (p.y < lh / 2 ? -1 : 1) * sin(p.dir)) > 0) {
-const st = spd * dtS * cos(p.dir - w.slideA);
-p.x += cos(w.slideA) * st, p.y += sin(w.slideA) * st, clampToBox(e)
-} else slideEnd(e);
+const ru = "rushing" === t.act;
+if (busy(b, p) || !ru && "walking" !== t.act) return;
+const spd = spdOf(b) * slow * (ru ? t.rushK : 1);
+if (t.slide != null) {
+if ((abs(sin(t.slide)) > .5 ? (p.x < lw / 2 ? -1 : 1) * cos(p.dir) : (p.y < lh / 2 ? -1 : 1) * sin(p.dir)) > 0) {
+const st = spd * dtS * cos(p.dir - t.slide);
+p.x += cos(t.slide) * st, p.y += sin(t.slide) * st, clampToBox(e)
+} else wallNext(e);
 return
 }
 const nx = p.x + cos(p.dir) * spd * dtS,
 ny = p.y + sin(p.dir) * spd * dtS,
 hitX = nx < m || nx > lw - m,
 hitY = ny < m || ny > lh - m;
-if (hitX || hitY) {
+if (!ru && (hitX || hitY)) {
 const sx = hitX && (!hitY || random() < .5), n = sx ? nx < m ? 0 : PI : ny < m ? HALF_PI : -HALF_PI;
-w.slideA = sx ? sin(p.dir) >= 0 ? HALF_PI : -HALF_PI : cos(p.dir) >= 0 ? 0 : PI;
-t.act = "slide", t.actT *= SLIDE_K, w.targetAngle = w.slideA + sign(norm(n - w.slideA)) * random() * HALF_PI;
+t.slide = sx ? sin(p.dir) >= 0 ? HALF_PI : -HALF_PI : cos(p.dir) >= 0 ? 0 : PI;
+t.actT *= SLIDE_K, t.turnA = t.slide + sign(norm(n - t.slide)) * random() * HALF_PI;
 return
 }
 p.x = nx, p.y = ny, clampToBox(e)
@@ -187,7 +167,7 @@ if (minD <= 0 || dist >= minD) continue;
 const ov = minD - dist,
 nx = dx / dist,
 ny = dy / dist;
-const fast = [ba.mood, bb.mood].some(m => "fighting" === m || combatState && "rushing" === m),
+const fast = combatState && [ents[i], ents[j]].some(x => aiAct(C.walk.get(x))),
 h = min(ov / 2, step * (fast ? SEP_FIGHT_MULT : 1));
 a.x -= nx * h, a.y -= ny * h, c.x += nx * h, c.y += ny * h
 }
@@ -251,32 +231,38 @@ boxCx.restore()
 }
 })
 }
-const IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2, IDLE = ["idle", "observing", "stalking", "flankTraining"];
+const IDL_MIN = 3000, IDL_SPAN = 5000, IDL_GAP = 2, IDLE = ["waiting", "observing", "stalking", "flankTraining"];
 function sysIdle(dt, ents) {
 const dtS = dt / 1e3;
 ents.forEach(e => {
 const b = C.bug.get(e), p = C.pos.get(e), t = C.walk.get(e);
 if (IDLE.indexOf(t.act) < 1 || b.loveBite) return;
-if (hpFrac(b) < 1) return void intPause(e);
+if (hpFrac(b) < 1) return void think(e);
 const fl = "flankTraining" === t.act;
 if (t.idlE == null) {
 const tg = (fl ? [...ecsQuery("obstacle", "pos"), ...ecsQuery("food", "pos")] : ents.filter(o => o !== e)).find(o => seesPoint(b, p, C.pos.get(o).x, C.pos.get(o).y));
 if (tg == null) {
 const s = min(t.idlA, turningOf(b) * dtS);
-return void(p.dir = norm(p.dir + t.idlS * s), (t.idlA -= s) <= 0 && (t.act = "idle"))
+return void(p.dir = norm(p.dir + t.idlS * s), (t.idlA -= s) <= 0 && (t.act = "waiting"))
 }
 const op = C.pos.get(tg);
-t.idlE = tg, t.idlX = op.x, t.idlY = op.y, t.idlA = rf(PI / 4, 2.5 * PI), t.idlR = max(hypot(op.x - p.x, op.y - p.y), bugRadius(b) + 10), t.idlD = t.idlS * spdOf(b) * dtS / t.idlR
+t.idlE = tg, t.idlX = op.x, t.idlY = op.y, fl && (t.idlS = random() < .5 ? -1 : 1, t.idlR = 0, t.actT = 8e3)
 }
-if (!ECS.pos.has(t.idlE)) return void intPause(e);
-const op = C.pos.get(t.idlE);
+if (!ECS.pos.has(t.idlE)) return void think(e);
+const op = C.pos.get(t.idlE), a = atan2(op.y - p.y, op.x - p.x), d = hypot(op.x - p.x, op.y - p.y);
+turnToward(p, a, turningOf(b) * dtS);
 if (fl) {
-if (hypot(op.x - t.idlX, op.y - t.idlY) > 2 || (t.idlA -= abs(t.idlD)) <= 0) return void intPause(e);
-const th = atan2(p.y - op.y, p.x - op.x) + t.idlD;
-p.x = op.x + cos(th) * t.idlR, p.y = op.y + sin(th) * t.idlR, p.dir = norm(th + t.idlS * HALF_PI)
+if (hypot(op.x - t.idlX, op.y - t.idlY) > 2) return void think(e);
+if (t.idlR) {
+const w = spdOf(b) * dtS / t.idlR, th = a + PI + t.idlS * w;
+if ((t.idlA -= w) <= 0) return void think(e);
+p.x = op.x + cos(th) * t.idlR, p.y = op.y + sin(th) * t.idlR, p.dir = norm(th + PI)
 } else {
-turnToward(p, atan2(op.y - p.y, op.x - p.x), turningOf(b) * dtS);
-if ("stalking" !== t.act || hypot(op.x - p.x, op.y - p.y) <= bugLen(b) * IDL_GAP) return;
+const s = spdOf(b) * RUSH * facing(p, a) * dtS;
+d - s > flankRange(b) + (C.obstacle.get(t.idlE)?.r || 0) ? (p.x += cos(p.dir) * s, p.y += sin(p.dir) * s) : (t.idlR = max(d, bugRadius(b) + 10), t.idlA = 3 * PI, t.actT = IDL_MIN + random() * IDL_SPAN)
+}
+} else {
+if ("stalking" !== t.act || d <= bugLen(b) * IDL_GAP) return;
 const s = min(spdOf(C.bug.get(t.idlE)), spdOf(b)) * dtS;
 p.x += cos(p.dir) * s, p.y += sin(p.dir) * s
 }

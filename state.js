@@ -1,8 +1,10 @@
 const WALK_MIN = 500, WALK_MAX = 1e4;
-function intPause(e, k = 1) {
+function setAct(e, act, ms = 1 / 0) {
 const t = C.walk.get(e);
-return t.act = "intPause", t.actT = k * (5500 - 500 * intOf(C.bug.get(e)))
+return t.slide = null, t.act = act, t.actT = ms
 }
+const think = (e, k = 1) => setAct(e, "thinking", k * (5500 - 500 * intOf(C.bug.get(e))));
+const aiAct = t => "fighting" === t.act || "fleeing" === t.act;
 const newDir = e => C.vel.get(e).wanderAngle = random() * TAU;
 const SN = ["CON", "STR", "AGI", "INT", "PER"];
 let dzAnim = 0,

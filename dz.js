@@ -115,7 +115,7 @@ picked = abils.filter(a => a),
 nb = makeBug({ hue: hue, morph: { ...m }, con: con, str: str, agi: agi, int: intel, per: per, abilities: picked });
 if (link || Object.assign(nb.morph, m), !combatState) return bugsOwned.push(nb), achOwn(1), void updateMoney();
 const mhp = maxHpOf(nb);
-nb.mood = "seeking", nb.curHp = mhp;
+nb.curHp = mhp;
 const lw = boxLW, lh = boxLH,
 c = bugEntity(nb, 0 === dzSide ? .18 * lw : .82 * lw, 30 + random() * (lh - 60), 0 === dzSide ? 0 : PI, dzSide);
 c.vel.wanderAngle = 0;

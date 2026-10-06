@@ -1,8 +1,7 @@
 const bugLen = b => b ? ensureMorph(b).bodyLength : 22;
-const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 7, flankRange = b => bugLen(b) * 2;
-const FLANK_WINDOW_MS = 1000;
+const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 7, flankRange = b => bugLen(b) * 2, flankMs = (b, r) => 1500 * PI * r / spdOf(b);
 const GRAB_HOLD_MS = 2500, FRONT_CONE = 20 * PI / 180, KB_DAMP = .72;
-const FLEE_MIN_MS = 3000, FLEE_MAX_MS = 6000, FOOD_PULL = 40;
+const FLEE_MIN_MS = 1000, FLEE_MAX_MS = 4000;
 const BITE_PREP_MS = 800, BITE_PREP_MAX = 1000, BITE_PREP_MIN = 600;
 const ABILITIES = {};
 [
@@ -10,7 +9,7 @@ const ABILITIES = {};
 ["jump", "Jump", "agi", 9e3, 600, `As soon as it reaches biting range with the target within 20 degrees of its nose, leaps over the target in {d}s, turning 150-210 degrees in mid-air, and lands at its rear, then turns straight back to it. The target must turn on its own to bite back.`],
 ["knockout", "Knock Out", "str", 8e3, 2400, `On a bite, stuns the target for {d}s + 0.2s per point your STR beats its CON (min 0.2s). Braced bugs are immune.`],
 ["kickback", "Kick Back", "str", 5e3, 350, `On a bite, shoves the target 1.5 of its body lengths, plus 0.28 for every point your STR beats its CON (minus 0.28 per point short, min 0.25), stuns it {d}s and, while sliding, spins it 60 degrees per body length shoved (max 180), plus a random -20 to +20 in steps of 10. Braced bugs go half as far, no stun, no spin.`],
-["flanking", "Flanking", "int", 0, 0, `Once inside 2 body lengths of the target, tries to circle to its rear for up to ${FLANK_WINDOW_MS / 1e3}s, then bites. Can flank again after a bite.`],
+["flanking", "Flanking", "int", 0, 0, `Once within 2 own body lengths of the target, sidesteps around it to reach its rear, then bites. Gives up when bitten or after the time 3/4 of a circle takes. Can flank again after a bite.`],
 ["strongbite", "Strong Bite", "str", 7e3, 0, `Charges after a bite: the next bite deals double damage.`],
 ["swiftbite", "Swift Bite", "agi", 7e3, 0, `Charges after a bite: the next bite needs half the usual wind-up (${BITE_PREP_MAX} ms at AGI 1 to ${BITE_PREP_MIN} ms at AGI 10).`],
 ["backflip", "Backflip", "agi", 6e3, 1000, `After its 3rd bite on the same target, if the target is not stunned, leaps backward and keeps backing off on foot, {d}s in total; the first half is airborne. Slides along any wall it backs into.`],
@@ -60,11 +59,14 @@ if (tcb) { const a = tp.dir + HALF_PI * (random() < .5 ? -1 : 1); tcb.dodT = 1, 
 return spawnDmgPop(tp, tb, 0, atkTeam, atan2(tp.y - p.y, tp.x - p.x)), !0
 }
 function wakeToFight(e) {
-const t = C.walk.get(e), b = C.bug.get(e);
-if (!t || "fighting" === t.act) return;
-b.mood = "fighting", t.scanRemain = 0, t.seekX = null, decide(e);
-const w = C.wall.get(e);
-w && (w.phase = null)
+const t = C.walk.get(e);
+t && !aiAct(t) && (t.scanRemain = 0, t.seekX = t.turnA = null, setAct(e, "fighting"))
+}
+function flee(e, a, ms = rf(FLEE_MIN_MS, FLEE_MAX_MS)) {
+const t = C.walk.get(e);
+if ("fleeing" === t.act) return void(t.actT += ms);
+wakeToFight(e), setAct(e, "fleeing", ms);
+C.combat.get(e).fleeA = a
 }
 function biteNoticed(te) {
 wakeToFight(te);
@@ -80,7 +82,7 @@ seesPoint(C.bug.get(oe), C.pos.get(oe), tp.x, tp.y) && wakeToFight(oe)
 function applyBite(cb, ab, p, tcb, tb, tp, mult, atkTeam, atkE) {
 const fd = abs(norm(atan2(p.y - tp.y, p.x - tp.x) - tp.dir)),
 flankMult = fd < PI / 3 ? 1 : fd < TAU / 3 ? 1.5 : 2;
-if (fd >= PI / 3 && atkE != null && intOf(tb) < 5) { tcb.avengeE = atkE, tcb.avengeA = atan2(p.y - tp.y, p.x - tp.x) }
+if (atkE != null && (tcb.flankT > 0 || fd >= PI / 3 && intOf(tb) < 5)) { tcb.avengeE = atkE, tcb.avengeA = atan2(p.y - tp.y, p.x - tp.x), tcb.flankT && (tcb.flankT = 0, tcb.flankReady = !1) }
 let dmg = ab.str * rollVar() * flankMult * mult;
 if (hasAbil(tb, "chitin")) dmg *= .5;
 tcb.curHp -= dmg, tb.hitT = 1;
@@ -107,8 +109,8 @@ grabTarget: -1, grabbedBy: -1, grabDragLeft: 0, grabTimeLeft: 0, grabDx: 0, grab
 flankReady: !0, flankT: 0, flankArmed: 0,
 callT: 0, callR: 0, callTeam: -1, callX: 0, callY: 0, callCry: 0, callDoneX: 0, callDoneY: 0, goOn: 0, goX: 0, goY: 0, loudT: 0, curTarget: -1,
 aimTarget: -1, aimLock: 0, avengeE: -1, avengeA: 0, lostSide: 1, wasInRange: 0, regather: 0,
-panicT: 0, panicT2: 0, panicA: 0, pickE: -1, swT: 0, biteE: -1, biteN: 0,
-memT: 0, memX: 0, memY: 0, memA: 0, searchPhase: 0, fleeT: 0, fleeA: 0, fledLvl: 0,
+pickE: -1, swT: 0, biteE: -1, biteN: 0,
+memT: 0, memX: 0, memY: 0, memA: 0, searchPhase: 0, fleeA: 0, fledLvl: 0,
 mvA: 0, mvSpd: 0, mvOn: 0,
 imX: 0, imY: 0,
 phoenixUsed: 0, phoenixT: 0, fakeUsed: 0, fakeT: 0, muted: 0, abT: 0, abTxt: ""

@@ -99,16 +99,16 @@ const show = inspected != null;
 el.style.display = show ? "" : "none";
 show && el.classList.toggle("prim", !!fow)
 }
+const entOf = b => ecsQuery("bug").find(en => C.bug.get(en) === b);
 function liveHp(b) {
-const e = ecsQuery("bug", "combat").find(en => C.bug.get(en) === b),
-cb = e == null ? null : C.combat.get(e);
+const cb = C.combat.get(entOf(b));
 return cb ? [max(0, round(cb.curHp)), cb.maxHp] : [round(b.curHp == null ? maxHpOf(b) : b.curHp), maxHpOf(b)]
 }
 function inspectLine(b) {
 const [hp, mhp] = liveHp(b);
 return `${b.name} | Gen${b.gen} | K${b.killsTotal||0}/F${b.fights||0} | ` +
 SK.map((k, i) => `<span style="color:#44ff88;font-size:9px;">${SN[i]}:${round(b[k])}</span>`).join(" ") +
-` | <span style="color:${hp>=mhp?"#44ff88":"#ff5555"};">${hp}/${mhp}</span> ${b.mood}` +
+` | <span style="color:${hp>=mhp?"#44ff88":"#ff5555"};">${hp}/${mhp}</span> ${C.walk.get(entOf(b))?.act ?? ""}` +
 abilTags(b)
 }
 let toastQ = [], toastBot = 96;
