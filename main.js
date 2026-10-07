@@ -1,8 +1,8 @@
 ! function() {
-const ctx = hidpi($("intro-art"), 200, 60);
+const ctx = hidpi($("intro-art"), 200, 60), hues = [120, 30, 275].sort(() => random() - .5);
 ctx.fillStyle = "#0a0a12", ctx.fillRect(0, 0, 200, 60), [40, 100, 160].forEach((cx, i) => {
 const m = randomMorph();
-drawMorphBug(ctx, m, morphColor([120, 30, 275][i]), cx, 32, 0, { scale: morphFitScale(m, 52, 48), shadow: !1, hue: [120, 30, 275][i] })
+drawMorphBug(ctx, m, morphColor(hues[i]), cx, 32, 0, { scale: morphFitScale(m, 52, 48), shadow: !1, hue: hues[i] })
 }), ctx.fillStyle = "#ffdd44", [
 [10, 6],
 [190, 6],

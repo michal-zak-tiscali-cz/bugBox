@@ -204,29 +204,28 @@ p.x = clamp(p.x, m, boxLW - m), p.y = clamp(p.y, m, boxLH - m)
 }
 function sysResolve(ents, dtS) {
 const step = RESOLVE_MAX * (dtS || COMBAT_STEP_MS / 1e3);
-ents.forEach(e => { const p = C.pos.get(e); p.v = hypot(p.x - (p.lx ?? p.x), p.y - (p.ly ?? p.y)) });
 resolveBodies(ents, step);
 resolveObstacles(ents, dtS);
 ents.forEach(e => {
 clampToBox(e);
 const p = C.pos.get(e);
-p.lx = p.x, p.ly = p.y;
+p.v = hypot(p.x - (p.lx ?? p.x), p.y - (p.ly ?? p.y)), p.lx = p.x, p.ly = p.y;
 p.top && drag?.e !== e && !ents.some(o => o !== e && hypot(C.pos.get(o).x - p.x, C.pos.get(o).y - p.y) < engageDistOf(C.bug.get(o)) + bugRadius(C.bug.get(e))) && (p.top = 0)
 })
 }
 const SHADE_FLAT = "rgba(0,0,0,.35)";
-let flatCx = null;
+let flatCx = null, flatCol;
 function sysRenderObstacles(top) {
-const pass = 3 === bugTheme ? [0] : [1, 0];
+const nl = 3 === bugTheme;
 eachObstacle((o, p, e) => {
 if ((drag?.e === e) !== top) return;
 const d = OBST[o.kind][1];
-for (const f of pass) {
+for (const f of nl ? [0] : [1, 0]) {
 boxCx.save(), boxCx.translate(p.x + 2 * f, p.y + 2.5 * f), boxCx.rotate(o.rot);
-f ? (flatCx || (flatCx = new Proxy(boxCx, {
+(flatCol = f ? SHADE_FLAT : nl && morphColor(47 * o.kind)) ? (flatCx || (flatCx = new Proxy(boxCx, {
 get: (t, k) => { const val = t[k]; return "function" == typeof val ? val.bind(t) : val },
-set: (t, k, val) => (t[k] = "fillStyle" === k || "strokeStyle" === k ? SHADE_FLAT : val, !0)
-})), boxCx.fillStyle = boxCx.strokeStyle = SHADE_FLAT, d(flatCx, o.r, o.v)) : d(boxCx, o.r, o.v);
+set: (t, k, val) => (t[k] = "fillStyle" === k || "strokeStyle" === k ? flatCol : val, !0)
+})), boxCx.fillStyle = boxCx.strokeStyle = boxCx.shadowColor = flatCol, boxCx.shadowBlur = 8 * nl, d(flatCx, o.r, o.v)) : d(boxCx, o.r, o.v);
 boxCx.restore()
 }
 })

@@ -139,7 +139,7 @@ glow ? (ctx.shadowColor = glow, ctx.shadowBlur = 14) : nl && (ctx.shadowColor = 
 ctx.fillStyle = ctx.strokeStyle = color, renderMorphParts(ctx, cfg, walkL, walkR, sh, nl), ctx.restore()
 }
 let palette = 0, gait = 0, bugTheme = 0;
-function setBugTheme(v) { bugTheme = +v, 3 === bugTheme ? ecsQuery("obstacle").forEach(ecsKill) : ecsQuery("obstacle").length || genObstacles(combatState) }
+function setBugTheme(v) { bugTheme = +v }
 function setPalette(v) { palette = +v }
 function setGait(v) { gait = +v }
 function morphColor(hue) { return 3 === bugTheme ? `hsl(${hue},95%,62%)` : 1 === palette ? `hsl(${15+hue%60},${15+hue%40}%,${8+hue*7%28}%)` : 2 === palette ? `hsl(${20+hue%40},30%,${18+hue%12}%)` : `hsl(${hue},70%,45%)` }

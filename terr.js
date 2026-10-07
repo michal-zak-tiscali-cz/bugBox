@@ -122,7 +122,6 @@ killsThis: cb.killsThis || 0
 })
 }
 function genObstacles(inCombat) {
-if (3 === bugTheme) return;
 const lw = boxLW, lh = boxLH, n = 8 + ri(5), placed = [];
 for (let i = 0; i < n; i++) {
 const k = ri(OBST.length), t = OBST[k], v = t[0][ri(t[0].length)], r = (12 + ri(10)) * (t[2] || 1);
@@ -156,7 +155,7 @@ function restoreTerrWorld() {
 if (!savedWorld) return;
 ecsQuery("obstacle").forEach(e => ecsKill(e));
 ecsQuery("food").forEach(e => ecsKill(e));
-3 === bugTheme || savedWorld.obs.forEach(o => ecsSpawn({ obstacle: { r: o.r, kind: o.kind, v: o.v, rot: o.rot }, pos: { x: o.x, y: o.y, dir: 0 } }));
+savedWorld.obs.forEach(o => ecsSpawn({ obstacle: { r: o.r, kind: o.kind, v: o.v, rot: o.rot }, pos: { x: o.x, y: o.y, dir: 0 } }));
 savedWorld.food.forEach(f => ecsSpawn({ food: {}, pos: { x: f.x, y: f.y, dir: 0 } }));
 savedWorld = null
 }

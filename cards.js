@@ -112,7 +112,7 @@ SK.map((k, i) => `<span style="color:#44ff88;font-size:9px;">${SN[i]}:${round(b[
 abilTags(b)
 }
 let toastQ = [], toastBot = 96;
-const toastLbl = (el = $("toast")) => (el.textContent = toastQ[0] + (toastQ[1] ? ` +${toastQ.length - 1}` : ""), el.style.boxShadow = toastQ.slice(1, 4).map((_, i) => (i = 3 * i + 3, `${i}px ${-i}px 0 -1px #0d0d2a,${i}px ${-i}px 0 #3a3aff`)).join() || "none");
+const toastLbl = (el = $("toast")) => (el.textContent = toastQ[0], el.style.boxShadow = toastQ.slice(1, 4).map((_, i) => (i = 3 * i + 3, `${i}px ${-i}px 0 -1px #0d0d2a,${i}px ${-i}px 0 #3a3aff`)).join() || "none");
 function toast(m) { toastQ.push(m) > 1 ? toastLbl() : toastNext() }
 function toastNext() {
 const el = $("toast"), r = $("terr-canvas").getBoundingClientRect();

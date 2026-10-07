@@ -34,7 +34,7 @@ ents = fight ? all.filter(e => !aiAct(C.walk.get(e)) && !C.combat.get(e).dead) :
 all.forEach(e => {
 const t = C.walk.get(e), b = C.bug.get(e);
 b.hitT > 0 && (b.hitT = max(0, b.hitT - dt / 200));
-drag?.moved && drag.e === e || C.combat.get(e)?.fakeT > 0 || (t.actT -= dt) > 0 || ("thinking" === t.act || "fleeing" === t.act ? decide(e) : t.slide != null ? wallNext(e) : think(e))
+drag?.moved && drag.e === e || C.combat.get(e)?.fakeT > 0 || (t.actT -= "walking" === t.act && t.slide == null && 5e3 * C.pos.get(e).v < spdOf(b) * dt ? 0 : dt) > 0 || ("thinking" === t.act || "fleeing" === t.act ? decide(e) : t.slide != null ? wallNext(e) : think(e))
 });
 fight && (sysSeek(ents), sysCombatAI(dt));
 sysSteer(dt, ents), sysMove(dtS, fight ? all : ents);

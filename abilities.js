@@ -1,5 +1,5 @@
 const bugLen = b => b ? ensureMorph(b).bodyLength : 22;
-const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 7, flankRange = b => bugLen(b) * 2, flankMs = (b, r) => 1500 * PI * r / spdOf(b);
+const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 7, flankRange = b => bugLen(b) * 2, flankEnd = cb => { cb.flankA = 0, cb.cd.flanking = ABILITIES.flanking.cd };
 const GRAB_HOLD_MS = 2500, FRONT_CONE = 20 * PI / 180, KB_DAMP = .72;
 const FLEE_MIN_MS = 1000, FLEE_MAX_MS = 4000;
 const BITE_PREP_MS = 800, BITE_PREP_MAX = 1000, BITE_PREP_MIN = 600;
@@ -9,7 +9,7 @@ const ABILITIES = {};
 ["jump", "Jump", "agi", 9e3, 600, `As soon as it reaches biting range with the target within 20 degrees of its nose, leaps over the target in {d}s, turning 150-210 degrees in mid-air, and lands at its rear, then turns straight back to it. The target must turn on its own to bite back.`],
 ["knockout", "Knock Out", "str", 8e3, 2400, `On a bite, stuns the target for {d}s + 0.2s per point your STR beats its CON (min 0.2s). Braced bugs are immune.`],
 ["kickback", "Kick Back", "str", 5e3, 350, `On a bite, shoves the target 1.5 of its body lengths, plus 0.28 for every point your STR beats its CON (minus 0.28 per point short, min 0.25), stuns it {d}s and, while sliding, spins it 60 degrees per body length shoved (max 180), plus a random -20 to +20 in steps of 10. Braced bugs go half as far, no stun, no spin.`],
-["flanking", "Flanking", "int", 0, 0, `Once within 2 own body lengths of the target, sidesteps around it to reach its rear, then bites. Gives up when bitten or after the time 3/4 of a circle takes. Can flank again after a bite.`],
+["flanking", "Flanking", "int", 6e3, 0, `Once within 2 own body lengths of the target, even in biting reach, sidesteps around it to reach its rear, then bites. Gives up when bitten, when muted by Loud, when the target gets 3 body lengths away, or after circling 270 degrees. The cooldown starts when the flank ends.`],
 ["strongbite", "Strong Bite", "str", 7e3, 0, `Charges after a bite: the next bite deals double damage.`],
 ["swiftbite", "Swift Bite", "agi", 7e3, 0, `Charges after a bite: the next bite needs half the usual wind-up (${BITE_PREP_MAX} ms at AGI 1 to ${BITE_PREP_MIN} ms at AGI 10).`],
 ["backflip", "Backflip", "agi", 6e3, 1000, `After its 3rd bite on the same target, if the target is not stunned, leaps backward and keeps backing off on foot, {d}s in total; the first half is airborne. Slides along any wall it backs into.`],
@@ -82,7 +82,7 @@ seesPoint(C.bug.get(oe), C.pos.get(oe), tp.x, tp.y) && wakeToFight(oe)
 function applyBite(cb, ab, p, tcb, tb, tp, mult, atkTeam, atkE) {
 const fd = abs(norm(atan2(p.y - tp.y, p.x - tp.x) - tp.dir)),
 flankMult = fd < PI / 3 ? 1 : fd < TAU / 3 ? 1.5 : 2;
-if (atkE != null && (tcb.flankT > 0 || fd >= PI / 3 && intOf(tb) < 5)) { tcb.avengeE = atkE, tcb.avengeA = atan2(p.y - tp.y, p.x - tp.x), tcb.flankT && (tcb.flankT = 0, tcb.flankReady = !1) }
+if (atkE != null && (tcb.flankA > 0 || fd >= PI / 3 && intOf(tb) < 5)) { tcb.avengeE = atkE, tcb.avengeA = atan2(p.y - tp.y, p.x - tp.x), tcb.flankA > 0 && flankEnd(tcb) }
 let dmg = ab.str * rollVar() * flankMult * mult;
 if (hasAbil(tb, "chitin")) dmg *= .5;
 tcb.curHp -= dmg, tb.hitT = 1;
@@ -92,7 +92,7 @@ const sh = bugLen(tb) * .15 * (random() < .5 ? -1 : 1);
 tcb.imX -= tcb.hitDy * sh, tcb.imY += tcb.hitDx * sh;
 spawnDmgPop(tp, tb, dmg, atkTeam, ha);
 hasAbil(tb, "cry") && (tcb.callT = ABILITIES.cry.dur, tcb.callR = callRadius(tb), tcb.callTeam = atkTeam ? 0 : 1, tcb.callCry = 1, tcb.callX = tp.x, tcb.callY = tp.y);
-if (tcb.curHp <= 0 && !(hasAbil(tb, "phoenix") && !tcb.phoenixUsed)) {
+if (tcb.curHp <= 0 && !(hasAbil(tb, "phoenix") && !tcb.phoenixUsed && !tcb.muted)) {
 tcb.dead = !0, tcb.curHp = 0, cb.killsThis = (cb.killsThis || 0) + 1, cb.memT = 0, cb.searchPhase = 0;
 groundMarks.push({ x: tp.x, y: tp.y, hue: tb.hue, t: 1 })
 }
@@ -106,7 +106,7 @@ flyT: 0, flyDx: 0, flyDy: 0, flySp: 0, flyE: -1, airT: 0, airMs: 1, spinRemain: 
 dashT: 0, dashHitPend: 0,
 strongPend: 0, swiftPend: 0, backflipT: 0,
 grabTarget: -1, grabbedBy: -1, grabDragLeft: 0, grabTimeLeft: 0, grabDx: 0, grabDy: 0,
-flankReady: !0, flankT: 0, flankArmed: 0,
+flankA: 0,
 callT: 0, callR: 0, callTeam: -1, callX: 0, callY: 0, callCry: 0, callDoneX: 0, callDoneY: 0, goOn: 0, goX: 0, goY: 0, loudT: 0, curTarget: -1,
 aimTarget: -1, aimLock: 0, avengeE: -1, avengeA: 0, lostSide: 1, wasInRange: 0, regather: 0,
 pickE: -1, swT: 0, biteE: -1, biteN: 0,

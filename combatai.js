@@ -16,6 +16,7 @@ setTimeout(() => boxCv.classList.remove("shake"), 500);
 ecsQuery("bug", "pos", "combat").forEach(e => {
 const cb = C.combat.get(e), t = C.walk.get(e), p = C.pos.get(e);
 if (cb.dead) return;
+combatState && (achieve("scare"), achStep("scared", [5], "scared"), achieve({ 5: "scare5x", 10: "terrify", 15: "ptsd" }[cb.scares = (cb.scares || 0) + 1]));
 flee(e, (floor(atan2(p.y - boxLH / 2, p.x - boxLW / 2) / HALF_PI) + rf(-.5, 1.5)) * HALF_PI), cb.stunT = 0, t.seekX = boxLW / 2 + rf(-30, 30), t.seekY = boxLH / 2 + rf(-30, 30)
 })
 }
@@ -45,7 +46,6 @@ cb.callT > 0 && (cb.callT -= dt, cb.callCry && (cb.callX = p.x, cb.callY = p.y))
 cb.backflipT > 0 && (cb.backflipT -= dt);
 cb.dashT > 0 && (cb.dashT -= dt);
 cb.airT > 0 && (cb.airT -= dt);
-cb.flankT > 0 && (cb.flankT = max(0, cb.flankT - dt));
 cb.prepVisT > 0 && (cb.prepVisT = max(0, cb.prepVisT - dt));
 cb.grabTimeLeft > 0 && (cb.grabTimeLeft = max(0, cb.grabTimeLeft - dt));
 if (cb.flyT > 0) {
@@ -68,6 +68,7 @@ t = C.walk.get(e);
 const bodyL = bugLen(b), engageDist = engageDistOf(b), spd = spdOf(b), turn = turningOf(b), tier = huntTierOf(b), go = a => (turnToward(p, a, turn * dtS), cb.mvA = p.dir, cb.mvSpd = spd, cb.mvOn = 1);
 if (cb.dead && !(cb.phoenixT > 0)) { clearActionState(cb); return }
 tickTimers(cb, p, dt);
+cb.muted = ents.some(oe => { const ocb = C.combat.get(oe), op = C.pos.get(oe); return ocb.loudT > 0 && !ocb.dead && C.team.get(oe).team !== tm.team && hypot(op.x - p.x, op.y - p.y) < loudRadius(C.bug.get(oe)) });
 if (cb.curHp <= 0 && !cb.dead) { cb.phoenixUsed = 1; cb.phoenixT = ABILITIES.phoenix.dur; cb.dead = true; cb.curHp = 0; clearActionState(cb); return }
 if (cb.dead && cb.phoenixT > 0) {
 cb.phoenixT -= dt;
@@ -75,7 +76,7 @@ if (cb.phoenixT > 0) return;
 cb.phoenixT = 0, cb.dead = false, cb.curHp = cb.maxHp * 0.1, abilFire(e, "phoenix");
 }
 if (cb.fakeT > 0 && (cb.fakeT = max(0, cb.fakeT - dt))) return;
-if (hasAbil(b, "fake") && cb.fakeUsed < 2 && !cb.fakeT && cb.curHp < cb.maxHp * (cb.fakeUsed ? .25 : .5)) {
+if (abilReady(e, "fake") && cb.fakeUsed < 2 && !cb.fakeT && cb.curHp < cb.maxHp * (cb.fakeUsed ? .25 : .5)) {
 cb.fakeUsed++; cb.fakeT = ABILITIES.fake.dur; clearActionState(cb); abilFire(e, "fake"); return;
 }
 if (cb.grabbedBy >= 0) {
@@ -165,7 +166,7 @@ cb.flyE >= 0 && (liveE(cb.flyE) ? target = cb.flyE : cb.flyE = -1);
 let minD = 1 / 0;
 cb.curTarget = target == null ? -1 : target;
 if (target) { const ts = snap.get(target); minD = hypot(ts.x - myS.x, ts.y - myS.y) }
-if (hasAbil(b, "flee") && "fleeing" !== t.act) {
+if (abilReady(e, "flee") && "fleeing" !== t.act) {
 const frac = cb.curHp / (cb.maxHp || 1),
 lvl = frac < .25 ? 2 : frac < .5 ? 1 : 0;
 if (lvl && !(cb.fledLvl >= lvl)) {
@@ -175,7 +176,6 @@ flee(e, p.dir + rf(45, 110) * PI / 180 * (random() < .5 ? -1 : 1)), cb.aimLock =
 }
 if ("fleeing" === t.act) return go(cb.fleeA), void(cb.mvSpd *= RUSH);
 if (hungry(e) && !melee() && seenFood(b, p)) return cb.aimLock = 0, cb.aimTarget = -1, void setAct(e, "rushing");
-cb.muted = ents.some(oe => { const ocb = C.combat.get(oe), op = C.pos.get(oe); return ocb.loudT > 0 && !ocb.dead && C.team.get(oe).team !== tm.team && hypot(op.x - p.x, op.y - p.y) < loudRadius(C.bug.get(oe)) });
 if (target) {
 const tp = C.pos.get(target),
 tcb = C.combat.get(target),
@@ -186,7 +186,6 @@ if (abilReady(e, "mark")) {
 abilFire(e, "mark");
 cb.callT = ABILITIES.mark.dur, cb.callR = callRadius(b), cb.callTeam = tm.team, cb.callCry = 0, cb.callX = tp.x, cb.callY = tp.y;
 }
-const flank = hasAbil(b, "flanking");
 const air = cb.flyT > 0;
 let airT = cb.airT > 0 || tcb.airT > 0;
 let facingOK = false, aiming = false;
@@ -227,16 +226,11 @@ cb.grabDx = cos(ga); cb.grabDy = sin(ga);
 }
 }
 const fr = flankRange(b), gap = minD - bugRadius(tb);
-if (flank && cb.flankReady && !cb.flankArmed && minD > attackReach && gap < fr) { cb.flankT = flankMs(b, minD); cb.flankArmed = 1 }
+abilReady(e, "flanking") && !cb.flankA && gap < fr && (cb.flankA = 1.5 * PI);
 if (cb.backflipT > 0) {
 cb.mvA = p.dir + PI, cb.mvSpd = spd;
 } else if (air) {
-} else if (flank && cb.flankReady && cb.flankT > 0 && minD > attackReach && gap > fr / 2 && gap < 1.5 * fr) {
-const rel = norm(atan2(p.y - tp.y, p.x - tp.x) - tp.dir);
-if (abs(rel) > TAU / 3) {
-cb.flankReady = false; cb.flankT = 0;
-if (minD > attackReach) cb.mvA = p.dir, cb.mvSpd = moveSpd;
-} else {
+} else if (cb.flankA > 0 && !cb.muted && gap < 1.5 * fr && abs(norm(atan2(p.y - tp.y, p.x - tp.x) - tp.dir)) <= TAU / 3) {
 const baseA = atan2(tp.y - p.y, tp.x - p.x);
 const predict = (sgn) => {
 const ta = baseA + HALF_PI * sgn, st = spd * dtS;
@@ -245,9 +239,8 @@ return abs(norm(atan2(ny - tp.y, nx - tp.x) - tp.dir));
 };
 const strafeSign = predict(1) >= predict(-1) ? 1 : -1,
 tangentA = baseA + strafeSign * (HALF_PI - (gap > fr ? .2 : 0));
-cb.aimLock = 0, cb.mvA = tangentA, cb.mvSpd = spd;
-}
-} else if (minD > attackReach) cb.mvA = p.dir, cb.mvSpd = moveSpd, cb.flankArmed && (cb.flankReady = !1);
+cb.aimLock = 0, cb.mvA = tangentA, cb.mvSpd = spd, airT = 1, (cb.flankA -= spd * dtS / minD) > 0 || flankEnd(cb);
+} else if (cb.flankA > 0 && flankEnd(cb), minD > attackReach) cb.mvA = p.dir, cb.mvSpd = moveSpd;
 if (hasAbil(b, "tank")) {
 const stepT = moveSpd * dtS;
 if (minD <= attackReach && !cb.mvSpd) cb.mvA = p.dir, cb.mvSpd = moveSpd;
@@ -284,7 +277,6 @@ if (!biteDodged(b, p, tb, tp, tm.team, tcb)) {
 let strongMult = 1;
 if (cb.strongPend) { strongMult = 2; cb.strongPend = 0 }
 applyBite(cb, b, p, tcb, tb, tp, strongMult, tm.team, e), biteNoticed(target);
-cb.flankReady = true; cb.flankT = 0; cb.flankArmed = 0;
 const kbA = atan2(tp.y - p.y, tp.x - p.x);
 const braced = hasAbil(tb, "braced");
 if (abilReady(e, "kickback")) { const d = max(.25, 1.5 + .28 * (b.str - tb.con)) * (braced ? .5 : 1), kbDist = bugLen(tb) * d * (1 - KB_DAMP); tcb.kbX += cos(kbA) * kbDist, tcb.kbY += sin(kbA) * kbDist; if (!braced) { tcb.stunT = max(tcb.stunT, ABILITIES.kickback.dur); const sa = (min(PI, d * PI / 3) + (floor(random() * 5) - 2) * PI / 18) * (random() < .5 ? -1 : 1); tcb.spinRemain = abs(sa); tcb.spinDir = sign(sa); tcb.regather = 1 } abilFire(e, "kickback") }
