@@ -8,15 +8,16 @@ const TUTORIAL = [
 ["own", "own a bug"],
 ["feed", "feed a bug"],
 ["drag", "drag a bug"],
-["dragObst", "drag an obstacle"],
-["rotObst", "rotate an obstacle"],
 ["inspect", "inspect a bug"],
 ["breed", "breed a bug"],
 ["mate", "mate a bug"],
+["find", "find a bug"],
+["kill", "kill a bug"],
 ["fight", "fight a bug"],
 ["feedFight", "feed a fighting bug"],
 ["scare", "scare a fighting bug"],
-["kill", "kill a bug"]
+["dragObst", "drag an obstacle"],
+["rotObst", "rotate an obstacle"]
 ];
 const ACHIEVEMENTS = [
 ["own10", "own 10 bugs (at the same time)"],

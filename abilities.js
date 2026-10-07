@@ -56,7 +56,7 @@ function biteDodged(atkB, p, tb, tp, atkTeam, tcb) {
 const chance = clamp(.12 + .04 * (tb.agi - atkB.agi), 0, .25);
 if (random() >= chance) return !1;
 if (tcb) { const a = tp.dir + HALF_PI * (random() < .5 ? -1 : 1); tcb.dodT = 1, tcb.dodDx = cos(a), tcb.dodDy = sin(a) }
-return spawnDmgPop(tp, tb, 0, atkTeam, atan2(tp.y - p.y, tp.x - p.x)), !0
+return spawnDmgPop(tp, 0, atkTeam, atan2(tp.y - p.y, tp.x - p.x)), !0
 }
 function wakeToFight(e) {
 const t = C.walk.get(e);
@@ -90,7 +90,7 @@ const ha = atan2(tp.y - p.y, tp.x - p.x);
 tcb.hitDx = cos(ha), tcb.hitDy = sin(ha);
 const sh = bugLen(tb) * .15 * (random() < .5 ? -1 : 1);
 tcb.imX -= tcb.hitDy * sh, tcb.imY += tcb.hitDx * sh;
-spawnDmgPop(tp, tb, dmg, atkTeam, ha);
+spawnDmgPop(tp, dmg, atkTeam, ha);
 hasAbil(tb, "cry") && (tcb.callT = ABILITIES.cry.dur, tcb.callR = callRadius(tb), tcb.callTeam = atkTeam ? 0 : 1, tcb.callCry = 1, tcb.callX = tp.x, tcb.callY = tp.y);
 if (tcb.curHp <= 0 && !(hasAbil(tb, "phoenix") && !tcb.phoenixUsed && !tcb.muted)) {
 tcb.dead = !0, tcb.curHp = 0, cb.killsThis = (cb.killsThis || 0) + 1, cb.memT = 0, cb.searchPhase = 0;

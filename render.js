@@ -38,7 +38,7 @@ list = (b.abilities || []).filter(id => id === "phoenix" ? !cb.phoenixUsed : id 
 const r = morphR(b);
 let yy = p.y + 4;
 list.forEach(id => {
-const has = ABILITIES[id].cd > 0, cd = cb.cd[id] || 0;
+const has = ABILITIES[id].cd > 0, cd = cb.cd?.[id] || 0;
 boxCx.fillStyle = has ? (cd <= 0 ? "#4f8" : "#fa6") : "#c8f";
 boxCx.fillText(`${ABILITIES[id].name}${has?" "+(cd<=0?"\u2713":(cd/1000).toFixed(1)):""}`, p.x + r + 4, yy), yy += 9
 })

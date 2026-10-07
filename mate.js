@@ -6,6 +6,7 @@ function eggRadius(a, b) { return max(bugLen(a), bugLen(b)) * .25 }
 const LOVE_BITE_REACH = 2.5, LOVE_BITE_CONE = 1;
 const mateOdds = () => bugsOwned.length <= 3 ? 1 : bugsOwned.length <= 10 ? .5 : .25;
 const nibble = (a, t) => (t.hitT = 1, t.curHp = max(1, (t.curHp == null ? maxHpOf(t) : t.curHp) - a.str * rollVar()));
+const canParent = b => hpFrac(b) >= 1 && !b.mated;
 function interactEligible(e) {
 const b = C.bug.get(e);
 return hpFrac(b) >= 1 && !(b.mateCd > 0) && "breeding" !== C.walk.get(e).act && !b.loveBite
@@ -24,7 +25,7 @@ seen.add(key);
 if (mateTouch.has(key)) continue;
 if (!interactEligible(ea) || !interactEligible(eb)) continue;
 if (random() >= INTERACT_CHANCE) continue;
-if (ba.mated || bbg.mated || random() >= mateOdds() || boxFull()) {
+if (!canParent(ba) || !canParent(bbg) || random() >= mateOdds() || boxFull()) {
 ba.loveBite = bbg.loveBite = 1;
 loveBites.push({ a: ea, b: eb, ta: 1, tb: 1 });
 continue

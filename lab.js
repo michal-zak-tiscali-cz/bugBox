@@ -12,14 +12,14 @@ const lay = $("lab-layout");
 lay && (lay.scrollTop = scrollToBottom ? lay.scrollHeight : 0)
 }
 function renderLab() {
-updateMoney();
+closeKill(), updateMoney();
 const lay = $("lab-layout"),
 st = labSt;
 if ("pick" === st.phase) {
 lay.innerHTML = "";
 const tip = document.createElement("div");
 tip.style = "font-size:8px;color:#888;width:100%;max-width:700px;text-align:center;margin-bottom:2px;";
-tip.textContent = "Tip: click the bug picture for the option to kill it";
+tip.textContent = "Tip: Tap any bug's picture to kill it. Hold any bug's card to find it.";
 lay.appendChild(tip);
 const sortRow = document.createElement("div");
 sortRow.style = "display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:center;width:100%;max-width:700px;margin-bottom:4px;";
@@ -86,7 +86,7 @@ gb.className = "nav-lab bt-breed", gb.style = "font-size:10px;padding:3px 8px;ma
 info && info.appendChild(gb)
 }
 const btn = div.querySelector(".bt-sel");
-btn && (btn.textContent = isA || isB ? "Deselect" : "Select"), div.classList.toggle("card-sel", isA || isB)
+btn && (btn.textContent = isA || isB ? "Deselect" : "Select"), div.classList.toggle("card-sel", isA || isB), div.classList.toggle("card-off", !canParent(b))
 }
 function breedNow() {
 if (boxFull()) return void toast("Terrarium full");
@@ -96,20 +96,22 @@ wins: 0,
 losses: 0
 }), labSt.pA.mated = labSt.pB.mated = 1, achKids(labSt.pA, labSt.pB), bugsOwned.push(labSt.larva), achOwn(1), achChild(labSt.larva), trackDynasty(labSt.larva.gen), SFX.hatch(), labSt.phase = "result", renderLab()) : toast("Select two bugs!")
 }
+const bugOfCard = div => bugsOwned.find(x => String(x.id) === div.dataset.bid);
 function labApplyAll(grid) {
 grid.querySelectorAll(".card").forEach(div => {
-const b = bugsOwned.find(x => String(x.id) === div.dataset.bid);
+const b = bugOfCard(div);
 b && labApplyCard(div, b)
 }), labBar()
 }
 function labPick(b, div, grid, addOnly) {
 const selected = labSt.pA?.id === b.id || labSt.pB?.id === b.id;
 if (selected && addOnly) return;
-if (!selected && (hpFrac(b) < 1 || b.mated)) return void flashBlocked(div);
+if (!selected && !canParent(b)) return void flashBlocked(div);
 if (!selected && boxFull()) return flashBlocked(div), void toast("Terrarium full");
 labSt.pA?.id === b.id ? (labSt.pA = labSt.pB, labSt.pB = null) : labSt.pB?.id === b.id ? labSt.pB = null : labSt.pA ? labSt.pB ? (labSt.pA = labSt.pB, labSt.pB = b) : labSt.pB = b : labSt.pA = b, labApplyAll(grid)
 }
 const BREED_SORT = [
+["name", "Nam", b => b.name.toLowerCase()],
 ["gen", "Gen", b => b.gen],
 ["con", "Con", b => b.con],
 ["str", "Str", b => b.str],
@@ -119,11 +121,11 @@ const BREED_SORT = [
 ["abi", "Abi", b => (b.abilities || []).length],
 ["pwr", "Pwr", b => SK.reduce((t, k) => t + b[k], 0)]
 ];
-let labSort = null;
-function setLabSort(k) { labSort = labSort === k ? null : k, renderLab() }
+let labSort = "name", labDir = 1;
+function setLabSort(k) { labDir = labSort === k ? -labDir : 1, labSort = k, renderLab() }
 function renderLabGrid(grid) {
-const sorter = BREED_SORT.find(r => r[0] === labSort),
-list = [...bugsOwned].sort((x, y) => sorter ? sorter[2](y) - sorter[2](x) : x.name.localeCompare(y.name));
+const val = BREED_SORT.find(r => r[0] === labSort)[2],
+list = [...bugsOwned].sort((x, y) => { const a = val(x), b = val(y); return labDir * ((a > b) - (a < b)) });
 grid.innerHTML = "", list.forEach(b => {
 const div = makeKillableCard(b, {
 uid: "lab",

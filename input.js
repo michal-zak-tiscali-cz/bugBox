@@ -1,5 +1,5 @@
 let drag = null, suppressClick = !1, holdT = 0;
-const DRAG_SLOP = 8, HOLD_MS = 250;
+const DRAG_SLOP = 8, HOLD_MS = 250, hold = (ms, fn) => holdT = setTimeout(fn, ms);
 const boxPt = e => { const r = boxCv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top] };
 function nearest(comps, cx, cy, radius) {
 let hit = null, best = 1 / 0;
@@ -20,7 +20,7 @@ return e == null ? null : { e: e, kind: "obstacle", pad: C.obstacle.get(e).r }
 }
 function dragStart(e) {
 const [cx, cy] = boxPt(e), t = draggableAt(cx, cy);
-suppressClick = !1, holdT = t ? 0 : setTimeout(() => canPlaceFood() && (ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed(), combatState && foodLeft--, suppressClick = !0), HOLD_MS);
+suppressClick = !1, t || hold(HOLD_MS, () => canPlaceFood() && (ecsSpawn({ food: {}, pos: { x: cx, y: cy, dir: 0 } }), SFX.feed(), combatState && foodLeft--, suppressClick = !0));
 if (!t || !canDrag(t.kind)) return;
 const op = C.pos.get(t.e);
 "bug" === t.kind && mateCancel(t.e);
@@ -43,4 +43,4 @@ abs(drag.turn) > 5.6 && (achieve("rotObst"), C.obstacle.get(drag.e).rot += sign(
 }
 e.preventDefault()
 }
-function endDrag() { clearTimeout(holdT), drag && (suppressClick = drag.moved, drag = null) }
+function endDrag() { drag && (suppressClick = drag.moved, drag = null) }

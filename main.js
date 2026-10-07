@@ -65,3 +65,17 @@ ov("ov-set", 1)
 };
 $("gset-snd").onchange = e => { sound.on = e.target.checked };
 $("bt-fow") && ($("bt-fow").onclick = () => toggleFow());
+let tap0;
+document.addEventListener("touchstart", e => tap0 = e.touches[0], { passive: !0 });
+document.addEventListener("touchend", e => {
+const t = e.changedTouches[0];
+e.target.closest(".card") && hypot(t.clientX - tap0.clientX, t.clientY - tap0.clientY) < 20 && (e.preventDefault(), e.target.click())
+});
+document.addEventListener("pointerdown", e => {
+const c = e.target.closest(".pick-grid .card");
+c && hold(500, () => {
+const b = bugOfCard(c);
+b && (achieve("find"), closeKill(), leaveFight(), requestAnimationFrame(() => requestAnimationFrame(() => inspected = b)))
+})
+});
+["pointerup", "pointercancel"].forEach(k => document.addEventListener(k, () => clearTimeout(holdT)));

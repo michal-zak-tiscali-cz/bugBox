@@ -71,7 +71,7 @@ syncSciHud()
 function canDrag(kind) { return !hudCombat() }
 const MAX_FOOD = 30;
 function canPlaceFood() { return combatState ? foodLeft > 0 && !fightDone : ecsQuery("food").length < MAX_FOOD }
-function spawnDmgPop(tp, tb, amount, team, a) { const o = bugLen(tb) / 2 + 3; dmgPops.push({ x: tp.x - cos(tp.dir) * o, y: tp.y - sin(tp.dir) * o, amount, team, a, t: 1 }) }
+function spawnDmgPop(p, amount, team, a) { dmgPops.push({ x: p.x, y: p.y, amount, team, a, t: 1 }) }
 function openTerr() {
 simLastT = 0, updateMoney(), achOwn(0), showScreen("s-terr")
 }
