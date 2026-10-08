@@ -1,4 +1,4 @@
-function openLab(scrollToBottom) {
+function openLab() {
 labSt = {
 phase: "pick",
 pA: null,
@@ -9,7 +9,7 @@ fL: 0,
 larva: null
 }, showScreen("s-lab"), renderLab();
 const lay = $("lab-layout");
-lay && (lay.scrollTop = scrollToBottom ? lay.scrollHeight : 0)
+lay && (lay.scrollTop = 0)
 }
 function renderLab() {
 closeKill(), updateMoney();
@@ -38,9 +38,9 @@ lay.innerHTML = `
         <h3 class="tc">🥚 NEW BUG!</h3>
         <div id="lab-parents-row" style="display:flex;gap:8px;justify-content:center;align-items:flex-start;margin:10px 0;"></div>
         <div id="lab-child-row" style="display:flex;justify-content:center;margin:10px 0;"></div>
-        <div class="tc"><button class="nav-lab bt" style="width:160px;padding:6px 28px;height:auto;" onclick="labBack()">← Breeding Lab 🧬</button></div>
+        <div class="tc"><button class="nav-lab bt" style="width:160px;padding:6px 28px;height:auto;">← Breeding Lab 🧬</button></div>
       </div>`;
-lay.style.cursor = "pointer", lay.onclick = e => { window.killPh || labBack() };
+lay.style.cursor = "pointer", lay.onclick = labBack;
 const parentsRow = $("lab-parents-row"),
 childRow = $("lab-child-row");
 const mkCard = (bug, dead, isChild, lbl) => {
@@ -94,7 +94,7 @@ labSt.pA && labSt.pB ? (labSt.larva = makeBug({
 ...computeOffspring(labSt.pA, labSt.pB),
 wins: 0,
 losses: 0
-}), labSt.pA.mated = labSt.pB.mated = 1, achKids(labSt.pA, labSt.pB), bugsOwned.push(labSt.larva), achOwn(1), achChild(labSt.larva), trackDynasty(labSt.larva.gen), SFX.hatch(), labSt.phase = "result", renderLab()) : toast("Select two bugs!")
+}), labSt.pA.mated = labSt.pB.mated = 1, achKids(labSt.pA, labSt.pB), labSt.larva.dead || (bugsOwned.push(labSt.larva), achOwn(1), achChild(labSt.larva), trackDynasty(labSt.larva.gen)), SFX.hatch(), labSt.phase = "result", renderLab()) : toast("Select two bugs!")
 }
 const bugOfCard = div => bugsOwned.find(x => String(x.id) === div.dataset.bid);
 function labApplyAll(grid) {
@@ -118,11 +118,11 @@ const BREED_SORT = [
 ["agi", "Agi", b => b.agi],
 ["int", "Int", b => b.int],
 ["per", "Per", b => b.per],
-["abi", "Abi", b => (b.abilities || []).length],
+["abi", "Abi", b => b.abilities.length + b.abilities.map(id => ABILITIES[id].name).join()],
 ["pwr", "Pwr", b => SK.reduce((t, k) => t + b[k], 0)]
 ];
 let labSort = "name", labDir = 1;
-function setLabSort(k) { labDir = labSort === k ? -labDir : 1, labSort = k, renderLab() }
+function setLabSort(k) { labDir = labSort === k ? -labDir : "pwr" === k ? -1 : 1, labSort = k, renderLab() }
 function renderLabGrid(grid) {
 const val = BREED_SORT.find(r => r[0] === labSort)[2],
 list = [...bugsOwned].sort((x, y) => { const a = val(x), b = val(y); return labDir * ((a > b) - (a < b)) });
@@ -172,7 +172,7 @@ sp.textContent = m.src + (m.d ? (m.d > 0 ? " +" : " ") + m.d : ""), row.appendCh
 })
 }
 function computeOffspring(a, b) {
-const child = { gen: max(a.gen, b.gen) + 1, name: childName(a, b), meta: {} };
+const name = childName(a, b), child = { gen: max(a.gen, b.gen) + 1, name: name || "Dead", dead: !name, meta: {} };
 const hr = random();
 child.hue = hr < 1 / 3 ? a.hue : hr < 2 / 3 ? b.hue : ((random() < .5 ? a.hue : b.hue) + HUE_OFF[ri(4)] + 360) % 360, child.morph = mixMorph(a, b);
 SK.forEach(k => {
@@ -187,10 +187,7 @@ return inheritAbilities(child, a, b), child
 }
 function labBack() {
 const newId = labSt.larva.id;
-labSt.larva = null, openLab(!0), setTimeout(() => {
+openLab();
 const div = document.querySelector(`.pick-grid .card[data-bid="${newId}"]`);
-div && (div.scrollIntoView({
-block: "center"
-}), flashBlocked(div))
-}, 250)
+div && (div.scrollIntoView({ block: "center" }), flashBlocked(div))
 }

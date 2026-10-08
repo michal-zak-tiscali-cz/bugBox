@@ -47,9 +47,7 @@ v.angVel += .9 * (random() - .5) * dtS, v.angVel *= .95, v.wanderAngle += v.angV
 let vx = cos(v.wanderAngle),
 vy = sin(v.wanderAngle);
 [vx, vy] = rockAvoid(p, vx, vy, obs);
-const diff = norm(atan2(vy, vx) - p.dir);
-const maxStep = turningOf(b) * dtS;
-p.dir += max(-maxStep, min(maxStep, diff))
+turnToward(p, atan2(vy, vx), turningOf(b) * dtS)
 })
 }
 const hurt = e => { const b = C.bug.get(e), c = C.combat.get(e); return !(c && c.dead) && (c || b).curHp < maxHpOf(b) };
@@ -200,6 +198,7 @@ clampToBox(e);
 }
 function clampToBox(e) {
 const p = C.pos.get(e), m = bugRadius(C.bug.get(e));
+isFinite(p.x + p.y) || (p.x = p.lx ?? m, p.y = p.ly ?? m);
 p.x = clamp(p.x, m, boxLW - m), p.y = clamp(p.y, m, boxLH - m)
 }
 function sysResolve(ents, dtS) {

@@ -1,6 +1,6 @@
-const INTERACT_CHANCE = .10, MATE_COOLDOWN_MS = 15000, BOX_CAP = 100;
+const INTERACT_CHANCE = .10, BOX_CAP = 100;
 const boxFull = () => bugsOwned.length + boxEggs.length >= BOX_CAP;
-const MATE_HOLD_MIN = 3000, MATE_HOLD_MAX = 7000, MATE_TURN_MAX = 1500;
+const MATE_HOLD_MIN = 3000, MATE_HOLD_MAX = 7000, MATE_TURN_MAX = 8000;
 let boxEggs = [], mates = [], loveBites = [], mateTouch = new Set();
 function eggRadius(a, b) { return max(bugLen(a), bugLen(b)) * .25 }
 const LOVE_BITE_REACH = 2.5, LOVE_BITE_CONE = 1;
@@ -9,11 +9,10 @@ const nibble = (a, t) => (t.hitT = 1, t.curHp = max(1, (t.curHp == null ? maxHpO
 const canParent = b => hpFrac(b) >= 1 && !b.mated;
 function interactEligible(e) {
 const b = C.bug.get(e);
-return hpFrac(b) >= 1 && !(b.mateCd > 0) && "breeding" !== C.walk.get(e).act && !b.loveBite
+return hpFrac(b) >= 1 && "breeding" !== C.walk.get(e).act && !b.loveBite
 }
 function sysMate(dt, ents) {
 const dtS = dt / 1e3;
-ents.forEach(e => { const b = C.bug.get(e); b.mateCd > 0 && (b.mateCd -= dt) });
 const seen = new Set();
 for (let i = 0; i < ents.length; i++)
 for (let j = i + 1; j < ents.length; j++) {
@@ -46,7 +45,7 @@ for (const [x, y, k2] of [[s.a, s.b, "ta"], [s.b, s.a, "tb"]]) {
 if (!s[k2]) continue;
 const px = C.pos.get(x), py = C.pos.get(y), bx = C.bug.get(x), a = atan2(py.y - px.y, py.x - px.x);
 C.vel.get(x).wanderAngle = a, turnToward(px, a, turningOf(bx) * dtS);
-abs(norm(a - px.dir)) < LOVE_BITE_CONE && (bx.prepT = (bx.prepT || BITE_PREP_MS) - dt) <= 0 && (s[k2] = bx.prepT = 0, nibble(bx, C.bug.get(y)), SFX.bite())
+abs(norm(a - px.dir)) < LOVE_BITE_CONE && (bx.prepT = (bx.prepT || (bx.prepMax = bitePrepOf(bx))) - dt) <= 0 && (s[k2] = bx.prepT = 0, nibble(bx, C.bug.get(y)), SFX.bite())
 }
 if (s.ta || s.tb) continue
 }
@@ -60,23 +59,20 @@ const sp = C.pos.get(m.sub), tp = C.pos.get(m.top),
 sb = C.bug.get(m.sub), tb = C.bug.get(m.top);
 if ("turn" === m.phase) {
 const away = atan2(sp.y - tp.y, sp.x - tp.x),
-ok1 = turnToward(sp, away, turningOf(sb) * dtS),
-ok2 = turnToward(tp, away, turningOf(tb) * dtS),
-gap = mateGap(m),
 dx = tp.x - sp.x, dy = tp.y - sp.y, d = hypot(dx, dy) || .001,
-step = min(abs(d - gap), spdOf(tb) * dtS) * (d > gap ? -1 : 1);
-tp.x += dx / d * step, tp.y += dy / d * step;
-m.t += dt;
-(ok1 && ok2 && abs(d - gap) < 1.5 || m.t >= MATE_TURN_MAX) &&
-(mateSnap(m, away), m.phase = "hold", m.hold = MATE_HOLD_MIN + random() * (MATE_HOLD_MAX - MATE_HOLD_MIN));
+rem = d - mateGap(m), step = min(abs(rem), spdOf(tb) * dtS);
+if ((m.t += dt) >= MATE_TURN_MAX) { mateEnd(m, !1), mates.splice(k, 1); continue }
+turnToward(sp, away, turningOf(sb) * dtS) & turnToward(tp, away, turningOf(tb) * dtS) &&
+(tp.x -= dx / d * step * sign(rem), tp.y -= dy / d * step * sign(rem), step === abs(rem) && (m.phase = "hold", m.hold = MATE_HOLD_MIN + random() * (MATE_HOLD_MAX - MATE_HOLD_MIN)));
 continue
 }
 mateSnap(m, sp.dir), m.hold -= dt;
 if (m.hold <= 0) {
-boxFull() || (boxEggs.push({
+const bug = boxFull() || makeBug({ ...computeOffspring(sb, tb) });
+!1 === bug.dead && (boxEggs.push({
 x: (sp.x + tp.x) / 2, y: (sp.y + tp.y) / 2,
 r: eggRadius(sb, tb),
-bug: makeBug({ ...computeOffspring(sb, tb) }),
+bug,
 ready: 0
 }), achKids(sb, tb), achieve("mate"));
 mateEnd(m, !0), mates.splice(k, 1)
@@ -105,7 +101,7 @@ function mateEnd(m, ok) {
 [m.sub, m.top].forEach(en => {
 if (!ECS.bug.has(en)) return;
 const b = C.bug.get(en);
-b.mateCd = MATE_COOLDOWN_MS, ok && (b.mated = 1), think(en, ok && en === m.sub ? 2 : 1)
+ok && (b.mated = 1), think(en, ok && en === m.sub ? 2 : 1)
 })
 }
 function markEggsReady() { boxEggs.forEach(g => g.ready = 1) }
@@ -114,7 +110,7 @@ const keep = [];
 boxEggs.forEach(g => {
 if (!g.ready) return void keep.push(g);
 const nb = g.bug;
-nb.curHp = maxHpOf(nb), nb.mateCd = MATE_COOLDOWN_MS;
+nb.curHp = maxHpOf(nb);
 bugsOwned.push(nb), achOwn(1), achChild(nb), achStep("hatched", [1, 10], "hatch");
 trackDynasty(nb.gen);
 SFX.hatch()

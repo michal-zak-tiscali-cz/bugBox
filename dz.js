@@ -119,6 +119,6 @@ nb.curHp = mhp;
 const lw = boxLW, lh = boxLH,
 c = bugEntity(nb, 0 === dzSide ? .18 * lw : .82 * lw, 30 + random() * (lh - 60), 0 === dzSide ? 0 : PI, dzSide);
 c.vel.wanderAngle = 0;
-c.combat = newCombat(mhp, mhp);
-ecsSpawn(c);
+c.combat = newCombat(nb, mhp, mhp);
+think(ecsSpawn(c));
 }

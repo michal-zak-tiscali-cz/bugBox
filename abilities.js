@@ -2,7 +2,7 @@ const bugLen = b => b ? ensureMorph(b).bodyLength : 22;
 const callRadius = b => bugLen(b) * 7, loudRadius = b => bugLen(b) * 3, dashRange = b => bugLen(b) * 7, flankRange = b => bugLen(b) * 2, flankEnd = cb => { cb.flankA = 0, cb.cd.flanking = ABILITIES.flanking.cd };
 const GRAB_HOLD_MS = 2500, FRONT_CONE = 20 * PI / 180, KB_DAMP = .72;
 const FLEE_MIN_MS = 1000, FLEE_MAX_MS = 4000;
-const BITE_PREP_MS = 800, BITE_PREP_MAX = 1000, BITE_PREP_MIN = 600;
+const BITE_PREP_MAX = 2000, BITE_PREP_MIN = 1000;
 const ABILITIES = {};
 [
 ["dash", "Dash", "agi", 5e3, 2000, `Leaps at 8x walking speed for up to {d}s at a target between biting reach and 7 body lengths away, and bites the instant it arrives, skipping the wind-up.`],
@@ -34,7 +34,8 @@ const ABIL_ROLL_CHANCE = [.5, .5, .25, .25, 0];
 const ABIL_BY_STAT = {};
 SK.forEach(k => ABIL_BY_STAT[k] = ABIL_IDS.filter(id => ABILITIES[id].stat === k));
 const shuf = a => a.sort(() => random() - .5);
-const bitePrepOf = b => BITE_PREP_MAX - (BITE_PREP_MAX - BITE_PREP_MIN) * (clamp(b.agi || 5, 1, 10) - 1) / 9;
+const bitePrepOf = (b, k = 1) => (BITE_PREP_MAX - (BITE_PREP_MAX - BITE_PREP_MIN) * (clamp(b.agi || 5, 1, 10) - 1) / 9) * k + rf(-125, 125),
+biteDone = (cb, b, k) => (SFX.bite(), cb.biteT = 1, cb.bitePrep = cb.bitePrepMax = bitePrepOf(b, k));
 const FOV_MIN_DEG = 90, FOV_MAX_DEG = 94.5;
 function engageDistOf(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize * 2 }
 function bugRadius(b) { const m = ensureMorph(b); return m.bodyLength / 2 + m.headSize }
@@ -52,10 +53,9 @@ const liveE = x => { const c = ECS.combat.has(x) && C.combat.get(x); return c &&
 const memMsOf = b => (intOf(b) + 2) * 1000, scanOf = b => TAU * (intOf(b) - 1) / 9;
 const huntTierOf = b => { const i = intOf(b); return i <= 3 ? 1 : i <= 6 ? 2 : i <= 8 ? 3 : 4 };
 const rollVar = () => .8 + .4 * random();
-function biteDodged(atkB, p, tb, tp, atkTeam, tcb) {
+function biteDodged(atkB, p, tb, tp, atkTeam) {
 const chance = clamp(.12 + .04 * (tb.agi - atkB.agi), 0, .25);
 if (random() >= chance) return !1;
-if (tcb) { const a = tp.dir + HALF_PI * (random() < .5 ? -1 : 1); tcb.dodT = 1, tcb.dodDx = cos(a), tcb.dodDy = sin(a) }
 return spawnDmgPop(tp, 0, atkTeam, atan2(tp.y - p.y, tp.x - p.x)), !0
 }
 function wakeToFight(e) {
@@ -99,8 +99,8 @@ groundMarks.push({ x: tp.x, y: tp.y, hue: tb.hue, t: 1 })
 }
 const COMBAT_DEFAULTS = {
 dead: !1, killsThis: 0,
-bitePrep: BITE_PREP_MS, bitePrepMax: BITE_PREP_MS, preppingBite: 0, prepVisT: 0,
-kbX: 0, kbY: 0, hitDx: 0, hitDy: 0, dodT: 0, dodDx: 0, dodDy: 0,
+preppingBite: 0, prepVisT: 0,
+kbX: 0, kbY: 0, hitDx: 0, hitDy: 0, biteT: 0,
 stunT: 0,
 flyT: 0, flyDx: 0, flyDy: 0, flySp: 0, flyE: -1, airT: 0, airMs: 1, spinRemain: 0, spinDir: 1,
 dashT: 0, dashHitPend: 0,
@@ -115,7 +115,7 @@ mvA: 0, mvSpd: 0, mvOn: 0,
 imX: 0, imY: 0,
 phoenixUsed: 0, phoenixT: 0, fakeUsed: 0, fakeT: 0, muted: 0, abT: 0, abTxt: ""
 };
-const newCombat = (curHp, maxHp) => ({ ...COMBAT_DEFAULTS, cd: {}, curHp, maxHp });
+const newCombat = (b, curHp, maxHp, w = bitePrepOf(b)) => ({ ...COMBAT_DEFAULTS, cd: {}, curHp, maxHp, bitePrep: w, bitePrepMax: w });
 const abilOrder = b => SK.filter(k => b[k] >= 5).sort((x, y) => b[y] - b[x] || (x < y ? -1 : 1));
 function rollAbilities(b, out, used) {
 for (const k of abilOrder(b)) {

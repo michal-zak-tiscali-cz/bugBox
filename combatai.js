@@ -17,7 +17,7 @@ ecsQuery("bug", "pos", "combat").forEach(e => {
 const cb = C.combat.get(e), t = C.walk.get(e), p = C.pos.get(e);
 if (cb.dead) return;
 combatState && (achieve("scare"), achStep("scared", [5], "scared"), achieve({ 5: "scare5x", 10: "terrify", 15: "ptsd" }[cb.scares = (cb.scares || 0) + 1]));
-flee(e, (floor(atan2(p.y - boxLH / 2, p.x - boxLW / 2) / HALF_PI) + rf(-.5, 1.5)) * HALF_PI), cb.stunT = 0, t.seekX = boxLW / 2 + rf(-30, 30), t.seekY = boxLH / 2 + rf(-30, 30)
+flee(e, (floor(atan2(p.y - boxLH / 2, p.x - boxLW / 2) / HALF_PI) + random()) * HALF_PI), cb.stunT = 0, t.seekX = boxLW / 2 + rf(-30, 30), t.seekY = boxLH / 2 + rf(-30, 30)
 })
 }
 const abilReady = (e, id) => { const cb = C.combat.get(e); return !cb.muted && hasAbil(C.bug.get(e), id) && !(cb.cd[id] > 0) };
@@ -37,7 +37,7 @@ abs(cb.kbY) < .15 && (cb.kbY = 0);
 const st = cb.kbX || cb.kbY ? cb.spinRemain * (1 - damp) : cb.spinRemain;
 p.dir += cb.spinDir * st, cb.spinRemain -= st;
 }
-cb.dodT > 0 && (cb.dodT = max(0, cb.dodT - dt / 200));
+cb.biteT > 0 && (cb.biteT = max(0, cb.biteT - dt / 200));
 for (const k in cb.cd) cb.cd[k] -= dt;
 cb.stunT > 0 && (cb.stunT -= dt);
 cb.loudT > 0 && (cb.loudT -= dt);
@@ -210,9 +210,8 @@ cb.dashT = ABILITIES.dash.dur; abilFire(e, "dash"); cb.dashHitPend = 1; cb.airT 
 }
 if (cb.dashHitPend && minD <= attackReach) {
 cb.dashHitPend = 0; cb.dashT = 0; cb.airT = 0;
-biteDodged(b, p, tb, tp, tm.team, tcb) || (applyBite(cb, b, p, tcb, tb, tp, 1, tm.team, e), biteNoticed(target));
-cb.bitePrep = cb.bitePrepMax || bitePrepOf(b);
-SFX.bite();
+biteDodged(b, p, tb, tp, tm.team) || (applyBite(cb, b, p, tcb, tb, tp, 1, tm.team, e), biteNoticed(target));
+biteDone(cb, b);
 }
 let moveSpd = cb.dashT > 0 ? spd * 8 : minD > attackReach && seesPoint(b, p, tp.x, tp.y) ? spd * RUSH * facing(p, atan2(tp.y - p.y, tp.x - p.x)) : spd;
 if (aiming) moveSpd = 0;
@@ -273,7 +272,7 @@ cb.bitePrep = max(cb.bitePrep, 0);
 cb.preppingBite = 0;
 } else { cb.preppingBite = 0 }
 if (inRange && facingOK && cb.bitePrep <= 0 && !airT) {
-if (!biteDodged(b, p, tb, tp, tm.team, tcb)) {
+if (!biteDodged(b, p, tb, tp, tm.team)) {
 let strongMult = 1;
 if (cb.strongPend) { strongMult = 2; cb.strongPend = 0 }
 applyBite(cb, b, p, tcb, tb, tp, strongMult, tm.team, e), biteNoticed(target);
@@ -286,11 +285,8 @@ abilFire(e, "knockout");
 }
 cb.biteE === target || (cb.biteE = target, cb.biteN = 0), cb.biteN++;
 if (cb.biteN >= 3 && tcb.stunT <= 0 && abilReady(e, "backflip")) { cb.backflipT = ABILITIES.backflip.dur, cb.airT = cb.airMs = cb.backflipT / 2; abilFire(e, "backflip") }
-SFX.bite();
 }
-let baseCd = bitePrepOf(b);
-if (cb.swiftPend) { baseCd /= 2; cb.swiftPend = 0 }
-cb.bitePrep = baseCd, cb.bitePrepMax = baseCd;
+biteDone(cb, b, cb.swiftPend ? .5 : 1), cb.swiftPend = 0;
 if (abilReady(e, "strongbite") && !cb.strongPend) { cb.strongPend = 1; abilFire(e, "strongbite") }
 if (abilReady(e, "swiftbite") && !cb.swiftPend) { cb.swiftPend = 1; abilFire(e, "swiftbite") }
 if (abilReady(e, "loud")) { cb.loudT = ABILITIES.loud.dur; abilFire(e, "loud") }

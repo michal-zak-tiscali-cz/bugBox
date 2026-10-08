@@ -82,7 +82,7 @@ drawHit(b, p.x, p.y, p.dir);
 const r = morphR(b);
 post.push(() => {
 (!fow && (b === inspected || scienceOn && sci("hp"))) && drawHpBar(p, hpFrac(b), r);
-b.prepT > 0 && sci("bite") && drawPrepBar(p, 1 - b.prepT / BITE_PREP_MS, r);
+b.prepT > 0 && sci("bite") && drawPrepBar(p, 1 - b.prepT / b.prepMax, r);
 scienceOn && sci("nam") && (boxCx.fillStyle = "#4cf", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 11))
 });
 return;
@@ -99,8 +99,8 @@ return;
 }
 cb.greyAt = 0;
 const hitFrac = b.hitT || 0;
-let offX = 7 * hitFrac * (cb.hitDx || 0) + 7 * (cb.dodT || 0) * (cb.dodDx || 0),
-offY = 7 * hitFrac * (cb.hitDy || 0) + 7 * (cb.dodT || 0) * (cb.dodDy || 0);
+let offX = 7 * hitFrac * (cb.hitDx || 0) + 7 / 3 * cb.biteT * cos(p.dir),
+offY = 7 * hitFrac * (cb.hitDy || 0) + 7 / 3 * cb.biteT * sin(p.dir);
 if (cb.loudT > 0) { const amp = (cfg.legLen * 0.5 / 3) * sin(cb.loudT / 20), sa = p.dir + HALF_PI; offX += cos(sa) * amp, offY += sin(sa) * amp }
 boxCx.globalAlpha = 1;
 const k = cb.airT > 0 ? sin(PI * (1 - cb.airT / cb.airMs)) * (cb.dashT > 0 ? .5 : 1) : 0, by = p.y + offY - bugLen(b) * k * (cb.dashT > 0 ? .5 : 1), s = 1 + .15 * k;
@@ -118,7 +118,7 @@ drawHpBar(p, f, r, sci("col") ? `hsl(${TEAM_HUE[tm.team]},85%,55%)` : f >= 1 ? "
 if (sci("nam")) { boxCx.fillStyle = 0 === tm.team ? "#44ccff" : "#ffaa44", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(b.name, p.x, p.y - r - 11) }
 if (cb.abT > 0) { boxCx.fillStyle = "#c8f", boxCx.font = "7px Courier New", boxCx.textAlign = "center", boxCx.fillText(cb.abTxt, p.x, p.y - r - 19) }
 if (sci("bite") && cb.prepVisT > 0) {
-const prepR = max(0, min(1, 1 - cb.bitePrep / (cb.bitePrepMax || BITE_PREP_MS)));
+const prepR = max(0, min(1, 1 - cb.bitePrep / cb.bitePrepMax));
 prepR > 0 && drawPrepBar(p, prepR, r)
 }
 });

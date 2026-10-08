@@ -130,13 +130,13 @@ const x = 40 + random() * (lw - 80), y = 40 + random() * (lh - 80);
 if (placed.some(o => hypot(o.x - x, o.y - y) < o.r + r + 18)) continue;
 if (inCombat && (abs(x - .18 * lw) < r + 26 || abs(x - .82 * lw) < r + 26)) continue;
 placed.push({ x, y, r });
-ecsSpawn({ obstacle: { r, kind: k, v, rot: ri(8) * PI / 4 }, pos: { x, y, dir: 0 } });
+ecsSpawn({ obstacle: { r, kind: k, v, rot: (45 * ri(8) + rf(10, 35)) * PI / 180 }, pos: { x, y, dir: 0 } });
 break
 }
 }
 }
 function bugEntity(b, x, y, dir, tm) {
-return {
+return b.loveBite = b.prepT = 0, {
 bug: b,
 pos: { x: x, y: y, dir: dir },
 vel: { wanderAngle: dir, angVel: 0 },
@@ -180,16 +180,16 @@ bugsOwned.includes(b) ? have.set(b, e) : ecsKill(e)
 bugsOwned.forEach(b => {
 if (have.has(b)) return;
 const dir = random() * TAU;
-ecsSpawn(bugEntity(b, 30 + random() * (lw - 60), 30 + random() * (lh - 60), dir, -1))
+think(ecsSpawn(bugEntity(b, 30 + random() * (lw - 60), 30 + random() * (lh - 60), dir, -1)))
 });
 return void syncHud(!0)
 }
 const side = (arr, tm) => {
 const gap = lh / (arr.length + 1);
 arr.forEach((b, i) => {
-const c = bugEntity(b, 0 === tm ? .18 * lw : .82 * lw, gap * (i + 1), 0 === tm ? 0 : PI, tm);
+const c = bugEntity(b, (0 === tm ? .18 : .82) * lw + rf(-.04, .04) * lw, gap * (i + 1 + rf(-.25, .25)), (0 === tm ? 0 : PI) + rf(-.35, .35), tm);
 const mhp = maxHpOf(b);
-c.combat = newCombat(max(1, min(b.curHp, mhp)), mhp);
+c.combat = newCombat(b, max(1, min(b.curHp, mhp)), mhp);
 think(ecsSpawn(c))
 })
 };

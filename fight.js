@@ -108,7 +108,7 @@ allEnemy.forEach(f => enemyCol.appendChild(buildCard(f, !1)));
 ov("ov-res", 1)
 }
 function leaveFight() {
-if (labSt.larva) { const l = labSt.larva; bugsOwned.some(x => x.id === l.id) || bugsOwned.push(l), labSt.larva = null }
+if (labSt.larva) { const l = labSt.larva; l.dead || bugsOwned.some(x => x.id === l.id) || bugsOwned.push(l), labSt.larva = null }
 wbKeep(), endFight(), fightTeam = fightTeam.filter(b => bugsOwned.find(s => s.id === b.id)), openTerr()
 }
 function checkFightEnd() {

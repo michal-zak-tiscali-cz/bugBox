@@ -3,7 +3,7 @@ function setAct(e, act, ms = 1 / 0) {
 const t = C.walk.get(e);
 return t.slide = null, t.act = act, t.actT = ms
 }
-const think = (e, k = 1) => setAct(e, "thinking", k * (5500 - 500 * intOf(C.bug.get(e))));
+const think = (e, k = 1) => setAct(e, "thinking", k * (5500 - 500 * intOf(C.bug.get(e))) + rf(-250, 250));
 const aiAct = t => "fighting" === t.act || "fleeing" === t.act;
 const newDir = e => C.vel.get(e).wanderAngle = random() * TAU;
 const SN = ["CON", "STR", "AGI", "INT", "PER"];
@@ -31,7 +31,8 @@ clamp = (v, a, b) => max(a, min(b, v)),
 fmtT = ms => { const d = floor(ms / 100), p = n => String(n).padStart(2, "0"); return p(floor(d / 600)) + ":" + p(floor(d / 10) % 60) + "." + d % 10 };
 function turnToward(p, want, step) {
 const d = norm(want - p.dir);
-return abs(d) <= step ? (p.dir = norm(want), !0) : (p.dir = norm(p.dir + sign(d) * step), !1)
+step *= p.tk ||= rf(.9, 1.1);
+return abs(d) <= step ? (p.dir = norm(want), p.tk = 0, !0) : (p.dir = norm(p.dir + sign(d) * step), !1)
 }
 function norm(a) { a %= TAU; return a > PI ? a - TAU : a < -PI ? a + TAU : a }
 function hidpi(canvas, w, h) {

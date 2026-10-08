@@ -88,7 +88,7 @@ const fixedW = div.offsetWidth, fixedH = div.offsetHeight;
 div.style.width = fixedW + "px", div.style.height = fixedH + "px", div.style.boxSizing = "border-box";
 div.innerHTML = '<div style="font-size:9px;color:#445;text-align:center;padding:' + max(0, (fixedH - 20) / 2) + 'px 0;">— gone —</div>'
 }
-function gkfLine(b) { return `Gen ${b.gen} \u00b7 K${b.killsTotal||0}/F${b.fights||0}${b.mated?' \u00b7 <span style="color:#c8f;">mated</span>':""}` }
+function gkfLine(b) { return `Gen ${b.gen} \u00b7 K${b.killsTotal||0}/F${b.fights||0}${b.mated?'<br><span style="color:#c8f;">mated</span>':""}` }
 let fow = 0;
 function toggleFow() { fow = fow ? 0 : 1, syncFowBtn(), syncHud(!0) }
 function syncFowBtn() {

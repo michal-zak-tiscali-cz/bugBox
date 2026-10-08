@@ -17,16 +17,13 @@ return `<div class="sr"><span class="sl" style="font-size:${fs}px;">${SN[i]}</sp
 }
 const SYL1 = ["Kr", "Veth", "Dor", "Br", "Zeph", "Th", "Ol", "Nex", "Grix", "Vael", "Mir", "Jex", "Wyr", "Sk", "Ph"],
 SYL2 = ["ax", "eth", "oru", "rix", "ael", "rax", "ion", "elm", "yx", "ath", "oz", "im"];
-function genName() {
-return SYL1[ri(SYL1.length)] + SYL2[ri(SYL2.length)]
-}
+const rnd = a => a[ri(a.length)], genName = () => rnd(SYL1) + rnd(SYL2);
 const sylSplit = n => { const p = SYL1.find(s => n.startsWith(s)) || SYL1[0]; return [p, n.slice(p.length) || SYL2[0]] };
 function childName(a, b) {
 const [a1, a2] = sylSplit(a.name), [b1, b2] = sylSplit(b.name),
 used = n => bugsOwned.some(x => x.name === n) || boxEggs.some(g => g.bug.name === n);
-for (const n of [a1 + b2, b1 + a2]) if (!used(n)) return n;
-for (let i = 0; i < 40; i++) { const n = a1 + SYL2[ri(SYL2.length)]; if (!used(n)) return n }
-return genName()
+for (const f of [() => a1 + b2, () => b1 + a2, () => a1 + rnd(SYL2), () => b1 + rnd(SYL2), genName])
+for (let i = 5; i--;) { const n = f(); if (!used(n)) return n }
 }
 function makeBug(o = {}) {
 const b = {
